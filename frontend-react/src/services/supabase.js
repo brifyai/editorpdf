@@ -71,7 +71,16 @@ export const supabase = {
           limit: async (count) => {
             // Mock response para compatibilidad
             return { data: [], error: null, count: 0 };
-          }
+          },
+          order: (column, options = {}) => ({
+            // Mock response para compatibilidad con .order()
+            limit: async (count) => {
+              return { data: [], error: null, count: 0 };
+            },
+            single: async () => {
+              return { data: null, error: null };
+            }
+          })
         }),
         single: async () => {
           // Mock response para compatibilidad con un solo .eq()
@@ -80,7 +89,16 @@ export const supabase = {
         limit: async (count) => {
           // Mock response para compatibilidad
           return { data: [], error: null, count: 0 };
-        }
+        },
+        order: (column, options = {}) => ({
+          // Mock response para compatibilidad con .order()
+          limit: async (count) => {
+            return { data: [], error: null, count: 0 };
+          },
+          single: async () => {
+            return { data: null, error: null };
+          }
+        })
       }),
       single: async () => {
         // Mock response para compatibilidad
@@ -89,7 +107,16 @@ export const supabase = {
       limit: async (count) => {
         // Mock response para compatibilidad
         return { data: [], error: null, count: 0 };
-      }
+      },
+      order: (column, options = {}) => ({
+        // Mock response para compatibilidad con .order()
+        limit: async (count) => {
+          return { data: [], error: null, count: 0 };
+        },
+        single: async () => {
+          return { data: null, error: null };
+        }
+      })
     }),
     
     eq: (column, value) => ({
@@ -100,7 +127,16 @@ export const supabase = {
       limit: async (count) => {
         // Mock response para compatibilidad
         return { data: [], error: null, count: 0 };
-      }
+      },
+      order: (column, options = {}) => ({
+        // Mock response para compatibilidad con .order()
+        limit: async (count) => {
+          return { data: [], error: null, count: 0 };
+        },
+        single: async () => {
+          return { data: null, error: null };
+        }
+      })
     }),
     
     insert: async (data) => {

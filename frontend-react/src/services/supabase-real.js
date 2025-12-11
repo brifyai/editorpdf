@@ -256,31 +256,30 @@ export const supabaseRealHelpers = {
   // Insertar datos reales de análisis
   async insertRealAnalysis(analysisData) {
     try {
-      const { data, error } = await supabaseReal
-        .from('document_analyses')
-        .insert({
-          user_int_id: analysisData.user_int_id,
-          document_id: analysisData.document_id,
-          analysis_type: analysisData.analysis_type || 'basic',
-          ai_model_used: analysisData.ai_model_used || 'Desconocido',
-          ai_strategy: analysisData.ai_strategy || 'balanced',
-          analysis_config: analysisData.analysis_config || {},
-          processing_time_ms: analysisData.processing_time_ms || 0,
-          confidence_score: analysisData.confidence_score || 85,
-          status: analysisData.status || 'completed',
-          created_at: new Date().toISOString(),
-          completed_at: analysisData.status === 'completed' ? new Date().toISOString() : null
-        })
-        .select()
-        .single();
+      console.log('Insertando análisis real:', analysisData);
+      
+      // Usar el endpoint temporal del servidor para insertar
+      const response = await apiClient.post('/temp/analysis', {
+        user_int_id: analysisData.user_int_id,
+        document_id: analysisData.document_id,
+        analysis_type: analysisData.analysis_type || 'basic',
+        ai_model_used: analysisData.ai_model_used || 'Desconocido',
+        ai_strategy: analysisData.ai_strategy || 'balanced',
+        analysis_config: analysisData.analysis_config || {},
+        processing_time_ms: analysisData.processing_time_ms || 0,
+        confidence_score: analysisData.confidence_score || 85,
+        status: analysisData.status || 'completed',
+        created_at: new Date().toISOString(),
+        completed_at: analysisData.status === 'completed' ? new Date().toISOString() : null
+      });
 
-      if (error) {
-        console.error('Error insertando análisis real:', error);
-        return { data: null, error };
+      if (!response.data.success) {
+        console.error('Error en endpoint temporal de análisis:', response.data.error);
+        return { data: null, error: { message: response.data.error } };
       }
 
-      console.log('Análisis real insertado:', data);
-      return { data, error: null };
+      console.log('Análisis real insertado:', response.data.analysis);
+      return { data: response.data.analysis, error: null };
     } catch (error) {
       console.error('Error en insertRealAnalysis:', error);
       return { data: null, error: { message: error.message } };
@@ -290,32 +289,31 @@ export const supabaseRealHelpers = {
   // Insertar documento real
   async insertRealDocument(documentData) {
     try {
-      const { data, error } = await supabaseReal
-        .from('documents')
-        .insert({
-          user_int_id: documentData.user_int_id,
-          original_filename: documentData.original_filename,
-          file_path: documentData.file_path,
-          file_size_bytes: documentData.file_size_bytes,
-          file_type: documentData.file_type,
-          mime_type: documentData.mime_type,
-          file_hash: documentData.file_hash || 'hash_' + Date.now(),
-          storage_url: documentData.storage_url,
-          is_processed: documentData.is_processed || false,
-          processing_status: documentData.processing_status || 'pending',
-          uploaded_at: new Date().toISOString(),
-          metadata: documentData.metadata || {}
-        })
-        .select()
-        .single();
+      console.log('Insertando documento real:', documentData);
+      
+      // Usar el endpoint temporal del servidor para insertar
+      const response = await apiClient.post('/temp/document', {
+        user_int_id: documentData.user_int_id,
+        original_filename: documentData.original_filename,
+        file_path: documentData.file_path,
+        file_size_bytes: documentData.file_size_bytes,
+        file_type: documentData.file_type,
+        mime_type: documentData.mime_type,
+        file_hash: documentData.file_hash || 'hash_' + Date.now(),
+        storage_url: documentData.storage_url,
+        is_processed: documentData.is_processed || false,
+        processing_status: documentData.processing_status || 'pending',
+        uploaded_at: new Date().toISOString(),
+        metadata: documentData.metadata || {}
+      });
 
-      if (error) {
-        console.error('Error insertando documento real:', error);
-        return { data: null, error };
+      if (!response.data.success) {
+        console.error('Error en endpoint temporal de documento:', response.data.error);
+        return { data: null, error: { message: response.data.error } };
       }
 
-      console.log('Documento real insertado:', data);
-      return { data, error: null };
+      console.log('Documento real insertado:', response.data.document);
+      return { data: response.data.document, error: null };
     } catch (error) {
       console.error('Error en insertRealDocument:', error);
       return { data: null, error: { message: error.message } };
@@ -325,20 +323,40 @@ export const supabaseRealHelpers = {
   // Obtener documentos reales
   async getRealDocuments(userId, limit = 50) {
     try {
-      const { data, error } = await supabaseReal
-        .from('documents')
-        .select('*')
-        .eq('user_int_id', userId)
-        .order('uploaded_at', { ascending: false })
-        .limit(limit);
-
-      if (error) {
-        console.error('Error obteniendo documentos reales:', error);
-        return { data: null, error };
+      console.log('Obteniendo documentos reales para usuario:', userId);
+      
+      // Usar el endpoint temporal que creé en el servidor
+      const response = await apiClient.get('/temp/documents');
+      
+      if (!response.data.success) {
+        console.error('Error en endpoint temporal de documentos:', response.data.error);
+        return { data: null, error: { message: response.data.error } };
       }
 
-      console.log('Documentos reales obtenidos:', data);
-      return { data, error: null };
+      console.log('Documentos obtenidos del endpoint temporal:', response.data.documents?.length || 0);
+
+      if (!response.data.documents || response.data.documents.length === 0) {
+        console.log('No se encontraron documentos en el endpoint temporal');
+        return { data: [], error: null };
+      }
+
+      // Transformar los datos del endpoint temporal al formato esperado por el frontend
+      const transformedData = response.data.documents.map(doc => ({
+        id: doc.id,
+        user_int_id: userId,
+        original_filename: doc.filename || 'Documento sin nombre',
+        file_path: doc.filePath || '/uploads/default.pdf',
+        file_size_bytes: doc.fileSize || 0,
+        file_type: doc.fileType?.toUpperCase() || 'UNKNOWN',
+        mime_type: doc.mimeType || 'application/pdf',
+        is_processed: doc.isProcessed || false,
+        processing_status: doc.processingStatus || 'pending',
+        uploaded_at: doc.uploadedAt || new Date().toISOString(),
+        metadata: doc.metadata || {}
+      }));
+
+      console.log('Documentos transformados:', transformedData.length);
+      return { data: transformedData, error: null };
     } catch (error) {
       console.error('Error en getRealDocuments:', error);
       return { data: null, error: { message: error.message } };
