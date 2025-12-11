@@ -1,0 +1,207 @@
+# Configuración de Netlify para Document Analyzer
+# Este archivo configura el build, despliegue y redirecciones para Netlify
+
+[build]
+  # Comando para construir la aplicación
+  command = "cd frontend-react && npm run build"
+  
+  # Directorio de publicación (archivos estáticos)
+  publish = "frontend-react/dist"
+  
+  # Directorio de funciones serverless
+  functions = "netlify/functions"
+
+[build.environment]
+  # Versión de Node.js
+  NODE_VERSION = "18"
+  
+  # Versión de npm
+  NPM_VERSION = "9"
+  
+  # Entorno de producción
+  NODE_ENV = "production"
+
+# =====================================================
+# REDIRECCIONES
+# =====================================================
+
+# Redirigir llamadas a la API a Netlify Functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Redirigir endpoints específicos del servidor a Functions
+[[redirects]]
+  from = "/api/analyze"
+  to = "/.netlify/functions/analyze"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/batch-analyze"
+  to = "/.netlify/functions/batch-analyze"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ocr"
+  to = "/.netlify/functions/ocr"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/convert-to-pdf"
+  to = "/.netlify/functions/convert-to-pdf"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/convert-to-docx"
+  to = "/.netlify/functions/convert-to-docx"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/save-ai-config"
+  to = "/.netlify/functions/save-ai-config"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/get-ai-config/*"
+  to = "/.netlify/functions/get-ai-config/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ai-status"
+  to = "/.netlify/functions/ai-status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/test-connections"
+  to = "/.netlify/functions/test-connections"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/metrics"
+  to = "/.netlify/functions/metrics"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/models"
+  to = "/.netlify/functions/models"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/available-models"
+  to = "/.netlify/functions/available-models"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/run-model-test"
+  to = "/.netlify/functions/run-model-test"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/best-ocr-model"
+  to = "/.netlify/functions/best-ocr-model"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/ocr-info"
+  to = "/.netlify/functions/ocr-info"
+  status = 200
+  force = true
+
+# Redirigir endpoints de autenticación
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - todas las demás rutas van a index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 404
+
+# =====================================================
+# HEADERS PERSONALIZADOS
+# =====================================================
+
+# Headers de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Headers para archivos estáticos
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers para la API
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# =====================================================
+# CONFIGURACIÓN DE PROCESAMIENTO DE ARCHIVOS
+# =====================================================
+
+# Tamaño máximo de archivo para uploads (50MB)
+[build.processing]
+  skip_processing = false
+
+# =====================================================
+# CONFIGURACIÓN DE PLUGINS
+# =====================================================
+
+# Plugin para manejar variables de entorno
+[[plugins]]
+  package = "@netlify/plugin-functions-core"
+
+# =====================================================
+# CONFIGURACIÓN DE EDGE FUNCTIONS (OPCIONAL)
+# =====================================================
+
+# Si quieres usar Edge Functions para mejor rendimiento
+# [edge_functions]
+#   path = "/api/*"
+#   function = "api-handler"
+
+# =====================================================
+# CONFIGURACIÓN DE DEPLOY
+# =====================================================
+
+# Configuración para despliegues automáticos
+[context.production]
+  command = "cd frontend-react && npm run build"
+  publish = "frontend-react/dist"
+
+[context.deploy-preview]
+  command = "cd frontend-react && npm run build"
+  publish = "frontend-react/dist"
+
+[context.branch-deploy]
+  command = "cd frontend-react && npm run build"
+  publish = "frontend-react/dist"

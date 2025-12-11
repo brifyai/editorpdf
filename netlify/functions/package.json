@@ -1,0 +1,39 @@
+{
+  "name": "document-analyzer-netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions para Document Analyzer",
+  "main": "api-handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.2",
+    "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "docx": "^9.5.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
+    "fs-extra": "^11.1.1",
+    "groq-sdk": "^0.37.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "officeparser": "^5.1.0",
+    "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.17.2",
+    "serverless-http": "^3.2.0",
+    "sharp": "^0.34.5",
+    "tesseract.js": "^6.0.1",
+    "uuid": "^11.0.3"
+  },
+  "keywords": [
+    "netlify",
+    "functions",
+    "serverless",
+    "document-analyzer"
+  ],
+  "author": "Document Analyzer Team",
+  "license": "MIT"
+}
