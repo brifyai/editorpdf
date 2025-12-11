@@ -109,6 +109,10 @@ export const supabaseReal = {
           limit: async (count) => {
             // Mock response para compatibilidad
             return { data: [], error: null, count: 0 };
+          },
+          order: async (column, options = {}) => {
+            // Mock response para compatibilidad con .order()
+            return { data: [], error: null, count: 0 };
           }
         }),
         single: async () => {
@@ -118,6 +122,10 @@ export const supabaseReal = {
         limit: async (count) => {
           // Mock response para compatibilidad
           return { data: [], error: null, count: 0 };
+        },
+        order: async (column, options = {}) => {
+          // Mock response para compatibilidad con .order()
+          return { data: [], error: null, count: 0 };
         }
       }),
       single: async () => {
@@ -126,6 +134,10 @@ export const supabaseReal = {
       },
       limit: async (count) => {
         // Mock response para compatibilidad
+        return { data: [], error: null, count: 0 };
+      },
+      order: async (column, options = {}) => {
+        // Mock response para compatibilidad con .order()
         return { data: [], error: null, count: 0 };
       }
     }),
@@ -137,6 +149,10 @@ export const supabaseReal = {
       },
       limit: async (count) => {
         // Mock response para compatibilidad
+        return { data: [], error: null, count: 0 };
+      },
+      order: async (column, options = {}) => {
+        // Mock response para compatibilidad con .order()
         return { data: [], error: null, count: 0 };
       }
     }),
