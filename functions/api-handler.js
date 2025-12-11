@@ -69,12 +69,24 @@ app.post('/api/auth/login', async (req, res) => {
     try {
       // Primero intentar con bcrypt (para contraseñas hasheadas)
       const bcrypt = require('bcrypt');
-      passwordMatch = await bcrypt.compare(password, user.password_hash);
+      // Verificar si la contraseña almacenada parece un hash bcrypt
+      if (user.password_hash && user.password_hash.startsWith('$2')) {
+        passwordMatch = await bcrypt.compare(password, user.password_hash);
+        console.log('🔍 LOGIN DEBUG - Usando bcrypt para comparar');
+      } else {
+        // Si no es un hash bcrypt, comparar directamente como texto plano
+        passwordMatch = password === user.password_hash;
+        console.log('🔍 LOGIN DEBUG - Usando comparación directa de texto plano');
+      }
     } catch (bcryptError) {
-      // Si falla bcrypt (probablemente porque es texto plano), comparar directamente
-      console.log('🔍 DEBUG - bcrypt falló, comparando texto plano...');
+      // Si hay cualquier error con bcrypt, comparar directamente
+      console.log('🔍 LOGIN DEBUG - Error con bcrypt, usando texto plano:', bcryptError.message);
       passwordMatch = password === user.password_hash;
     }
+    
+    console.log('🔍 LOGIN DEBUG - Password provided:', password);
+    console.log('🔍 LOGIN DEBUG - Password in DB:', user.password_hash);
+    console.log('🔍 LOGIN DEBUG - Final passwordMatch:', passwordMatch);
     
     if (!passwordMatch) {
       return res.status(401).json({
