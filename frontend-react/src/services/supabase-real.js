@@ -61,40 +61,69 @@ export const supabaseReal = {
   },
   
   from: (table) => ({
-    select: () => ({
-      eq: () => ({
+    select: (columns = '*') => ({
+      eq: (column, value) => ({
+        eq: (column2, value2) => ({
+          single: async () => {
+            // Mock response para compatibilidad con múltiples .eq()
+            return { data: null, error: null };
+          },
+          limit: async (count) => {
+            // Mock response para compatibilidad
+            return { data: [], error: null, count: 0 };
+          }
+        }),
         single: async () => {
-          // Mock response para compatibilidad
+          // Mock response para compatibilidad con un solo .eq()
           return { data: null, error: null };
         },
-        limit: async () => {
+        limit: async (count) => {
           // Mock response para compatibilidad
           return { data: [], error: null, count: 0 };
         }
       }),
-      limit: async () => {
+      single: async () => {
+        // Mock response para compatibilidad
+        return { data: null, error: null };
+      },
+      limit: async (count) => {
         // Mock response para compatibilidad
         return { data: [], error: null, count: 0 };
       }
     }),
     
-    insert: async () => {
+    eq: (column, value) => ({
+      single: async () => {
+        // Mock response para compatibilidad
+        return { data: null, error: null };
+      },
+      limit: async (count) => {
+        // Mock response para compatibilidad
+        return { data: [], error: null, count: 0 };
+      }
+    }),
+    
+    insert: async (data) => {
       // Mock response para compatibilidad
       return { data: null, error: null };
     },
     
-    update: () => ({
-      eq: async () => {
-        // Mock response para compatibilidad
-        return { data: null, error: null };
-      }
+    update: (data) => ({
+      eq: (column, value) => ({
+        single: async () => {
+          // Mock response para compatibilidad
+          return { data: null, error: null };
+        }
+      })
     }),
     
     delete: () => ({
-      eq: async () => {
-        // Mock response para compatibilidad
-        return { data: null, error: null };
-      }
+      eq: (column, value) => ({
+        single: async () => {
+          // Mock response para compatibilidad
+          return { data: null, error: null };
+        }
+      })
     })
   })
 };

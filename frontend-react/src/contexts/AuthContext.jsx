@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+import { supabaseReal } from '../services/supabase-real';
 
 const AuthContext = createContext({});
 
@@ -26,49 +26,19 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
-      // Buscar usuario en la tabla users
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('password_hash', password) // NOTA: En producción, compara con hash
-        .eq('is_active', true)
-        .single();
-
+      // Usar autenticación real con Netlify Functions
+      const { data, error } = await supabaseReal.auth.signInWithPassword({ email, password });
+      
       if (error) throw error;
-      if (!data) throw new Error('Credenciales inválidas o usuario inactivo');
-
-      // Actualizar last_login
-      await supabase
-        .from('users')
-        .update({
-          last_login: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', data.id);
+      if (!data || !data.user) throw new Error('Credenciales inválidas');
 
       // Guardar sesión en localStorage
       const userSession = {
-        id: data.id,
-        email: data.email,
-        username: data.username,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatarUrl: data.avatar_url,
-        phone: data.phone,
-        role: data.role,
-        subscriptionTier: data.subscription_tier,
-        apiUsageLimit: data.api_usage_limit,
-        monthlyApiCount: data.monthly_api_count,
-        storageQuotaMb: data.storage_quota_mb,
-        storageUsedMb: data.storage_used_mb,
-        preferences: data.preferences,
-        isActive: data.is_active,
-        emailVerified: data.email_verified,
-        lastLogin: data.last_login,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        userIntId: data.user_int_id,
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name || data.user.email,
+        role: data.user.role || 'user',
+        token: data.token
       };
       
       localStorage.setItem('user', JSON.stringify(userSession));
@@ -83,93 +53,21 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (userData) => {
     try {
-      const { email, username, password, firstName, lastName } = userData;
+      const { email, password, name } = userData;
       
-      // Verificar si el email ya existe
-      const { data: existingEmail } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (existingEmail) {
-        throw new Error('El email ya está registrado');
-      }
-
-      // Verificar si el username ya existe (si se proporciona)
-      if (username) {
-        const { data: existingUsername } = await supabase
-          .from('users')
-          .select('id')
-          .eq('username', username)
-          .single();
-
-        if (existingUsername) {
-          throw new Error('El nombre de usuario ya está en uso');
-        }
-      }
-
-      // Generar user_int_id secuencial
-      const { data: lastUser } = await supabase
-        .from('users')
-        .select('user_int_id')
-        .order('user_int_id', { ascending: false })
-        .limit(1)
-        .single();
-
-      const nextUserIntId = (lastUser?.user_int_id || 0) + 1;
-
-      // Insertar nuevo usuario en la tabla users
-      const { data, error } = await supabase
-        .from('users')
-        .insert([
-          {
-            email,
-            username: username || null,
-            password_hash: password, // NOTA: En producción, guarda el hash
-            first_name: firstName || null,
-            last_name: lastName || null,
-            role: 'user',
-            subscription_tier: 'free',
-            api_usage_limit: 100,
-            monthly_api_count: 0,
-            storage_quota_mb: 100,
-            storage_used_mb: 0,
-            preferences: {},
-            is_active: true,
-            email_verified: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            user_int_id: nextUserIntId,
-          },
-        ])
-        .select()
-        .single();
-
+      // Usar autenticación real con Netlify Functions
+      const { data, error } = await supabaseReal.auth.signUp({ email, password, name });
+      
       if (error) throw error;
+      if (!data || !data.user) throw new Error('Error al crear usuario');
 
       // Crear sesión
       const userSession = {
-        id: data.id,
-        email: data.email,
-        username: data.username,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        avatarUrl: data.avatar_url,
-        phone: data.phone,
-        role: data.role,
-        subscriptionTier: data.subscription_tier,
-        apiUsageLimit: data.api_usage_limit,
-        monthlyApiCount: data.monthly_api_count,
-        storageQuotaMb: data.storage_quota_mb,
-        storageUsedMb: data.storage_used_mb,
-        preferences: data.preferences,
-        isActive: data.is_active,
-        emailVerified: data.email_verified,
-        lastLogin: data.last_login,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        userIntId: data.user_int_id,
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name || name,
+        role: data.user.role || 'user',
+        token: data.token
       };
       
       localStorage.setItem('user', JSON.stringify(userSession));
@@ -184,6 +82,9 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
+      // Usar autenticación real con Netlify Functions
+      await supabaseReal.auth.signOut();
+      
       localStorage.removeItem('user');
       setUser(null);
     } catch (error) {
