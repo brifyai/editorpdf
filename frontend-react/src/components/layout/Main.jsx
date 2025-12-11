@@ -235,26 +235,6 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
   };
 
-  // Breadcrumbs configuration
-  const getBreadcrumbs = () => {
-    const pathSegments = location.pathname.split('/').filter(segment => segment);
-    const breadcrumbs = [];
-
-    let currentPath = '';
-    pathSegments.forEach(segment => {
-      currentPath += `/${segment}`;
-      const segmentConfig = pageConfig[currentPath];
-      if (segmentConfig) {
-        breadcrumbs.push({
-          label: segmentConfig.title.split(' ')[0],
-          path: currentPath
-        });
-      }
-    });
-
-    return breadcrumbs;
-  };
-
   // Scroll progress optimizado con useCallback
   const handleScroll = useCallback(() => {
     const mainElement = document.querySelector('.premium-main');
@@ -343,8 +323,6 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     loading: loadingMetrics
   }), [metrics, loadingMetrics]);
 
-  const breadcrumbs = getBreadcrumbs();
-
   return (
     <>
       {/* Progress Bar */}
@@ -362,29 +340,6 @@ const Main = React.memo(({ children, sidebarOpen }) => {
           <div className="page-header-backdrop" style={{ background: currentPage.gradient }}></div>
           
           <div className="page-header-content">
-            {/* Breadcrumbs */}
-            <nav className="breadcrumbs-premium">
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.path} className="breadcrumb-item-premium">
-                  {index > 0 && (
-                    <svg className="breadcrumb-separator" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="9,18 15,12 9,6"></polyline>
-                    </svg>
-                  )}
-                  <button 
-                    className={`breadcrumb-link ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
-                    onClick={() => {
-                      if (index < breadcrumbs.length - 1) {
-                        window.location.href = crumb.path;
-                      }
-                    }}
-                  >
-                    {crumb.label}
-                  </button>
-                </div>
-              ))}
-            </nav>
-
             {/* Page Title Section */}
             <div className="page-title-section-premium">
               <div className="page-title-content-premium">
