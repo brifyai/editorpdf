@@ -3,7 +3,7 @@ import { Upload, FileText, Download, X, MoveUp, MoveDown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
-import { getRealMetrics } from '../../../services/database';
+import axios from 'axios';
 import './MergePDF.css';
 
 const MergePDF = () => {
@@ -16,10 +16,18 @@ const MergePDF = () => {
   const updateStatistics = async () => {
     try {
       console.log('📊 Actualizando estadísticas después de procesar PDF...');
-      await getRealMetrics();
-      console.log('✅ Estadísticas actualizadas');
+      
+      // Llamar al endpoint del servidor para obtener métricas
+      const response = await axios.get('/api/metrics');
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Estadísticas actualizadas:', response.data.data);
+      } else {
+        console.warn('⚠️ Respuesta inválida del servidor');
+      }
     } catch (error) {
-      console.warn('⚠️ Error actualizando estadísticas:', error);
+      console.warn('⚠️ Error actualizando estadísticas:', error.message);
+      // No mostrar error al usuario, solo log en consola
     }
   };
 
