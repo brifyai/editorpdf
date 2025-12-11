@@ -1,0 +1,145 @@
+-- =====================================================
+-- COMPLETAR TABLAS DE BATCH CON COLUMNAS FALTANTES
+-- =====================================================
+
+-- Agregar columnas faltantes a batch_jobs
+ALTER TABLE batch_jobs 
+ADD COLUMN IF NOT EXISTS job_description TEXT,
+ADD COLUMN IF NOT EXISTS processed_files INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS successful_files INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS failed_files INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS analysis_config JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS use_ai BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS ai_strategy VARCHAR(100) DEFAULT 'balanced',
+ADD COLUMN IF NOT EXISTS ocr_confidence INTEGER DEFAULT 75,
+ADD COLUMN IF NOT EXISTS started_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS estimated_completion TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS total_processing_time_ms INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS average_processing_time_ms INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_cost_usd DECIMAL(10,6) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_pages INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_words INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_characters INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS error_message TEXT,
+ADD COLUMN IF NOT EXISTS file_list JSONB DEFAULT '[]',
+ADD COLUMN IF NOT EXISTS results_summary JSONB DEFAULT '{}';
+
+-- Agregar columnas faltantes a batch_job_files
+ALTER TABLE batch_job_files 
+ADD COLUMN IF NOT EXISTS document_id BIGINT,
+ADD COLUMN IF NOT EXISTS file_type VARCHAR(50),
+ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT,
+ADD COLUMN IF NOT EXISTS file_path VARCHAR(500),
+ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS processing_completed_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS processing_time_ms INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS analysis_id BIGINT,
+ADD COLUMN IF NOT EXISTS success BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS error_message TEXT,
+ADD COLUMN IF NOT EXISTS page_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS word_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS character_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(5,2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS analysis_results JSONB DEFAULT '{}';
+
+-- Completar user_profiles
+ALTER TABLE user_profiles 
+ADD COLUMN IF NOT EXISTS bio TEXT,
+ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500),
+ADD COLUMN IF NOT EXISTS phone VARCHAR(50),
+ADD COLUMN IF NOT EXISTS timezone VARCHAR(100) DEFAULT 'UTC',
+ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'es',
+ADD COLUMN IF NOT EXISTS ui_language VARCHAR(10) DEFAULT 'es',
+ADD COLUMN IF NOT EXISTS date_format VARCHAR(20) DEFAULT 'DD/MM/YYYY',
+ADD COLUMN IF NOT EXISTS time_format VARCHAR(10) DEFAULT '24h',
+ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS default_analysis_strategy VARCHAR(50) DEFAULT 'balanced',
+ADD COLUMN IF NOT EXISTS default_ocr_confidence INTEGER DEFAULT 75,
+ADD COLUMN IF NOT EXISTS default_use_ai BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS default_ai_model VARCHAR(100),
+ADD COLUMN IF NOT EXISTS auto_save_analyses BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS max_file_size_mb INTEGER DEFAULT 50,
+ADD COLUMN IF NOT EXISTS max_batch_files INTEGER DEFAULT 10,
+ADD COLUMN IF NOT EXISTS preferred_export_format VARCHAR(20) DEFAULT 'pdf',
+ADD COLUMN IF NOT EXISTS auto_delete_temp_files BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS total_analyses INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_documents_processed INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_processing_time_ms BIGINT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS storage_used_mb DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_analysis_date TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(50) DEFAULT 'free',
+ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS api_usage_limit INTEGER DEFAULT 100,
+ADD COLUMN IF NOT EXISTS monthly_api_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS storage_quota_mb INTEGER DEFAULT 100,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS custom_settings JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS api_keys_encrypted JSONB DEFAULT '{}';
+
+-- Completar user_preferences
+ALTER TABLE user_preferences 
+ADD COLUMN IF NOT EXISTS ocr_preprocessing BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS ocr_auto_rotate BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS ocr_enhance_contrast BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS ocr_remove_noise BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS preferred_ai_provider VARCHAR(50) DEFAULT 'groq',
+ADD COLUMN IF NOT EXISTS preferred_ai_model VARCHAR(100),
+ADD COLUMN IF NOT EXISTS ai_temperature DECIMAL(3,2) DEFAULT 0.2,
+ADD COLUMN IF NOT EXISTS ai_max_tokens INTEGER DEFAULT 1500,
+ADD COLUMN IF NOT EXISTS ai_auto_summarize BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS ai_extract_keywords BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS ai_sentiment_analysis BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS export_format VARCHAR(20) DEFAULT 'pdf',
+ADD COLUMN IF NOT EXISTS export_include_images BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS export_include_metadata BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS export_quality VARCHAR(20) DEFAULT 'high',
+ADD COLUMN IF NOT EXISTS notify_analysis_complete BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS notify_batch_complete BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS notify_storage_limit BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS notify_subscription_expiry BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS notification_email_frequency VARCHAR(20) DEFAULT 'immediate',
+ADD COLUMN IF NOT EXISTS share_analytics_data BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS enable_usage_tracking BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS data_retention_days INTEGER DEFAULT 365,
+ADD COLUMN IF NOT EXISTS dashboard_layout JSONB DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS favorite_analyses JSONB DEFAULT '[]',
+ADD COLUMN IF NOT EXISTS recent_files_limit INTEGER DEFAULT 10,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Crear tabla user_usage_stats si no existe
+CREATE TABLE IF NOT EXISTS user_usage_stats (
+    id BIGSERIAL PRIMARY KEY,
+    user_int_id INTEGER,
+    stat_date DATE NOT NULL,
+    stat_period VARCHAR(20) NOT NULL,
+    documents_analyzed INTEGER DEFAULT 0,
+    documents_uploaded INTEGER DEFAULT 0,
+    pages_processed INTEGER DEFAULT 0,
+    words_extracted INTEGER DEFAULT 0,
+    analyses_completed INTEGER DEFAULT 0,
+    batch_jobs_completed INTEGER DEFAULT 0,
+    ai_analyses_completed INTEGER DEFAULT 0,
+    ocr_operations INTEGER DEFAULT 0,
+    total_processing_time_ms BIGINT DEFAULT 0,
+    average_processing_time_ms INTEGER DEFAULT 0,
+    successful_analyses INTEGER DEFAULT 0,
+    failed_analyses INTEGER DEFAULT 0,
+    storage_used_mb DECIMAL(10,2) DEFAULT 0,
+    storage_added_mb DECIMAL(10,2) DEFAULT 0,
+    storage_deleted_mb DECIMAL(10,2) DEFAULT 0,
+    api_calls_made INTEGER DEFAULT 0,
+    api_tokens_used INTEGER DEFAULT 0,
+    api_cost_usd DECIMAL(10,6) DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Forzar refresco del schema
+NOTIFY pgrst, 'reload schema';
+
+SELECT '✅ TABLAS COMPLETADAS' as status;

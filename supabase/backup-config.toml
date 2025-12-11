@@ -1,0 +1,18 @@
+# Configuración de Backup Automático
+# Generado automáticamente - 2025-12-09T18:19:27.934Z
+
+[backup]
+enabled = true
+schedule = "0 2 * * *"  # Diario a las 2 AM
+retention_days = 30
+compression = true
+encryption = true
+
+[backup.s3]
+bucket = "supabase-backups-app-pdf"
+region = "us-east-1"
+encryption_key = "generate-secure-key"
+
+[backup.notifications]
+email = "admin@example.com"
+webhook = "env(BACKUP_WEBHOOK_URL)"

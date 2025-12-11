@@ -1,0 +1,36 @@
+import React from 'react';
+
+const OCR = () => {
+  return (
+    <div className="container-fluid">
+      <div className="row mb-4">
+        <div className="col-12">
+          <h1 className="h2 mb-2">OCR Avanzado</h1>
+          <p className="text-muted mb-0">
+            Convierte imágenes y documentos escaneados a texto editable
+          </p>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body text-center py-5">
+              <i className="bi bi-camera display-1 text-muted mb-3"></i>
+              <h3>Reconocimiento Óptico de Caracteres</h3>
+              <p className="text-muted mb-4">
+                Convierte imágenes a texto con IA avanzada
+              </p>
+              <button className="btn btn-info">
+                <i className="bi bi-search me-2"></i>
+                Iniciar OCR
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default OCR;
