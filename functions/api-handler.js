@@ -1113,6 +1113,104 @@ app.get('/api/test-connections', (req, res) => {
   });
 });
 
+// Debug endpoint para diagnosticar autenticación
+app.post('/api/debug-auth', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log('🔍 DEBUG - Email recibido:', email);
+    console.log('🔍 DEBUG - Password recibido:', password);
+    console.log('🔍 DEBUG - Supabase URL:', supabaseUrl);
+    console.log('🔍 DEBUG - Supabase Key (primeros 20 chars):', supabaseKey.substring(0, 20) + '...');
+
+    // Buscar usuario por email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    console.log('🔍 DEBUG - Usuario encontrado:', user);
+    console.log('🔍 DEBUG - Error:', error);
+
+    if (error || !user) {
+      return res.json({
+        success: true,
+        step: 'user_not_found',
+        message: 'Usuario no encontrado',
+        error: error?.message,
+        email: email,
+        supabaseUrl: supabaseUrl
+      });
+    }
+
+    // Verificar si está activo
+    if (!user.is_active) {
+      return res.json({
+        success: true,
+        step: 'user_inactive',
+        message: 'Usuario inactivo',
+        user: {
+          id: user.id,
+          email: user.email,
+          is_active: user.is_active
+        }
+      });
+    }
+
+    // Verificar contraseña (compatible con hash y texto plano)
+    let passwordMatch = false;
+    
+    try {
+      // Primero intentar con bcrypt (para contraseñas hasheadas)
+      const bcrypt = require('bcrypt');
+      passwordMatch = await bcrypt.compare(password, user.password_hash);
+      console.log('🔍 DEBUG - bcrypt compare result:', passwordMatch);
+    } catch (bcryptError) {
+      // Si falla bcrypt (probablemente porque es texto plano), comparar directamente
+      console.log('🔍 DEBUG - bcrypt falló, comparando texto plano...');
+      passwordMatch = password === user.password_hash;
+      console.log('🔍 DEBUG - Texto plano compare result:', passwordMatch);
+    }
+    
+    console.log('🔍 DEBUG - Password provided:', password);
+    console.log('🔍 DEBUG - Password in DB:', user.password_hash);
+    console.log('🔍 DEBUG - Final passwordMatch:', passwordMatch);
+
+    if (!passwordMatch) {
+      return res.json({
+        success: true,
+        step: 'password_mismatch',
+        message: 'Contraseña incorrecta',
+        passwordMatch: passwordMatch,
+        providedPassword: password,
+        storedHash: user.password_hash
+      });
+    }
+
+    res.json({
+      success: true,
+      step: 'success',
+      message: 'Autenticación exitosa',
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en /api/debug-auth:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+});
+
 // Default 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -1140,7 +1238,8 @@ app.use((req, res) => {
       'POST /api/convert-to-pdf',
       'POST /api/convert-to-docx',
       'GET /api/best-ocr-model',
-      'GET /api/ocr-info'
+      'GET /api/ocr-info',
+      'POST /api/debug-auth'
     ]
   });
 });
