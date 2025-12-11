@@ -282,7 +282,7 @@ const getRealMetrics = async (timeRange = '7d', userId = null) => {
         
         totalResponseTime += processingTime;
         totalTokens += wordCount; // Usar valor real, no estimación
-        totalCost += results.cost_usd || 0; // Usar costo real si existe
+        totalCost += 0; // Costo no disponible
 
         // Determinar modelo basado en el tipo de análisis REAL
         let modelName = 'Desconocido';
@@ -397,7 +397,7 @@ const getPerformanceData = async (timeRange = '24h', userId = null) => {
       
       hourlyData[hourKey].requests++;
       hourlyData[hourKey].tokens += metric.tokens_used || 0;
-      hourlyData[hourKey].cost += metric.cost_usd || 0;
+      hourlyData[hourKey].cost += 0;
     });
 
     // Convertir a array ordenado por hora
@@ -456,7 +456,7 @@ const getModelUsage = async (timeRange = '7d', userId = null) => {
       }
       
       modelData[modelName].requests++;
-      modelData[modelName].cost += metric.cost_usd || 0;
+      modelData[modelName].cost += 0;
       modelData[modelName].totalTime += metric.response_time_ms || 0;
       if (metric.success) {
         modelData[modelName].successCount++;
@@ -515,7 +515,7 @@ const getProviderStats = async (timeRange = '7d', userId = null) => {
       }
       
       providerData[provider].requests++;
-      providerData[provider].cost += metric.cost_usd || 0;
+      providerData[provider].cost += 0;
       providerData[provider].totalTime += metric.response_time_ms || 0;
       if (metric.success) {
         providerData[provider].successCount++;

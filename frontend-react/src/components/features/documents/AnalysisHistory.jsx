@@ -13,6 +13,25 @@ const AnalysisHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
 
+  // Función para ver detalles del análisis
+  const handleViewDetails = (analysis) => {
+    console.log('Ver detalles del análisis:', analysis);
+    // Aquí se puede abrir un modal o navegar a una página de detalles
+    alert(`Ver detalles de: ${analysis.filename}\nTipo: ${analysis.type}\nEstado: ${analysis.status}\nConfianza: ${analysis.confidence}%`);
+  };
+
+  // Función para descargar análisis
+  const handleDownload = (analysis) => {
+    console.log('Descargar análisis:', analysis);
+    // Aquí se puede iniciar la descarga del análisis
+    if (analysis.documentId && analysis.documents?.storage_url) {
+      // Si hay una URL de storage, abrir en nueva ventana
+      window.open(analysis.documents.storage_url, '_blank');
+    } else {
+      alert(`Función de descarga para: ${analysis.filename} (en desarrollo)`);
+    }
+  };
+
   // Cargar historial real de análisis
   useEffect(() => {
     if (user?.id) {
@@ -197,8 +216,21 @@ const AnalysisHistory = () => {
 
   const filteredAnalyses = analyses
     .filter(analysis => {
+      // Filtro por estado
       if (filter !== 'all' && analysis.status !== filter) return false;
-      if (searchTerm && !analysis.filename.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      
+      // Filtro por término de búsqueda
+      if (searchTerm && searchTerm.trim() !== '') {
+        const searchLower = searchTerm.toLowerCase().trim();
+        const filenameMatch = analysis.filename.toLowerCase().includes(searchLower);
+        const typeMatch = analysis.type.toLowerCase().includes(searchLower);
+        const aiModelMatch = analysis.aiModel && analysis.aiModel.toLowerCase().includes(searchLower);
+        
+        if (!filenameMatch && !typeMatch && !aiModelMatch) {
+          return false;
+        }
+      }
+      
       return true;
     })
     .sort((a, b) => {
@@ -208,7 +240,10 @@ const AnalysisHistory = () => {
         case 'name':
           return a.filename.localeCompare(b.filename);
         case 'size':
-          return parseFloat(b.size) - parseFloat(a.size);
+          // Extraer número del tamaño para comparación
+          const sizeA = parseFloat(a.size) || 0;
+          const sizeB = parseFloat(b.size) || 0;
+          return sizeB - sizeA;
         default:
           return 0;
       }
@@ -377,14 +412,22 @@ const AnalysisHistory = () => {
                 </div>
 
                 <div className="card-actions">
-                  <button className="action-btn primary">
+                  <button
+                    className="action-btn primary"
+                    onClick={() => handleViewDetails(analysis)}
+                    title="Ver detalles del análisis"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
                     Ver detalles
                   </button>
-                  <button className="action-btn secondary">
+                  <button
+                    className="action-btn secondary"
+                    onClick={() => handleDownload(analysis)}
+                    title="Descargar análisis"
+                  >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                       <path d="M7 10l5 5 5-5"/>

@@ -535,7 +535,6 @@ class SupabaseClient {
                     success: metricData.success,
                     response_time_ms: metricData.response_time_ms,
                     accuracy_score: metricData.accuracy_score,
-                    cost_usd: metricData.cost_usd || 0,
                     tokens_used: metricData.tokens_used || 0,
                     error_type: metricData.error_type,
                     error_message: metricData.error_message,
