@@ -27,13 +27,41 @@ const AnalysisHistory = () => {
   // Función para descargar análisis
   const handleDownload = (analysis) => {
     console.log('Descargar análisis:', analysis);
-    if (analysis.documentId && analysis.documents?.storage_url) {
-      window.open(analysis.documents.storage_url, '_blank');
+    
+    // Intentar obtener la URL de descarga desde diferentes fuentes
+    let downloadUrl = null;
+    
+    // 1. URL directa en storageUrl
+    if (analysis.storageUrl) {
+      downloadUrl = analysis.storageUrl;
+    }
+    // 2. URL en metadata.storage_url
+    else if (analysis.metadata?.storage_url) {
+      downloadUrl = analysis.metadata.storage_url;
+    }
+    // 3. URL en documents.storage_url (estructura original)
+    else if (analysis.documents?.storage_url) {
+      downloadUrl = analysis.documents.storage_url;
+    }
+    
+    if (downloadUrl) {
+      // Crear un enlace temporal para la descarga
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = analysis.filename || 'documento';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      
+      // Agregar al DOM, hacer clic y remover
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
       showSuccess('Descarga iniciada', `Descargando: ${analysis.filename}`);
     } else {
       showInfo(
-        'Función en desarrollo',
-        `La función de descarga para: ${analysis.filename} estará disponible próximamente`
+        'Descarga no disponible',
+        `No se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`
       );
     }
   };
@@ -139,7 +167,11 @@ const AnalysisHistory = () => {
           documentId: analysis.document_id || analysis.id,
           analysisType: analysis.analysis_type || 'document',
           processingTime: analysis.processing_time_ms || 0,
-          aiModel: analysis.ai_model_used || 'Desconocido'
+          aiModel: analysis.ai_model_used || 'Desconocido',
+          // URLs de descarga desde diferentes fuentes
+          storageUrl: analysis.storageUrl || analysis.documents?.file_path || analysis.file_path || analysis.metadata?.storage_url,
+          // Información adicional para debugging
+          _rawData: analysis // Mantener datos originales para debugging
         };
       });
 
