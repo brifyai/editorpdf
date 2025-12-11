@@ -110,10 +110,15 @@ export const supabaseReal = {
             // Mock response para compatibilidad
             return { data: [], error: null, count: 0 };
           },
-          order: async (column, options = {}) => {
-            // Mock response para compatibilidad con .order()
-            return { data: [], error: null, count: 0 };
-          }
+          order: (column, options = {}) => ({
+            // Mock response para compatibilidad con .order() que debe devolver un objeto con .limit()
+            limit: async (count) => {
+              return { data: [], error: null, count: 0 };
+            },
+            single: async () => {
+              return { data: null, error: null };
+            }
+          })
         }),
         single: async () => {
           // Mock response para compatibilidad con un solo .eq()
@@ -123,10 +128,15 @@ export const supabaseReal = {
           // Mock response para compatibilidad
           return { data: [], error: null, count: 0 };
         },
-        order: async (column, options = {}) => {
-          // Mock response para compatibilidad con .order()
-          return { data: [], error: null, count: 0 };
-        }
+        order: (column, options = {}) => ({
+          // Mock response para compatibilidad con .order() que debe devolver un objeto con .limit()
+          limit: async (count) => {
+            return { data: [], error: null, count: 0 };
+          },
+          single: async () => {
+            return { data: null, error: null };
+          }
+        })
       }),
       single: async () => {
         // Mock response para compatibilidad
@@ -136,10 +146,15 @@ export const supabaseReal = {
         // Mock response para compatibilidad
         return { data: [], error: null, count: 0 };
       },
-      order: async (column, options = {}) => {
-        // Mock response para compatibilidad con .order()
-        return { data: [], error: null, count: 0 };
-      }
+      order: (column, options = {}) => ({
+        // Mock response para compatibilidad con .order() que debe devolver un objeto con .limit()
+        limit: async (count) => {
+          return { data: [], error: null, count: 0 };
+        },
+        single: async () => {
+          return { data: null, error: null };
+        }
+      })
     }),
     
     eq: (column, value) => ({
@@ -151,10 +166,15 @@ export const supabaseReal = {
         // Mock response para compatibilidad
         return { data: [], error: null, count: 0 };
       },
-      order: async (column, options = {}) => {
-        // Mock response para compatibilidad con .order()
-        return { data: [], error: null, count: 0 };
-      }
+      order: (column, options = {}) => ({
+        // Mock response para compatibilidad con .order() que debe devolver un objeto con .limit()
+        limit: async (count) => {
+          return { data: [], error: null, count: 0 };
+        },
+        single: async () => {
+          return { data: null, error: null };
+        }
+      })
     }),
     
     insert: async (data) => {
