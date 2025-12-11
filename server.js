@@ -28,6 +28,7 @@ const {
   createResponse,
   createErrorResponse,
   isDatabaseAvailable,
+  getSupabaseClient,
   getRealMetrics,
   getPerformanceData,
   getModelUsage,
@@ -173,6 +174,168 @@ app.get('/auth', (req, res) => {
 
 // Rutas modulares con rate limiting específico
 app.use('/api/auth', authRoutes);
+
+// Endpoint temporal para crear usuario de prueba
+app.post('/api/create-test-user', async (req, res) => {
+  try {
+    if (!isDatabaseAvailable()) {
+      return res.status(503).json(createErrorResponse(
+        'Base de datos no disponible',
+        'DATABASE_UNAVAILABLE',
+        503
+      ));
+    }
+
+    const supabase = getSupabaseClient();
+    
+    // Insertar usuario de prueba
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{
+        email: 'camiloalegriabarra@gmail.com',
+        password_hash: 'password123', // En producción sería un hash
+        first_name: 'Camilo',
+        last_name: 'Alegría',
+        role: 'user',
+        subscription_tier: 'free',
+        api_usage_limit: 100,
+        monthly_api_count: 0,
+        storage_quota_mb: 100,
+        storage_used_mb: 0,
+        preferences: '{}',
+        is_active: true,
+        email_verified: false,
+        user_int_id: 1
+      }])
+      .select('id, email, first_name, last_name, role')
+      .single();
+
+    if (error) {
+      console.error('Error creando usuario de prueba:', error);
+      return res.status(500).json(createErrorResponse(
+        'Error al crear usuario de prueba: ' + error.message,
+        'USER_CREATION_ERROR',
+        500
+      ));
+    }
+
+    console.log('✅ Usuario de prueba creado:', data);
+    
+    res.json(createResponse(true, {
+      message: 'Usuario de prueba creado exitosamente',
+      user: data,
+      credentials: {
+        email: 'camiloalegriabarra@gmail.com',
+        password: 'password123'
+      }
+    }));
+
+  } catch (error) {
+    console.error('Error en /api/create-test-user:', error);
+    res.status(500).json(createErrorResponse(
+      'Error interno del servidor',
+      'INTERNAL_ERROR',
+      500,
+      { details: error.message }
+    ));
+  }
+});
+
+// Endpoint temporal para depurar autenticación
+app.post('/api/debug-auth', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!isDatabaseAvailable()) {
+      return res.status(503).json(createErrorResponse(
+        'Base de datos no disponible',
+        'DATABASE_UNAVAILABLE',
+        503
+      ));
+    }
+
+    const supabase = getSupabaseClient();
+
+    // Buscar usuario por email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    console.log('🔍 DEBUG - Usuario encontrado:', user);
+    console.log('🔍 DEBUG - Error:', error);
+
+    if (error || !user) {
+      return res.json(createResponse(true, {
+        step: 'user_not_found',
+        message: 'Usuario no encontrado',
+        error: error?.message,
+        email: email
+      }));
+    }
+
+    // Verificar si está activo
+    if (!user.is_active) {
+      return res.json(createResponse(true, {
+        step: 'user_inactive',
+        message: 'Usuario inactivo',
+        user: {
+          id: user.id,
+          email: user.email,
+          is_active: user.is_active
+        }
+      }));
+    }
+
+    // Verificar contraseña (compatible con hash y texto plano)
+    let passwordMatch = false;
+    
+    try {
+      // Primero intentar con bcrypt (para contraseñas hasheadas)
+      passwordMatch = await bcrypt.compare(password, user.password_hash);
+    } catch (bcryptError) {
+      // Si falla bcrypt (probablemente porque es texto plano), comparar directamente
+      console.log('🔍 DEBUG - bcrypt falló, comparando texto plano...');
+      passwordMatch = password === user.password_hash;
+    }
+    
+    console.log('🔍 DEBUG - Password match:', passwordMatch);
+    console.log('🔍 DEBUG - Password provided:', password);
+    console.log('🔍 DEBUG - Password hash in DB:', user.password_hash);
+
+    if (!passwordMatch) {
+      return res.json(createResponse(true, {
+        step: 'password_mismatch',
+        message: 'Contraseña incorrecta',
+        passwordMatch: passwordMatch,
+        providedPassword: password,
+        storedHash: user.password_hash
+      }));
+    }
+
+    res.json(createResponse(true, {
+      step: 'success',
+      message: 'Autenticación exitosa',
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role
+      }
+    }));
+
+  } catch (error) {
+    console.error('Error en /api/debug-auth:', error);
+    res.status(500).json(createErrorResponse(
+      'Error interno del servidor',
+      'INTERNAL_ERROR',
+      500,
+      { details: error.message }
+    ));
+  }
+});
 
 // Aplicar rate limiting específico a endpoints de análisis
 app.use('/api/analyze', analysisLimiter);

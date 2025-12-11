@@ -223,10 +223,34 @@ router.post('/login', async (req, res) => {
       ));
     }
 
-    // Verificar contraseña
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    // Verificar contraseña (compatible con hash y texto plano)
+    let passwordMatch = false;
+    
+    // Detectar si la contraseña almacenada es un hash bcrypt o texto plano
+    const isHashedPassword = user.password_hash && user.password_hash.startsWith('$2');
+    
+    if (isHashedPassword) {
+      // Es un hash bcrypt, usar bcrypt.compare()
+      try {
+        passwordMatch = await bcrypt.compare(password, user.password_hash);
+        console.log('🔍 LOGIN DEBUG - bcrypt compare result:', passwordMatch);
+      } catch (bcryptError) {
+        console.log('🔍 LOGIN DEBUG - Error bcrypt:', bcryptError.message);
+        passwordMatch = false;
+      }
+    } else {
+      // Es texto plano, comparar directamente
+      console.log('🔍 LOGIN DEBUG - Detectado texto plano, comparando directamente...');
+      passwordMatch = password === user.password_hash;
+      console.log('🔍 LOGIN DEBUG - Texto plano compare result:', passwordMatch);
+    }
+
+    console.log('🔍 LOGIN DEBUG - Password provided:', password);
+    console.log('🔍 LOGIN DEBUG - Password in DB:', user.password_hash);
+    console.log('🔍 LOGIN DEBUG - Final passwordMatch:', passwordMatch);
 
     if (!passwordMatch) {
+      console.log('🔍 LOGIN DEBUG - Password mismatch, returning 401');
       return res.status(401).json(createErrorResponse(
         'Credenciales inválidas',
         'INVALID_CREDENTIALS',
