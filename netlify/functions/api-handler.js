@@ -412,7 +412,7 @@ function setupAPIEndpoints() {
       let models = [];
       
       try {
-        const { AI_MODELS_CONFIG } = require('../../../config/ai-models-config.js');
+        const { AI_MODELS_CONFIG } = require('./ai-models-config.js');
         
         if (AI_MODELS_CONFIG && typeof AI_MODELS_CONFIG === 'object') {
           if (Array.isArray(AI_MODELS_CONFIG)) {
