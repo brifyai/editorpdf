@@ -58,6 +58,7 @@
     "uuid": "^11.0.3"
   },
   "devDependencies": {
+    "@netlify/plugin-functions-core": "^2.0.0",
     "depcheck": "^1.4.7",
     "eslint": "^8.57.1",
     "eslint-config-standard": "^17.1.0",
