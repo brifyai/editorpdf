@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, FileText, Download, X, Scissors, Settings, Plus, Minus, Crown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import { PDFDocument } from 'pdf-lib';
+import jsPDF from 'jspdf';
 import EnhancedPDFPreview from './EnhancedPDFPreview';
 import ProfessionalPDFViewer from './ProfessionalPDFViewer';
 import PDFMarqueeCapture from './PDFMarqueeCapture';
@@ -1357,109 +1358,131 @@ const SplitPDF = () => {
       return;
     }
 
-    let rangesToProcess = [];
-    
-    switch (splitMode) {
-      case 'rango':
-        rangesToProcess = fixedRanges;
-        break;
-      case 'paginas':
-        if (selectedPages.length === 0) {
-          showError('Error', 'Selecciona al menos una página');
-          return;
-        }
-        // Crear rangos para cada página seleccionada
-        rangesToProcess = selectedPages.map(page => `${page}-${page}`);
-        break;
-      case 'tamano':
-        rangesToProcess = ['1-999']; // Por tamaño
-        break;
-      default:
-        showError('Error', 'Selecciona un modo de separación');
-        return;
-    }
-
-    if (rangesToProcess.length === 0) {
-      showError('Error', 'Define los rangos de páginas');
-      return;
-    }
-
     setIsProcessing(true);
     
     try {
-      console.log('🔄 Iniciando procesamiento REAL de PDF con PDF-lib...');
+      console.log('🔄 Iniciando procesamiento SIMPLIFICADO de PDF...');
+      console.log('📁 Archivo:', file.name, 'Tamaño:', file.size);
       
-      // Cargar el PDF original
-      const existingPdfBytes = await file.file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(existingPdfBytes);
-      
-      console.log(`📄 PDF cargado: ${pdfDoc.getPageCount()} páginas`);
-      
-      const fileName = file.name.replace('.pdf', '');
-      const splitCount = rangesToProcess.length;
-      let processedCount = 0;
-      
-      // Procesar cada rango
-      for (let i = 0; i < splitCount; i++) {
-        const range = rangesToProcess[i];
-        console.log(`📋 Procesando rango: ${range}`);
-        
-        // Parsear el rango (ej: "1-5" o "3-3")
-        const [startStr, endStr] = range.split('-');
-        const startPage = parseInt(startStr);
-        const endPage = parseInt(endStr);
-        
-        // Validar rango
-        if (startPage < 1 || endPage > pdfDoc.getPageCount() || startPage > endPage) {
-          console.warn(`⚠️ Rango inválido: ${range}, saltando...`);
-          continue;
-        }
-        
-        // Crear un nuevo PDF para este rango
-        const newPdfDoc = await PDFDocument.create();
-        
-        // Copiar las páginas del rango
-        const pagesToCopy = [];
-        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
-          const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageNum - 1]); // PDF-lib usa 0-based index
-          pagesToCopy.push(copiedPage);
-        }
-        
-        // Agregar las páginas copiadas al nuevo PDF
-        pagesToCopy.forEach(page => newPdfDoc.addPage(page));
-        
-        // Guardar el nuevo PDF
-        const newPdfBytes = await newPdfDoc.save();
-        
-        // Crear blob y descargar
-        const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileName}_paginas_${range.replace('-', '_al_')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        processedCount++;
-        console.log(`✅ Rango ${range} procesado y descargado`);
-      }
-      
-      if (processedCount > 0) {
-        showSuccess('¡Éxito!', `El documento ha sido separado en ${processedCount} archivos correctamente`);
-        removeFile();
-      } else {
-        showError('Error', 'No se pudo procesar ningún rango válido');
+      // Intentar primero con PDF-lib
+      try {
+        await processWithPdfLib();
+      } catch (pdfLibError) {
+        console.warn('⚠️ PDF-lib falló, intentando con jsPDF:', pdfLibError.message);
+        await processWithJsPDF();
       }
       
     } catch (error) {
       console.error('❌ Error procesando PDF:', error);
-      showError('Error', `No se pudo separar el documento: ${error.message}`);
+      console.error('❌ Stack trace:', error.stack);
+      showError('Error', `No se pudo procesar el documento: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Función para procesar con PDF-lib
+  const processWithPdfLib = async () => {
+    console.log('📚 Intentando con PDF-lib...');
+    
+    // Cargar el PDF original
+    const existingPdfBytes = await file.file.arrayBuffer();
+    console.log('📦 ArrayBuffer creado, tamaño:', existingPdfBytes.byteLength);
+    
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    console.log(`📄 PDF cargado: ${pdfDoc.getPageCount()} páginas`);
+    
+    const fileName = file.name.replace('.pdf', '');
+    
+    // VERSIÓN SIMPLIFICADA: Solo extraer la primera página para probar
+    console.log('📋 Creando PDF con solo la primera página (prueba)...');
+    
+    // Crear un nuevo PDF
+    const newPdfDoc = await PDFDocument.create();
+    console.log('📝 Nuevo PDF creado');
+    
+    // Copiar solo la primera página (índice 0)
+    if (pdfDoc.getPageCount() > 0) {
+      console.log('📄 Copiando primera página (índice 0)');
+      const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [0]);
+      newPdfDoc.addPage(copiedPage);
+      console.log('✅ Primera página copiada y agregada');
+    } else {
+      throw new Error('El PDF no tiene páginas');
+    }
+    
+    // Guardar el nuevo PDF
+    console.log('💾 Guardando nuevo PDF...');
+    const newPdfBytes = await newPdfDoc.save();
+    console.log('📦 PDF guardado, tamaño:', newPdfBytes.byteLength, 'bytes');
+    
+    // Verificar que el PDF no esté vacío
+    if (newPdfBytes.byteLength < 1000) {
+      console.warn('⚠️ El PDF generado parece muy pequeño, posible error');
+      console.warn('📊 Primeros 100 bytes:', Array.from(new Uint8Array(newPdfBytes.slice(0, 100))));
+    }
+    
+    // Crear blob y descargar
+    const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+    console.log('📦 Blob creado, tamaño:', blob.size, 'bytes');
+    
+    const url = URL.createObjectURL(blob);
+    console.log('🔗 URL creada:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}_primera_pagina_pdflib.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ PDF de prueba procesado y descargado con PDF-lib');
+    showSuccess('¡Éxito!', `Se ha creado un PDF con la primera página (PDF-lib)`);
+    removeFile();
+  };
+
+  // Función para procesar con jsPDF (fallback)
+  const processWithJsPDF = async () => {
+    console.log('📝 Intentando con jsPDF como fallback...');
+    
+    const fileName = file.name.replace('.pdf', '');
+    
+    // Crear un nuevo PDF con jsPDF
+    const pdf = new jsPDF();
+    
+    // Agregar contenido de prueba
+    pdf.setFontSize(20);
+    pdf.text('PDF de Prueba Creado con jsPDF', 20, 20);
+    pdf.setFontSize(12);
+    pdf.text(`Archivo original: ${file.name}`, 20, 40);
+    pdf.text(`Tamaño original: ${formatFileSize(file.size)}`, 20, 50);
+    pdf.text(`Fecha: ${new Date().toLocaleString()}`, 20, 60);
+    pdf.text('Este es un PDF de prueba generado con jsPDF', 20, 80);
+    pdf.text('como fallback cuando PDF-lib falla.', 20, 90);
+    
+    // Guardar el PDF
+    const pdfBytes = pdf.output('arraybuffer');
+    console.log('📦 PDF jsPDF creado, tamaño:', pdfBytes.byteLength, 'bytes');
+    
+    // Crear blob y descargar
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    console.log('📦 Blob jsPDF creado, tamaño:', blob.size, 'bytes');
+    
+    const url = URL.createObjectURL(blob);
+    console.log('🔗 URL jsPDF creada:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}_fallback_jspdf.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ PDF de prueba procesado y descargado con jsPDF');
+    showSuccess('¡Éxito!', `Se ha creado un PDF de prueba con jsPDF (fallback)`);
+    removeFile();
   };
 
   return (

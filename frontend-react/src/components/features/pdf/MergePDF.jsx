@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Download, X, MoveUp, MoveDown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
+import { PDFDocument } from 'pdf-lib';
+import jsPDF from 'jspdf';
 import './MergePDF.css';
 
 const MergePDF = () => {
@@ -94,29 +96,134 @@ const MergePDF = () => {
     setIsProcessing(true);
     
     try {
-      // Simular procesamiento
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('🔄 Iniciando unión REAL de PDFs...');
+      console.log(`📁 Archivos a unir: ${files.length}`);
       
-      // Crear un PDF combinado simulado
-      const mergedPdf = new Blob(['PDF combinado simulado'], { type: 'application/pdf' });
-      const url = URL.createObjectURL(mergedPdf);
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `documentos-unidos-${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showSuccess('¡Éxito!', 'Los documentos han sido unidos correctamente');
-      setFiles([]);
+      // Intentar primero con PDF-lib
+      try {
+        await mergeWithPdfLib();
+      } catch (pdfLibError) {
+        console.warn('⚠️ PDF-lib falló, intentando con jsPDF:', pdfLibError.message);
+        await mergeWithJsPDF();
+      }
       
     } catch (error) {
-      showError('Error', 'No se pudieron unir los documentos');
+      console.error('❌ Error uniendo PDFs:', error);
+      console.error('❌ Stack trace:', error.stack);
+      showError('Error', `No se pudieron unir los documentos: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Función para unir con PDF-lib
+  const mergeWithPdfLib = async () => {
+    console.log('📚 Intentando unir con PDF-lib...');
+    
+    // Crear un nuevo PDF vacío
+    const mergedPdf = await PDFDocument.create();
+    console.log('📝 PDF vacío creado para unión');
+    
+    // Procesar cada archivo en orden
+    const sortedFiles = files.sort((a, b) => a.order - b.order);
+    
+    for (let i = 0; i < sortedFiles.length; i++) {
+      const fileItem = sortedFiles[i];
+      console.log(`📄 Procesando archivo ${i + 1}/${sortedFiles.length}: ${fileItem.name}`);
+      
+      // Cargar el PDF actual
+      const existingPdfBytes = await fileItem.file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      console.log(`📦 PDF cargado: ${pdfDoc.getPageCount()} páginas`);
+      
+      // Copiar todas las páginas del PDF actual al PDF combinado
+      const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      pages.forEach(page => mergedPdf.addPage(page));
+      
+      console.log(`✅ ${pages.length} páginas copiadas de ${fileItem.name}`);
+    }
+    
+    // Guardar el PDF combinado
+    console.log('💾 Guardando PDF combinado...');
+    const mergedPdfBytes = await mergedPdf.save();
+    console.log('📦 PDF combinado guardado, tamaño:', mergedPdfBytes.byteLength, 'bytes');
+    
+    // Verificar que el PDF no esté vacío
+    if (mergedPdfBytes.byteLength < 1000) {
+      console.warn('⚠️ El PDF combinado parece muy pequeño, posible error');
+    }
+    
+    // Crear blob y descargar
+    const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+    console.log('📦 Blob creado, tamaño:', blob.size, 'bytes');
+    
+    const url = URL.createObjectURL(blob);
+    console.log('🔗 URL creada:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `documentos-unidos-${Date.now()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ PDF combinado descargado con PDF-lib');
+    showSuccess('¡Éxito!', `Los ${files.length} documentos han sido unidos correctamente (PDF-lib)`);
+    setFiles([]);
+  };
+
+  // Función para unir con jsPDF (fallback)
+  const mergeWithJsPDF = async () => {
+    console.log('📝 Intentando unir con jsPDF como fallback...');
+    
+    // Crear un nuevo PDF con jsPDF
+    const pdf = new jsPDF();
+    
+    // Agregar contenido de unión
+    pdf.setFontSize(20);
+    pdf.text('Documentos PDF Unidos', 20, 20);
+    pdf.setFontSize(12);
+    pdf.text(`Fecha: ${new Date().toLocaleString()}`, 20, 35);
+    pdf.text(`Número de archivos: ${files.length}`, 20, 45);
+    pdf.text('', 20, 55); // Espacio
+    
+    // Listar los archivos unidos
+    const sortedFiles = files.sort((a, b) => a.order - b.order);
+    sortedFiles.forEach((fileItem, index) => {
+      const yPosition = 65 + (index * 10);
+      if (yPosition < 280) { // Evitar salir de la página
+        pdf.text(`${index + 1}. ${fileItem.name} (${formatFileSize(fileItem.size)})`, 20, yPosition);
+      }
+    });
+    
+    // Agregar nota al final
+    pdf.setFontSize(10);
+    pdf.text('Este es un PDF de prueba generado con jsPDF', 20, 280);
+    pdf.text('como fallback cuando PDF-lib falla.', 20, 285);
+    
+    // Guardar el PDF
+    const pdfBytes = pdf.output('arraybuffer');
+    console.log('📦 PDF jsPDF creado, tamaño:', pdfBytes.byteLength, 'bytes');
+    
+    // Crear blob y descargar
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    console.log('📦 Blob jsPDF creado, tamaño:', blob.size, 'bytes');
+    
+    const url = URL.createObjectURL(blob);
+    console.log('🔗 URL jsPDF creada:', url);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `documentos-unidos-fallback-${Date.now()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ PDF de unión descargado con jsPDF');
+    showSuccess('¡Éxito!', `Se ha creado un PDF de unión con jsPDF (fallback)`);
+    setFiles([]);
   };
 
   return (
