@@ -3,7 +3,7 @@
 
 [build]
   # Comando para construir la aplicación
-  command = "cd frontend-react && npm run build"
+  command = "cd frontend-react && npm install && npm run build"
   
   # Directorio de publicación (archivos estáticos)
   publish = "frontend-react/dist"
