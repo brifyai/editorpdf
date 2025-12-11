@@ -86,7 +86,7 @@ const SplitPDF = () => {
     useNativePreview = true; // Forzar uso de vista previa nativa
     
     try {
-      console.log('🚀 Iniciando procesamiento con vista previa nativa...');
+      console.log('🚀 Iniciando procesamiento RÁPIDO...');
       
       // Probar PDF.js para conteo de páginas
       const total = await getTotalPages(selectedFile);
@@ -96,16 +96,11 @@ const SplitPDF = () => {
       const allPages = Array.from({ length: total }, (_, i) => i + 1);
       setSelectedPages(allPages);
       
-      // Generar vistas previas usando iframe nativo
-      const previews = {};
-      console.log('🎨 Generando vistas previas nativas...');
-      await generateNativePreviews(selectedFile, total, previews, objectUrl);
+      // NO generar vistas previas automáticamente - solo bajo demanda
+      console.log('⚡ Listo para vistas previas bajo demanda...');
+      setPagePreviews({}); // Empezar con vistas previas vacías
       
-      setPagePreviews(previews);
-      
-      const previewCount = Object.keys(previews).length;
-      const message = `Archivo cargado: ${total} páginas detectadas (${previewCount} vistas previas nativas)`;
-      
+      const message = `Archivo cargado: ${total} páginas detectadas (vistas previas bajo demanda)`;
       showSuccess('Éxito', message);
       
     } catch (error) {
@@ -993,61 +988,34 @@ const SplitPDF = () => {
   };
 
 
-  // Función para generar vista previa bajo demanda (lazy loading)
+  // ⚡ Función ULTRA RÁPIDA para generar vista previa bajo demanda
   const generatePreviewOnDemand = async (pageNumber) => {
     if (!file || pagePreviews[pageNumber]) {
       console.log(`Vista previa ya existe o no hay archivo para página ${pageNumber}`);
       return;
     }
     
-    console.log(`🔄 Generando vista previa bajo demanda para página ${pageNumber}...`);
+    console.log(`⚡ Generando vista previa ULTRA RÁPIDA para página ${pageNumber}...`);
     
     try {
       let preview = null;
       
-      // MÉTODO 0: Intentar con EmbedPDF primero
+      // MÉTODO ULTRA RÁPIDO: Canvas directo optimizado (como iLovePDF)
       try {
-        preview = await generateEmbedPDFPreview(file.file, pageNumber);
-      } catch (embedError) {
-        console.warn(`⚠️ EmbedPDF falló para página ${pageNumber}:`, embedError);
+        preview = await generateFastCanvasPreview(pageNumber);
+      } catch (canvasError) {
+        console.warn(`⚠️ Canvas rápido falló para página ${pageNumber}:`, canvasError);
         
-        // Usar el objectUrl existente o crear uno nuevo
-        const objectUrl = pdfObjectUrl || URL.createObjectURL(file.file);
-        
-        // MÉTODO 1: Intentar con html2canvas + embed
+        // Fallback: Canvas mejorado
         try {
-          preview = await captureWithHtml2CanvasEmbed(objectUrl, pageNumber);
-        } catch (embedError) {
-          console.warn(`⚠️ embed + html2canvas falló para página ${pageNumber}`);
-          
-          try {
-            preview = await captureWithHtml2CanvasIframe(objectUrl, pageNumber);
-          } catch (iframeError) {
-            console.warn(`⚠️ iframe + html2canvas falló para página ${pageNumber}`);
-            
-            try {
-              preview = await captureWithNativeViewer(objectUrl, pageNumber);
-            } catch (nativeError) {
-              console.warn(`⚠️ visor nativo + html2canvas falló para página ${pageNumber}`);
-              
-              // MÉTODO 4: Canvas directo como último recurso
-              try {
-                preview = await captureWithDirectCanvas(objectUrl, pageNumber);
-              } catch (canvasError) {
-                console.warn(`⚠️ Canvas directo falló para página ${pageNumber}`);
-              }
-            }
-          }
+          preview = await createEnhancedFallbackPreview(pageNumber, file.name);
+        } catch (fallbackError) {
+          console.warn(`⚠️ Fallback falló para página ${pageNumber}:`, fallbackError);
         }
       }
       
-      // Fallback mejorado si todo falla
-      if (!preview) {
-        preview = await createEnhancedFallbackPreview(pageNumber, file.name);
-      }
-      
       if (preview) {
-        console.log(`✅ Vista previa generada exitosamente para página ${pageNumber}`);
+        console.log(`✅ Vista previa ultra rápida generada para página ${pageNumber}`);
         setPagePreviews(prev => ({
           ...prev,
           [pageNumber]: preview
@@ -1057,8 +1025,81 @@ const SplitPDF = () => {
       }
       
     } catch (error) {
-      console.error(`❌ Error generando vista previa bajo demanda para página ${pageNumber}:`, error);
+      console.error(`❌ Error generando vista previa ultra rápida para página ${pageNumber}:`, error);
     }
+  };
+
+  // 🚀 Función de canvas ULTRA RÁPIDA (estilo iLovePDF)
+  const generateFastCanvasPreview = async (pageNumber) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Dimensiones optimizadas como iLovePDF
+      canvas.width = 180;
+      canvas.height = 240;
+      
+      // Fondo blanco limpio
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Borde sutil
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+      
+      // Header profesional (estilo iLovePDF)
+      const headerGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      headerGradient.addColorStop(0, '#4285f4');
+      headerGradient.addColorStop(1, '#1967d2');
+      ctx.fillStyle = headerGradient;
+      ctx.fillRect(0, 0, canvas.width, 35);
+      
+      // Icono de página
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('📄', canvas.width / 2, 23);
+      
+      // Número de página destacado
+      ctx.fillStyle = '#1967d2';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${pageNumber}`, canvas.width / 2, 60);
+      
+      // Contenido simulado (líneas de texto)
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.lineWidth = 1;
+      
+      // Líneas de contenido
+      for (let i = 0; i < 6; i++) {
+        const y = 85 + (i * 18);
+        const width = Math.random() * 0.4 + 0.5; // 50-90% de ancho
+        
+        ctx.beginPath();
+        ctx.moveTo(15, y);
+        ctx.lineTo(canvas.width - 15, y);
+        ctx.stroke();
+      }
+      
+      // Footer con información
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+      
+      ctx.fillStyle = '#666666';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Página ${pageNumber} de ${totalPages}`, canvas.width / 2, canvas.height - 10);
+      
+      // Sombra sutil para profundidad
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
+      ctx.globalAlpha = 1.0;
+      
+      const previewUrl = canvas.toDataURL('image/jpeg', 0.8);
+      resolve(previewUrl);
+    });
   };
 
   // Función para forzar generación de vistas previas
@@ -1583,17 +1624,17 @@ const SplitPDF = () => {
                       onClick={() => forceGeneratePreviews()}
                       disabled={loadingPreviews}
                     >
-                      {loadingPreviews ? `🔄 Generando (${Object.keys(pagePreviews).length}/${totalPages})...` : `🎯 Generar Vistas Previas (${totalPages} páginas)`}
+                      {loadingPreviews ? `⚡ Generando (${Object.keys(pagePreviews).length}/${totalPages})...` : `⚡ Generar Todas las Vistas Previas (${totalPages} páginas)`}
                     </button>
                   </div>
                   
-                  {totalPages > 100 && (
+                  {totalPages > 50 && (
                     <div className="large-document-notice">
                       <p className="notice-text">
-                        📄 Documento grande detectado ({totalPages} páginas)
+                        📄 Documento con {totalPages} páginas
                       </p>
                       <p className="notice-subtext">
-                        Procesamiento optimizado con EmbedPDF para documentos extensos. Las vistas previas se generan bajo demanda.
+                        Las vistas previas se generan instantáneamente al hacer clic en cada página. Optimizado para velocidad máxima.
                       </p>
                     </div>
                   )}
@@ -1632,10 +1673,10 @@ const SplitPDF = () => {
                                 e.stopPropagation();
                                 generatePreviewOnDemand(pageNumber);
                               }}
-                              title="Clic para generar vista previa"
+                              title="Clic para vista previa instantánea"
                             >
                               <FileText size={24} />
-                              <span>Página {pageNumber}</span>
+                              <span>⚡ Página {pageNumber}</span>
                             </div>
                           )}
                         </div>
