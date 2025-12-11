@@ -86,6 +86,100 @@ app.get('/api/test-connections', (req, res) => {
   });
 });
 
+// =====================================================
+// AUTH ENDPOINTS
+// =====================================================
+
+// Login endpoint
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Basic validation
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email and password are required'
+    });
+  }
+  
+  // For demo purposes, accept any credentials
+  // In production, you would validate against a database
+  const user = {
+    id: 'demo-user-123',
+    email: email,
+    name: 'Demo User',
+    role: 'user'
+  };
+  
+  res.json({
+    success: true,
+    data: {
+      user: user,
+      token: 'demo-token-' + Date.now(),
+      message: 'Login successful'
+    }
+  });
+});
+
+// Register endpoint
+app.post('/api/auth/register', (req, res) => {
+  const { email, password, name } = req.body;
+  
+  // Basic validation
+  if (!email || !password || !name) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email, password and name are required'
+    });
+  }
+  
+  // For demo purposes, create a user
+  const user = {
+    id: 'demo-user-' + Date.now(),
+    email: email,
+    name: name,
+    role: 'user'
+  };
+  
+  res.json({
+    success: true,
+    data: {
+      user: user,
+      token: 'demo-token-' + Date.now(),
+      message: 'Registration successful'
+    }
+  });
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      message: 'Logout successful'
+    }
+  });
+});
+
+// Get current user endpoint
+app.get('/api/auth/me', (req, res) => {
+  // For demo purposes, return a demo user
+  // In production, you would validate the token and get user from database
+  const user = {
+    id: 'demo-user-123',
+    email: 'demo@example.com',
+    name: 'Demo User',
+    role: 'user'
+  };
+  
+  res.json({
+    success: true,
+    data: {
+      user: user
+    }
+  });
+});
+
 // Default 404 handler
 app.use((req, res) => {
   res.status(404).json({
