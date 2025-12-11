@@ -194,13 +194,13 @@
 
 # Configuración para despliegues automáticos
 [context.production]
-  command = "cd frontend-react && npm run build"
+  command = "cd frontend-react && npm install && npm run build"
   publish = "frontend-react/dist"
 
 [context.deploy-preview]
-  command = "cd frontend-react && npm run build"
+  command = "cd frontend-react && npm install && npm run build"
   publish = "frontend-react/dist"
 
 [context.branch-deploy]
-  command = "cd frontend-react && npm run build"
+  command = "cd frontend-react && npm install && npm run build"
   publish = "frontend-react/dist"
