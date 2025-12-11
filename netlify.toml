@@ -25,114 +25,114 @@
 # REDIRECCIONES
 # =====================================================
 
-# Redirigir llamadas a la API a Netlify Functions
+# Redirigir todas las llamadas a la API a la función api-handler
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/api-handler/:splat"
   status = 200
   force = true
 
-# Redirigir endpoints específicos del servidor a Functions
+# Redirigir endpoints específicos del servidor a la función api-handler
 [[redirects]]
   from = "/api/analyze"
-  to = "/.netlify/functions/analyze"
+  to = "/.netlify/functions/api-handler/api/analyze"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/batch-analyze"
-  to = "/.netlify/functions/batch-analyze"
+  to = "/.netlify/functions/api-handler/api/batch-analyze"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/ocr"
-  to = "/.netlify/functions/ocr"
+  to = "/.netlify/functions/api-handler/api/ocr"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/convert-to-pdf"
-  to = "/.netlify/functions/convert-to-pdf"
+  to = "/.netlify/functions/api-handler/api/convert-to-pdf"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/convert-to-docx"
-  to = "/.netlify/functions/convert-to-docx"
+  to = "/.netlify/functions/api-handler/api/convert-to-docx"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/save-ai-config"
-  to = "/.netlify/functions/save-ai-config"
+  to = "/.netlify/functions/api-handler/api/save-ai-config"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/get-ai-config/*"
-  to = "/.netlify/functions/get-ai-config/:splat"
+  to = "/.netlify/functions/api-handler/api/get-ai-config/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/health"
-  to = "/.netlify/functions/health"
+  to = "/.netlify/functions/api-handler/api/health"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/ai-status"
-  to = "/.netlify/functions/ai-status"
+  to = "/.netlify/functions/api-handler/api/ai-status"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/test-connections"
-  to = "/.netlify/functions/test-connections"
+  to = "/.netlify/functions/api-handler/api/test-connections"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/metrics"
-  to = "/.netlify/functions/metrics"
+  to = "/.netlify/functions/api-handler/api/metrics"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/models"
-  to = "/.netlify/functions/models"
+  to = "/.netlify/functions/api-handler/api/models"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/available-models"
-  to = "/.netlify/functions/available-models"
+  to = "/.netlify/functions/api-handler/api/available-models"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/run-model-test"
-  to = "/.netlify/functions/run-model-test"
+  to = "/.netlify/functions/api-handler/api/run-model-test"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/best-ocr-model"
-  to = "/.netlify/functions/best-ocr-model"
+  to = "/.netlify/functions/api-handler/api/best-ocr-model"
   status = 200
   force = true
 
 [[redirects]]
   from = "/api/ocr-info"
-  to = "/.netlify/functions/ocr-info"
+  to = "/.netlify/functions/api-handler/api/ocr-info"
   status = 200
   force = true
 
 # Redirigir endpoints de autenticación
 [[redirects]]
   from = "/api/auth/*"
-  to = "/.netlify/functions/auth/:splat"
+  to = "/.netlify/functions/api-handler/api/auth/:splat"
   status = 200
   force = true
 
