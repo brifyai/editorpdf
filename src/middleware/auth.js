@@ -134,18 +134,23 @@ const authenticate = (options = {}) => {
  */
 const optionalAuth = async (req, res, next) => {
   try {
+    // Leer token de múltiples fuentes, incluyendo X-User-ID
     const token = req.headers.authorization?.replace('Bearer ', '') ||
                  req.cookies?.authToken ||
                  req.cookies?.auth_token ||
                  req.query.token;
+    
+    // También leer X-User-ID header
+    const userIdHeader = req.headers['x-user-id'];
 
-    if (!token) {
+    if (!token && !userIdHeader) {
       req.user = null;
       req.userId = null;
       return next();
     }
 
-    const userId = parseInt(token);
+    // Usar X-User-ID si está disponible, sino usar token
+    const userId = parseInt(userIdHeader || token);
     
     if (!userId || isNaN(userId)) {
       req.user = null;

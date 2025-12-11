@@ -78,22 +78,96 @@
   gap: 0.75rem;
   padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.format-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.format-option:hover::before {
+  left: 100%;
 }
 
 .format-option:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
-.format-option.selected {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+/* Colores específicos para cada formato - MANTENER FONDO IGUAL AL UPLOAD-ZONE */
+.format-option[data-format="pdf"] {
+  border-left: 4px solid #dc2626;
+}
+
+.format-option[data-format="pdf"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #dc2626;
+}
+
+.format-option[data-format="pdf"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+.format-option[data-format="docx"] {
+  border-left: 4px solid #2563eb;
+}
+
+.format-option[data-format="docx"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #2563eb;
+}
+
+.format-option[data-format="docx"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.format-option[data-format="txt"] {
+  border-left: 4px solid #059669;
+}
+
+.format-option[data-format="txt"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #059669;
+}
+
+.format-option[data-format="txt"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+}
+
+.format-option[data-format="html"] {
+  border-left: 4px solid #ea580c;
+}
+
+.format-option[data-format="html"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #ea580c;
+}
+
+.format-option[data-format="html"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.2);
 }
 
 .format-icon {
@@ -105,6 +179,49 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   color: #10b981;
+  transition: all 0.3s ease;
+}
+
+/* Colores específicos para iconos de formatos */
+.format-option[data-format="pdf"] .format-icon {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.format-option[data-format="docx"] .format-icon {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.format-option[data-format="txt"] .format-icon {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.format-option[data-format="html"] .format-icon {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+}
+
+/* Efectos hover para iconos */
+.format-option:hover[data-format="pdf"] .format-icon {
+  background: rgba(220, 38, 38, 0.2);
+  transform: scale(1.1);
+}
+
+.format-option:hover[data-format="docx"] .format-icon {
+  background: rgba(37, 99, 235, 0.2);
+  transform: scale(1.1);
+}
+
+.format-option:hover[data-format="txt"] .format-icon {
+  background: rgba(5, 150, 105, 0.2);
+  transform: scale(1.1);
+}
+
+.format-option:hover[data-format="html"] .format-icon {
+  background: rgba(234, 88, 12, 0.2);
+  transform: scale(1.1);
 }
 
 .format-info {
@@ -166,10 +283,52 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
+/* Efectos específicos según el formato seleccionado */
+.upload-zone[data-format="pdf"]:hover {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.upload-zone[data-format="docx"]:hover {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.upload-zone[data-format="txt"]:hover {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.upload-zone[data-format="html"]:hover {
+  border-color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+}
+
 .upload-zone.drag-over {
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.1);
   transform: scale(1.02);
+}
+
+/* Efectos especiales cuando se arrastra sobre el área */
+.upload-zone.drag-over[data-format="pdf"] {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.2);
+}
+
+.upload-zone.drag-over[data-format="docx"] {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.upload-zone.drag-over[data-format="txt"] {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.2);
+}
+
+.upload-zone.drag-over[data-format="html"] {
+  border-color: #ea580c;
+  background: rgba(234, 88, 12, 0.2);
 }
 
 .upload-zone.converting {
@@ -216,6 +375,58 @@
 .formats-size {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.format-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.preview-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.preview-format {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Colores específicos para el preview del formato */
+.preview-format[data-format="pdf"] {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.2);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.preview-format[data-format="docx"] {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.preview-format[data-format="txt"] {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.2);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.preview-format[data-format="html"] {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.2);
+  border: 1px solid rgba(234, 88, 12, 0.3);
 }
 
 .upload-button {
@@ -614,4 +825,69 @@
   .feature-card {
     border-width: 2px;
   }
+}
+
+/* Sobrescribir estilos globales de styles.css con mayor especificidad */
+.format-options .format-option[data-format="pdf"],
+.format-option[data-format="pdf"] {
+  border-left: 4px solid #dc2626 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="pdf"]:hover,
+.format-option[data-format="pdf"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="pdf"].selected,
+.format-option[data-format="pdf"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="docx"],
+.format-option[data-format="docx"] {
+  border-left: 4px solid #2563eb !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="docx"]:hover,
+.format-option[data-format="docx"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="docx"].selected,
+.format-option[data-format="docx"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="txt"],
+.format-option[data-format="txt"] {
+  border-left: 4px solid #059669 !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="txt"]:hover,
+.format-option[data-format="txt"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="txt"].selected,
+.format-option[data-format="txt"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="html"],
+.format-option[data-format="html"] {
+  border-left: 4px solid #ea580c !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="html"]:hover,
+.format-option[data-format="html"]:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.format-options .format-option[data-format="html"].selected,
+.format-option[data-format="html"].selected {
+  background: rgba(255, 255, 255, 0.15) !important;
 }

@@ -228,7 +228,6 @@ router.post('/analyze', optionalAuth, upload.single('document'), async (req, res
             prompt_used: 'Document analysis',
             response_generated: JSON.stringify(analysisResult.aiAnalysis),
             tokens_used: analysisResult.aiAnalysis.tokensUsed || 0,
-            cost_usd: analysisResult.aiAnalysis.cost || 0,
             processing_time_ms: analysisResult.aiAnalysis.processingTime || 0,
             quality_metrics: {
               sentiment_confidence: analysisResult.aiAnalysis.sentiment?.confidence || 0,
@@ -246,7 +245,6 @@ router.post('/analyze', optionalAuth, upload.single('document'), async (req, res
             api_calls_count: 1,
             tokens_used: analysisResult.aiAnalysis.tokensUsed || 0,
             cache_hits: 0,
-            total_cost: analysisResult.aiAnalysis.cost || 0,
             memory_usage_mb: 128,
             cpu_usage_percent: 25
           });
@@ -508,7 +506,6 @@ router.post('/batch-analyze', optionalAuth, upload.array('documents', 10), async
                 prompt_used: 'Batch document analysis',
                 response_generated: JSON.stringify(analysisResult.aiAnalysis),
                 tokens_used: analysisResult.aiAnalysis.tokensUsed || 0,
-                cost_usd: analysisResult.aiAnalysis.cost || 0,
                 processing_time_ms: analysisResult.aiAnalysis.processingTime || 0,
                 quality_metrics: {
                   sentiment_confidence: analysisResult.aiAnalysis.sentiment?.confidence || 0,

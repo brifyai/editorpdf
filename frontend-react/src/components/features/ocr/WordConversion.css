@@ -79,21 +79,110 @@
   padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.format-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 10px;
+  padding: 2px;
+  background: linear-gradient(135deg, transparent, transparent);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: -1;
   transition: all 0.3s ease;
 }
 
 .format-option:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.format-option:hover::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
 }
 
 .format-option.selected {
-  background: rgba(16, 185, 129, 0.2);
-  border-color: #10b981;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px currentColor;
+  transform: translateY(-2px);
+}
+
+.format-option.selected::before {
+  background: linear-gradient(135deg, currentColor, rgba(255, 255, 255, 0.2));
+}
+
+/* Colores específicos para cada formato */
+.format-option[data-format="docx"] {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.format-option[data-format="docx"]:hover {
+  border-color: rgba(37, 99, 235, 0.6);
+}
+
+.format-option[data-format="docx"].selected {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+.format-option[data-format="doc"] {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.format-option[data-format="doc"]:hover {
+  border-color: rgba(37, 99, 235, 0.6);
+}
+
+.format-option[data-format="doc"].selected {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+.format-option[data-format="rtf"] {
+  color: #ea580c;
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+.format-option[data-format="rtf"]:hover {
+  border-color: rgba(234, 88, 12, 0.6);
+}
+
+.format-option[data-format="rtf"].selected {
+  background: rgba(234, 88, 12, 0.15);
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3);
+}
+
+.format-option[data-format="odt"] {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+.format-option[data-format="odt"]:hover {
+  border-color: rgba(5, 150, 105, 0.6);
+}
+
+.format-option[data-format="odt"].selected {
+  background: rgba(5, 150, 105, 0.15);
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3);
 }
 
 .format-icon {
@@ -104,7 +193,18 @@
   height: 40px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  color: #10b981;
+  color: currentColor;
+  transition: all 0.3s ease;
+}
+
+.format-option:hover .format-icon {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.format-option.selected .format-icon {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .format-info {
@@ -192,6 +292,60 @@
   font-weight: 600;
   margin: 0 0 1rem 0;
   color: white;
+}
+
+.format-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.preview-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.preview-format {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid currentColor;
+  transition: all 0.3s ease;
+}
+
+/* Colores específicos para vista previa */
+.preview-docx {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.preview-doc {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.preview-rtf {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+.preview-odt {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.3);
 }
 
 .upload-formats {

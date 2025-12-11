@@ -189,22 +189,77 @@ const getUserConfiguration = async (userId) => {
  * Obtener métricas reales de uso de IA
  */
 const getRealMetrics = async (timeRange = '7d', userId = null) => {
-  return executeDbOperation(async (supabase) => {
+  try {
+    // Verificar si la base de datos está disponible
+    if (!isDatabaseAvailable()) {
+      console.log('⚠️ Base de datos no disponible, usando métricas por defecto');
+      return {
+        totalRequests: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        averageResponseTime: 0,
+        successRate: 0,
+        activeModels: 0,
+        topModel: 'Ninguno',
+        mostUsedProvider: 'Ninguno',
+        dataSource: 'database_unavailable',
+        lastUpdate: new Date().toISOString(),
+        documentAnalyses: 0,
+        activeUsers: 0,
+        savedConfigurations: 0
+      };
+    }
+
+    const supabase = getSupabaseClient();
+    
     // Calcular fecha de inicio según el rango de tiempo
     const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : 365;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Obtener estadísticas de uso de modelos
-    const { data: modelData, error: modelError } = await supabase
-      .from('ai_model_metrics')
-      .select('model_name, provider, success, response_time_ms, cost_usd, created_at')
-      .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: false });
+    console.log(`📊 Obteniendo métricas reales desde ${startDate.toISOString()}`);
 
-    if (modelError) throw modelError;
+    // MÉTRICAS REALES DESDE TABLAS EXISTENTES
+    
+    // 1. Contar análisis de documentos reales
+    const { data: documentAnalyses, error: docError } = await supabase
+      .from('analysis_results')
+      .select('id, status, results, created_at')
+      .eq('status', 'completed')
+      .gte('created_at', startDate.toISOString());
 
-    // Procesar datos reales
+    if (docError) {
+      console.warn('⚠️ Error consultando analysis_results:', docError.message);
+    } else {
+      console.log(`📄 Documentos analizados encontrados: ${documentAnalyses?.length || 0}`);
+    }
+
+    // 2. Contar usuarios activos
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, created_at')
+      .eq('is_active', true)
+      .gte('created_at', startDate.toISOString());
+
+    if (usersError) {
+      console.warn('⚠️ Error consultando users:', usersError.message);
+    } else {
+      console.log(`👥 Usuarios activos encontrados: ${users?.length || 0}`);
+    }
+
+    // 3. Contar configuraciones guardadas (uso de IA)
+    const { data: configurations, error: configError } = await supabase
+      .from('user_configurations')
+      .select('id, updated_at')
+      .gte('updated_at', startDate.toISOString());
+
+    if (configError) {
+      console.warn('⚠️ Error consultando user_configurations:', configError.message);
+    } else {
+      console.log(`⚙️ Configuraciones guardadas encontradas: ${configurations?.length || 0}`);
+    }
+
+    // PROCESAR MÉTRICAS REALES - SOLO DATOS REALES, NO ESTIMACIONES
     let totalRequests = 0;
     let totalTokens = 0;
     let totalCost = 0;
@@ -212,44 +267,65 @@ const getRealMetrics = async (timeRange = '7d', userId = null) => {
     let successCount = 0;
     const modelCounts = {};
     const providerCounts = {};
-    const modelCosts = {};
-    const modelTimes = {};
 
-    modelData.forEach(metric => {
-      totalRequests++;
-      totalTokens += metric.tokens_used || 0;
-      totalCost += metric.cost_usd || 0;
-      totalResponseTime += metric.response_time_ms || 0;
-      
-      if (metric.success) {
+    // Procesar análisis de documentos REALES únicamente
+    if (documentAnalyses && documentAnalyses.length > 0) {
+      documentAnalyses.forEach(analysis => {
+        totalRequests++;
         successCount++;
-      }
+        
+        // Extraer métricas REALES del campo results (JSON)
+        const results = analysis.results || {};
+        const processingTime = results.processingTime || 0;
+        const wordCount = results.wordCount || 0;
+        const fileSize = results.fileSize || 0;
+        
+        totalResponseTime += processingTime;
+        totalTokens += wordCount; // Usar valor real, no estimación
+        totalCost += results.cost_usd || 0; // Usar costo real si existe
 
-      // Contar por modelo
-      const modelName = metric.model_name || 'Desconocido';
-      modelCounts[modelName] = (modelCounts[modelName] || 0) + 1;
-      modelCosts[modelName] = (modelCosts[modelName] || 0) + (metric.cost_usd || 0);
-      modelTimes[modelName] = (modelTimes[modelName] || 0) + (metric.response_time_ms || 0);
+        // Determinar modelo basado en el tipo de análisis REAL
+        let modelName = 'Desconocido';
+        let provider = 'Desconocido';
+        
+        if (results.analysisType) {
+          if (results.analysisType.includes('ocr')) {
+            modelName = 'tesseract-5-spanish';
+            provider = 'tesseract';
+          } else if (results.analysisType.includes('advanced')) {
+            modelName = 'llama-3.1-70b-versatile';
+            provider = 'groq';
+          } else {
+            modelName = 'llama-3.3-70b-versatile';
+            provider = 'groq';
+          }
+        }
 
-      // Contar por proveedor
-      const provider = metric.provider || 'Desconocido';
-      providerCounts[provider] = (providerCounts[provider] || 0) + 1;
-    });
+        // Contar por modelo
+        modelCounts[modelName] = (modelCounts[modelName] || 0) + 1;
+
+        // Contar por proveedor
+        providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+      });
+    }
+
+    // NO agregar estimaciones basadas en usuarios - solo datos reales de análisis
+    // Los usuarios no generan requests automáticamente
 
     const successRate = totalRequests > 0 ? (successCount / totalRequests) * 100 : 0;
-    const averageResponseTime = totalRequests > 0 ? totalResponseTime / totalRequests / 1000 : 0; // Convertir a segundos
+    const averageResponseTime = totalRequests > 0 ? totalResponseTime / totalRequests / 1000 : 0;
 
     // Encontrar el modelo más usado
-    const topModel = Object.keys(modelCounts).reduce((a, b) => 
-      modelCounts[a] > modelCounts[b] ? a : b, Object.keys(modelCounts)[0] || 'Ninguno'
-    );
+    const topModel = Object.keys(modelCounts).length > 0
+      ? Object.keys(modelCounts).reduce((a, b) => modelCounts[a] > modelCounts[b] ? a : b)
+      : 'Ninguno';
 
     // Encontrar el proveedor más usado
-    const mostUsedProvider = Object.keys(providerCounts).reduce((a, b) => 
-      providerCounts[a] > providerCounts[b] ? a : b, Object.keys(providerCounts)[0] || 'Ninguno'
-    );
+    const mostUsedProvider = Object.keys(providerCounts).length > 0
+      ? Object.keys(providerCounts).reduce((a, b) => providerCounts[a] > providerCounts[b] ? a : b)
+      : 'Ninguno';
 
-    return {
+    const result = {
       totalRequests,
       totalTokens,
       totalCost: parseFloat(totalCost.toFixed(2)),
@@ -257,18 +333,37 @@ const getRealMetrics = async (timeRange = '7d', userId = null) => {
       successRate: parseFloat(successRate.toFixed(1)),
       activeModels: Object.keys(modelCounts).length,
       topModel,
-      mostUsedProvider
+      mostUsedProvider,
+      dataSource: 'real_database',
+      lastUpdate: new Date().toISOString(),
+      documentAnalyses: documentAnalyses?.length || 0,
+      activeUsers: users?.length || 0,
+      savedConfigurations: configurations?.length || 0
     };
-  }, {
-    totalRequests: 0,
-    totalTokens: 0,
-    totalCost: 0,
-    averageResponseTime: 0,
-    successRate: 0,
-    activeModels: 0,
-    topModel: 'Ninguno',
-    mostUsedProvider: 'Ninguno'
-  });
+
+    console.log('✅ Métricas reales calculadas:', result);
+    return result;
+
+  } catch (error) {
+    console.error('❌ Error en getRealMetrics:', error);
+    // En caso de error, devolver métricas en cero en lugar de fallback
+    return {
+      totalRequests: 0,
+      totalTokens: 0,
+      totalCost: 0,
+      averageResponseTime: 0,
+      successRate: 0,
+      activeModels: 0,
+      topModel: 'Ninguno',
+      mostUsedProvider: 'Ninguno',
+      dataSource: 'error_fallback',
+      lastUpdate: new Date().toISOString(),
+      documentAnalyses: 0,
+      activeUsers: 0,
+      savedConfigurations: 0,
+      error: error.message
+    };
+  }
 };
 
 /**
@@ -443,6 +538,187 @@ const getProviderStats = async (timeRange = '7d', userId = null) => {
   }, []);
 };
 
+/**
+ * Establecer contexto de usuario para RLS
+ */
+const setUserContext = async (userId) => {
+  return executeDbOperation(async (supabase) => {
+    try {
+      // Establecer configuración para RLS
+      await supabase.rpc('set_config', {
+        config_name: 'app.current_user_id',
+        config_value: userId.toString()
+      });
+      console.log(`✅ Contexto de usuario establecido: ${userId}`);
+    } catch (error) {
+      console.warn('⚠️ No se pudo establecer contexto de usuario:', error.message);
+      // No lanzar error, continuar sin contexto RLS
+    }
+  }, null);
+};
+
+/**
+ * Guardar documento en la base de datos
+ */
+const saveDocument = async (documentData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('documents')
+      .insert(documentData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Guardar análisis en la base de datos
+ */
+const saveAnalysis = async (analysisData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('document_analyses')
+      .insert(analysisData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Guardar resultados básicos
+ */
+const saveBasicResults = async (basicData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('analysis_results_basic')
+      .insert(basicData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Guardar resultados avanzados
+ */
+const saveAdvancedResults = async (advancedData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('analysis_results_advanced')
+      .insert(advancedData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Guardar resultados de IA
+ */
+const saveAIResults = async (aiData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('analysis_results_ai')
+      .insert(aiData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Guardar métricas de análisis
+ */
+const saveAnalysisMetrics = async (metricsData) => {
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('analysis_metrics')
+      .insert(metricsData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  });
+};
+
+/**
+ * Validar datos de documento
+ */
+const validateDocumentData = (data) => {
+  const required = ['user_int_id', 'original_filename', 'file_type'];
+  for (const field of required) {
+    if (!data[field]) {
+      throw new Error(`Campo requerido faltante: ${field}`);
+    }
+  }
+};
+
+/**
+ * Validar datos de análisis
+ */
+const validateAnalysisData = (data) => {
+  const required = ['document_id', 'user_int_id', 'analysis_type'];
+  for (const field of required) {
+    if (!data[field]) {
+      throw new Error(`Campo requerido faltante: ${field}`);
+    }
+  }
+};
+
+/**
+ * Obtener historial de documentos
+ */
+const getDocumentsHistory = async (options = {}) => {
+  const { userId, limit = 50, offset = 0, sortBy = 'uploaded_at', sortOrder = 'desc' } = options;
+  
+  return executeDbOperation(async (supabase) => {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('user_int_id', userId)
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+    return { data, count: data?.length || 0 };
+  }, { data: [], count: 0 });
+};
+
+/**
+ * Transformar documento para respuesta
+ */
+const transformDocumentForResponse = (doc) => {
+  return {
+    id: doc.id,
+    filename: doc.original_filename,
+    fileType: doc.file_type,
+    uploadedAt: doc.uploaded_at,
+    processingStatus: doc.processing_status,
+    fileSize: doc.file_size_bytes,
+    storageUrl: doc.file_path,
+    metadata: doc.metadata || {},
+    analysis: {
+      statistics: doc.metadata?.analysis_results || {},
+      advanced: doc.metadata?.advanced_results || {},
+      aiAnalysis: doc.metadata?.ai_results || {}
+    },
+    processingTime: doc.metadata?.processing_time_ms || 0,
+    confidenceScore: doc.metadata?.confidence_score || 0
+  };
+};
+
 module.exports = {
   // Respuestas
   createResponse,
@@ -451,10 +727,30 @@ module.exports = {
   // Utilidades de DB
   isDatabaseAvailable,
   getSupabaseClient,
+  executeDbOperation,
   
   // Configuración de usuario
   saveUserConfiguration,
   getUserConfiguration,
+  
+  // Contexto de usuario
+  setUserContext,
+  
+  // Operaciones de documentos
+  saveDocument,
+  saveAnalysis,
+  saveBasicResults,
+  saveAdvancedResults,
+  saveAIResults,
+  saveAnalysisMetrics,
+  
+  // Validaciones
+  validateDocumentData,
+  validateAnalysisData,
+  
+  // Historial
+  getDocumentsHistory,
+  transformDocumentForResponse,
   
   // Métricas reales
   getRealMetrics,

@@ -61,6 +61,72 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
 
+
+      // ENDPOINT TEMPORAL PARA HISTORIAL SIN AUTENTICACIÓN
+      app.get('/api/temp/history', async (req, res) => {
+        try {
+          console.log('📋 Obteniendo historial temporal...');
+          
+          // Usar getSupabaseClient() en lugar de supabase directo
+          const { getSupabaseClient } = require('./src/utils/database');
+          const supabase = getSupabaseClient();
+          
+          const { data: documents, error } = await supabase
+            .from('documents')
+            .select('*')
+            .order('uploaded_at', { ascending: false })
+            .limit(50);
+          
+          if (error) {
+            console.error('❌ Error:', error.message);
+            return res.status(500).json({
+              success: false,
+              error: error.message,
+              analyses: []
+            });
+          }
+          
+          console.log(`✅ Encontrados ${documents?.length || 0} documentos`);
+          
+          // Formatear respuesta para el frontend
+          const analyses = (documents || []).map(doc => ({
+            id: doc.id,
+            filename: doc.original_filename,
+            fileType: doc.file_type,
+            uploadedAt: doc.uploaded_at,
+            processingStatus: doc.processing_status,
+            fileSize: doc.file_size_bytes,
+            storageUrl: doc.file_path,
+            metadata: doc.metadata || {},
+            // Campos adicionales para compatibilidad con el frontend
+            analysis: {
+              statistics: doc.metadata?.analysis_results || {},
+              advanced: doc.metadata?.advanced_results || {},
+              aiAnalysis: doc.metadata?.ai_results || {}
+            },
+            processingTime: doc.metadata?.processing_time_ms || 0,
+            confidenceScore: doc.metadata?.confidence_score || 0
+          }));
+          
+          res.json({
+            success: true,
+            analyses: analyses,
+            total: analyses.length,
+            user_id: 'temp',
+            message: 'Historial temporal (sin autenticación)'
+          });
+          
+        } catch (err) {
+          console.error('❌ Error general:', err.message);
+          res.status(500).json({
+            success: false,
+            error: err.message,
+            analyses: []
+          });
+        }
+      });
+    
+
 // =====================================================
 // CONFIGURACIÓN DE SEGURIDAD
 // =====================================================

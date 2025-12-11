@@ -3073,23 +3073,23 @@ input:checked + .slider-moderno:before {
   font-weight: 600;
 }
 
+/* ImageConversion component uses different structure - styles handled in ImageConversion.css */
+/* format-option styles removed - handled in component-specific CSS files */
 .format-options {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  /* Handled in ImageConversion.css and WordConversion.css */
 }
 
 .format-option {
-  cursor: pointer;
-  flex: 1;
-  min-width: 120px;
+  /* Handled in component-specific CSS files */
 }
 
 .format-option input[type='radio'] {
+  /* Not used in current components */
   display: none;
 }
 
 .format-card {
+  /* Not used in current components */
   background: var(--bg-tertiary);
   border: 2px solid var(--border-color);
   border-radius: 8px;
@@ -3100,18 +3100,21 @@ input:checked + .slider-moderno:before {
 }
 
 .format-option input[type='radio']:checked + .format-card {
+  /* Not used in current components */
   border-color: var(--primary-color);
   background: var(--primary-color);
   color: white;
 }
 
 .format-card i {
+  /* Not used in current components */
   display: block;
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
 .format-card span {
+  /* Not used in current components */
   font-size: 0.875rem;
   font-weight: 500;
 }

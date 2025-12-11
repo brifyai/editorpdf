@@ -1,38 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppProvider } from './contexts/AppContext';
 import { useAuth } from './hooks/useAuth';
 
-// Layout Components
+// Layout Components (cargar inmediatamente)
 import Sidebar from './components/layout/Sidebar';
 import Main from './components/layout/Main';
 
 // Auth Components
 import AuthPage from './components/auth/AuthPage';
 
-// Feature Components
-import DocumentAnalysis from './components/features/documents/DocumentAnalysis';
-import ImageAnalysis from './components/features/documents/ImageAnalysis';
-import AnalysisHistory from './components/features/documents/AnalysisHistory';
-import OCRProcessing from './components/features/ocr/OCRProcessing';
-import ImageConversion from './components/features/ocr/ImageConversion';
-import WordConversion from './components/features/ocr/WordConversion';
-import OCRSettings from './components/features/ocr/OCRSettings';
-import BatchAnalysis from './components/features/batch/BatchAnalysis';
-import BatchTools from './components/features/batch/BatchTools';
-import AIConfiguration from './components/features/ai/AIConfiguration';
-import ModelSelection from './components/features/ai/ModelSelection';
-import ModelComparison from './components/features/ai/ModelComparison';
-import AIMetrics from './components/features/ai/AIMetrics';
-import ExportTools from './components/features/export/ExportTools';
-import Settings from './components/features/settings/Settings';
-import Statistics from './components/features/statistics/Statistics';
-import Help from './components/features/help/Help';
-
 // Error Boundary
 import ErrorBoundary from './components/ErrorBoundary';
+
+// LAZY LOADING - Cargar componentes solo cuando se necesiten
+const DocumentAnalysis = React.lazy(() => import('./components/features/documents/DocumentAnalysis'));
+const ImageAnalysis = React.lazy(() => import('./components/features/documents/ImageAnalysis'));
+const AnalysisHistory = React.lazy(() => import('./components/features/documents/AnalysisHistory'));
+const OCRProcessing = React.lazy(() => import('./components/features/ocr/OCRProcessing'));
+const ImageConversion = React.lazy(() => import('./components/features/ocr/ImageConversion'));
+const WordConversion = React.lazy(() => import('./components/features/ocr/WordConversion'));
+const OCRSettings = React.lazy(() => import('./components/features/ocr/OCRSettings'));
+const BatchAnalysis = React.lazy(() => import('./components/features/batch/BatchAnalysis'));
+const BatchTools = React.lazy(() => import('./components/features/batch/BatchTools'));
+const AIConfiguration = React.lazy(() => import('./components/features/ai/AIConfiguration'));
+const ModelSelection = React.lazy(() => import('./components/features/ai/ModelSelection'));
+const ModelComparison = React.lazy(() => import('./components/features/ai/ModelComparison'));
+const AIMetrics = React.lazy(() => import('./components/features/ai/AIMetrics'));
+const ExportTools = React.lazy(() => import('./components/features/export/ExportTools'));
+const Settings = React.lazy(() => import('./components/features/settings/Settings'));
+const Statistics = React.lazy(() => import('./components/features/statistics/Statistics'));
+const Help = React.lazy(() => import('./components/features/help/Help'));
 
 // Styles
 import './styles/App.css';
@@ -82,18 +82,35 @@ const AppLayout = ({ children }) => {
   );
 };
 
-// Main App Routes Component
+// Componente de carga optimizado
+const LoadingSpinner = () => (
+  <div className="loading-container">
+    <div className="loading-spinner"></div>
+    <p>Cargando...</p>
+  </div>
+);
+
+// Wrapper para componentes lazy con Suspense
+const LazyWrapper = ({ children }) => (
+  <Suspense fallback={<LoadingSpinner />}>
+    {children}
+  </Suspense>
+);
+
+// Main App Routes Component optimizado
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Auth Route */}
       <Route path="/auth" element={<AuthPage />} />
       
-      {/* Protected Routes */}
+      {/* Protected Routes con Lazy Loading */}
       <Route path="/" element={
         <ProtectedRoute>
           <AppLayout>
-            <DocumentAnalysis />
+            <LazyWrapper>
+              <DocumentAnalysis />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -101,7 +118,9 @@ const AppRoutes = () => {
       <Route path="/documents" element={
         <ProtectedRoute>
           <AppLayout>
-            <DocumentAnalysis />
+            <LazyWrapper>
+              <DocumentAnalysis />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -109,7 +128,9 @@ const AppRoutes = () => {
       <Route path="/history" element={
         <ProtectedRoute>
           <AppLayout>
-            <AnalysisHistory />
+            <LazyWrapper>
+              <AnalysisHistory />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -117,7 +138,9 @@ const AppRoutes = () => {
       <Route path="/ocr" element={
         <ProtectedRoute>
           <AppLayout>
-            <OCRProcessing />
+            <LazyWrapper>
+              <OCRProcessing />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -125,7 +148,9 @@ const AppRoutes = () => {
       <Route path="/ocr/convert" element={
         <ProtectedRoute>
           <AppLayout>
-            <ImageConversion />
+            <LazyWrapper>
+              <ImageConversion />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -133,7 +158,9 @@ const AppRoutes = () => {
       <Route path="/ocr/settings" element={
         <ProtectedRoute>
           <AppLayout>
-            <OCRSettings />
+            <LazyWrapper>
+              <OCRSettings />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -141,7 +168,9 @@ const AppRoutes = () => {
       <Route path="/batch" element={
         <ProtectedRoute>
           <AppLayout>
-            <BatchAnalysis />
+            <LazyWrapper>
+              <BatchAnalysis />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -149,7 +178,9 @@ const AppRoutes = () => {
       <Route path="/batch/tools" element={
         <ProtectedRoute>
           <AppLayout>
-            <BatchTools />
+            <LazyWrapper>
+              <BatchTools />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -157,7 +188,9 @@ const AppRoutes = () => {
       <Route path="/ai" element={
         <ProtectedRoute>
           <AppLayout>
-            <AIConfiguration />
+            <LazyWrapper>
+              <AIConfiguration />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -165,7 +198,9 @@ const AppRoutes = () => {
       <Route path="/ai/models" element={
         <ProtectedRoute>
           <AppLayout>
-            <ModelSelection />
+            <LazyWrapper>
+              <ModelSelection />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -173,7 +208,9 @@ const AppRoutes = () => {
       <Route path="/ai/comparison" element={
         <ProtectedRoute>
           <AppLayout>
-            <ModelComparison />
+            <LazyWrapper>
+              <ModelComparison />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -181,7 +218,9 @@ const AppRoutes = () => {
       <Route path="/ai/metrics" element={
         <ProtectedRoute>
           <AppLayout>
-            <AIMetrics />
+            <LazyWrapper>
+              <AIMetrics />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -189,7 +228,9 @@ const AppRoutes = () => {
       <Route path="/export" element={
         <ProtectedRoute>
           <AppLayout>
-            <ExportTools />
+            <LazyWrapper>
+              <ExportTools />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -197,7 +238,9 @@ const AppRoutes = () => {
       <Route path="/settings" element={
         <ProtectedRoute>
           <AppLayout>
-            <Settings />
+            <LazyWrapper>
+              <Settings />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -205,7 +248,9 @@ const AppRoutes = () => {
       <Route path="/statistics" element={
         <ProtectedRoute>
           <AppLayout>
-            <Statistics />
+            <LazyWrapper>
+              <Statistics />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -213,7 +258,9 @@ const AppRoutes = () => {
       <Route path="/help" element={
         <ProtectedRoute>
           <AppLayout>
-            <Help />
+            <LazyWrapper>
+              <Help />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -222,7 +269,9 @@ const AppRoutes = () => {
       <Route path="/images" element={
         <ProtectedRoute>
           <AppLayout>
-            <ImageAnalysis />
+            <LazyWrapper>
+              <ImageAnalysis />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -230,7 +279,9 @@ const AppRoutes = () => {
       <Route path="/pdf-convert" element={
         <ProtectedRoute>
           <AppLayout>
-            <ImageConversion />
+            <LazyWrapper>
+              <ImageConversion />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -238,7 +289,9 @@ const AppRoutes = () => {
       <Route path="/word-convert" element={
         <ProtectedRoute>
           <AppLayout>
-            <WordConversion />
+            <LazyWrapper>
+              <WordConversion />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -246,7 +299,9 @@ const AppRoutes = () => {
       <Route path="/ai-config" element={
         <ProtectedRoute>
           <AppLayout>
-            <AIConfiguration />
+            <LazyWrapper>
+              <AIConfiguration />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -254,7 +309,9 @@ const AppRoutes = () => {
       <Route path="/ai-metrics" element={
         <ProtectedRoute>
           <AppLayout>
-            <AIMetrics />
+            <LazyWrapper>
+              <AIMetrics />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -262,7 +319,9 @@ const AppRoutes = () => {
       <Route path="/models" element={
         <ProtectedRoute>
           <AppLayout>
-            <ModelSelection />
+            <LazyWrapper>
+              <ModelSelection />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
@@ -270,7 +329,9 @@ const AppRoutes = () => {
       <Route path="/stats" element={
         <ProtectedRoute>
           <AppLayout>
-            <Statistics />
+            <LazyWrapper>
+              <Statistics />
+            </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />

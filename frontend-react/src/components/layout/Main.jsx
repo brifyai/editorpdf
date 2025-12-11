@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const Main = ({ children, sidebarOpen }) => {
+// Memoizar el componente Main para evitar re-renders innecesarios
+const Main = React.memo(({ children, sidebarOpen }) => {
   const location = useLocation();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isContentVisible, setIsContentVisible] = useState(false);
+  const [metrics, setMetrics] = useState({
+    totalRequests: 0,
+    successRate: 0,
+    activeModels: 0,
+    averageResponseTime: 0
+  });
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
 
   // Page configuration
   const pageConfig = {
@@ -75,23 +83,26 @@ const Main = ({ children, sidebarOpen }) => {
     return breadcrumbs;
   };
 
-  // Scroll progress - ahora usando el contenedor principal en lugar de window
+  // Scroll progress optimizado con useCallback
+  const handleScroll = useCallback(() => {
+    const mainElement = document.querySelector('.premium-main');
+    if (!mainElement) return;
+
+    const scrollTop = mainElement.scrollTop;
+    const scrollHeight = mainElement.scrollHeight - mainElement.clientHeight;
+    const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+    setScrollProgress(progress);
+  }, []);
+
   useEffect(() => {
     const mainElement = document.querySelector('.premium-main');
     if (!mainElement) return;
 
-    const handleScroll = () => {
-      const scrollTop = mainElement.scrollTop;
-      const scrollHeight = mainElement.scrollHeight - mainElement.clientHeight;
-      const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-      setScrollProgress(progress);
-    };
-
-    mainElement.addEventListener('scroll', handleScroll);
+    mainElement.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // Initial call
 
     return () => mainElement.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   // Content visibility animation
   useEffect(() => {
@@ -101,6 +112,64 @@ const Main = ({ children, sidebarOpen }) => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Memoizar la función de carga de métricas para evitar re-creaciones
+  const loadMetrics = useCallback(async () => {
+    try {
+      setLoadingMetrics(true);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/metrics`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setMetrics({
+          totalRequests: data.data.totalRequests || 0,
+          successRate: data.data.successRate || 0,
+          activeModels: data.data.activeModels || 0,
+          averageResponseTime: data.data.averageResponseTime || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error cargando métricas:', error);
+    } finally {
+      setLoadingMetrics(false);
+    }
+  }, []);
+
+  // Cargar métricas reales desde el servidor (optimizado)
+  useEffect(() => {
+    let timeoutId;
+    let isCancelled = false;
+
+    // Carga inicial con debounce
+    timeoutId = setTimeout(() => {
+      if (!isCancelled) {
+        loadMetrics();
+      }
+    }, 1000);
+    
+    // Actualizar métricas cada 5 minutos
+    const interval = setInterval(() => {
+      if (!isCancelled) {
+        loadMetrics();
+      }
+    }, 300000);
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      clearInterval(interval);
+    };
+  }, [loadMetrics]);
+
+  // Memoizar los valores de métricas para evitar re-renders
+  const memoizedMetrics = useMemo(() => ({
+    totalRequests: metrics.totalRequests,
+    successRate: metrics.successRate,
+    activeModels: metrics.activeModels,
+    averageResponseTime: metrics.averageResponseTime,
+    loading: loadingMetrics
+  }), [metrics, loadingMetrics]);
 
   const breadcrumbs = getBreadcrumbs();
 
@@ -179,33 +248,41 @@ const Main = ({ children, sidebarOpen }) => {
             <div className="stats-container-premium">
               <div className="stat-card-premium">
                 <div className="stat-content">
-                  <div className="stat-value">1,234</div>
+                  <div className="stat-value">
+                    {memoizedMetrics.loading ? '...' : memoizedMetrics.totalRequests.toLocaleString()}
+                  </div>
                   <div className="stat-label">Documentos Analizados</div>
-                  <div className="stat-change positive">+12.5%</div>
+                  <div className="stat-change neutral">Real</div>
                 </div>
               </div>
 
               <div className="stat-card-premium">
                 <div className="stat-content">
-                  <div className="stat-value">98.5%</div>
+                  <div className="stat-value">
+                    {memoizedMetrics.loading ? '...' : `${memoizedMetrics.successRate.toFixed(1)}%`}
+                  </div>
                   <div className="stat-label">Precisión</div>
-                  <div className="stat-change positive">+2.1%</div>
+                  <div className="stat-change neutral">Real</div>
                 </div>
               </div>
 
               <div className="stat-card-premium">
                 <div className="stat-content">
-                  <div className="stat-value">5</div>
+                  <div className="stat-value">
+                    {memoizedMetrics.loading ? '...' : memoizedMetrics.activeModels}
+                  </div>
                   <div className="stat-label">Modelos IA Activos</div>
-                  <div className="stat-change neutral">0%</div>
+                  <div className="stat-change neutral">Real</div>
                 </div>
               </div>
 
               <div className="stat-card-premium">
                 <div className="stat-content">
-                  <div className="stat-value">45s</div>
+                  <div className="stat-value">
+                    {memoizedMetrics.loading ? '...' : `${memoizedMetrics.averageResponseTime.toFixed(1)}s`}
+                  </div>
                   <div className="stat-label">Tiempo Promedio</div>
-                  <div className="stat-change positive">-15%</div>
+                  <div className="stat-change neutral">Real</div>
                 </div>
               </div>
             </div>
@@ -228,6 +305,7 @@ const Main = ({ children, sidebarOpen }) => {
       </main>
     </>
   );
-};
+});
 
-export default Main;
+// Memoizar el componente para optimizar re-renders
+export default React.memo(Main);

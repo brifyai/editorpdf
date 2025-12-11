@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useAuth } from '../../../hooks/useAuth';
 import './DocumentAnalysis.css';
 
 const DocumentAnalysis = () => {
+  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -72,7 +74,9 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${user?.id || 1}`,
+          'X-User-ID': user?.id || 1
         }
       });
       
@@ -122,7 +126,9 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${user?.id || 1}`,
+          'X-User-ID': user?.id || 1
         }
       });
       
@@ -181,7 +187,9 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${user?.id || 1}`,
+          'X-User-ID': user?.id || 1
         }
       });
       
@@ -281,7 +289,9 @@ const DocumentAnalysis = () => {
           method: 'POST',
           body: formData,
           headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${user?.id || 1}`,
+            'X-User-ID': user?.id || 1
           }
         });
         

@@ -204,56 +204,51 @@ export const supabaseReal = {
 
 // Helper functions para datos reales desde Supabase
 export const supabaseRealHelpers = {
-  // Obtener historial real de análisis desde Supabase
+  // Obtener historial real de análisis desde el endpoint temporal del servidor
   async getAnalysisHistory(userId, limit = 50) {
     try {
-      console.log('Obteniendo historial REAL para usuario:', userId);
+      console.log('Obteniendo historial desde endpoint temporal para usuario:', userId);
       
-      // Obtener los documentos reales del usuario
-      const { data: documentsData, error: documentsError } = await supabaseReal
-        .from('documents')
-        .select('*')
-        .eq('user_int_id', userId)
-        .order('uploaded_at', { ascending: false })
-        .limit(limit);
-
-      if (documentsError) {
-        console.error('Error obteniendo documentos reales:', documentsError);
-        return { data: null, error: documentsError };
+      // Usar el endpoint temporal que creé en el servidor
+      const response = await apiClient.get('/temp/history');
+      
+      if (!response.data.success) {
+        console.error('Error en endpoint temporal:', response.data.error);
+        return { data: null, error: { message: response.data.error } };
       }
 
-      console.log('Documentos reales obtenidos:', documentsData?.length || 0);
+      console.log('Datos obtenidos del endpoint temporal:', response.data.analyses?.length || 0);
 
-      if (!documentsData || documentsData.length === 0) {
-        console.log('No se encontraron documentos reales para este usuario');
+      if (!response.data.analyses || response.data.analyses.length === 0) {
+        console.log('No se encontraron análisis en el endpoint temporal');
         return { data: [], error: null };
       }
 
-      // Transformar los datos de documentos al formato de historial de análisis
-      const transformedData = documentsData.map(doc => ({
-        id: doc.id,
-        user_id: doc.user_int_id,
-        created_at: doc.uploaded_at,
-        status: doc.processing_status === 'completed' ? 'completed' :
-                doc.processing_status === 'processing' ? 'processing' : 'pending',
+      // Transformar los datos del endpoint temporal al formato esperado por el frontend
+      const transformedData = response.data.analyses.map(analysis => ({
+        id: analysis.id,
+        user_id: userId,
+        created_at: analysis.uploadedAt,
+        status: analysis.processingStatus === 'completed' ? 'completed' :
+                analysis.processingStatus === 'processing' ? 'processing' : 'pending',
         documents: {
-          original_filename: doc.original_filename || 'Documento sin nombre',
-          file_type: doc.file_type?.toUpperCase() || 'UNKNOWN',
-          file_size_bytes: doc.file_size_bytes || 0
+          original_filename: analysis.filename || 'Documento sin nombre',
+          file_type: analysis.fileType?.toUpperCase() || 'UNKNOWN',
+          file_size_bytes: analysis.fileSize || 0
         },
         analysis_results_basic: {
-          page_count: doc.page_count || 0 // Si existe este campo en documents
+          page_count: analysis.analysis?.statistics?.totalPages || 0
         },
-        confidence_score: doc.confidence_score || 85, // Si existe este campo
-        analysis_type: 'document', // Valor por defecto
-        processing_time_ms: doc.processing_time_ms || 0, // Si existe este campo
-        ai_model_used: doc.ai_model_used || 'Desconocido' // Si existe este campo
+        confidence_score: analysis.confidenceScore || 85,
+        analysis_type: 'document',
+        processing_time_ms: analysis.processingTime || 0,
+        ai_model_used: analysis.analysis?.aiAnalysis?.model || 'Desconocido'
       }));
 
       console.log('Datos transformados para historial:', transformedData.length);
       return { data: transformedData, error: null };
     } catch (error) {
-      console.error('Error en getAnalysisHistory real:', error);
+      console.error('Error en getAnalysisHistory:', error);
       return { data: null, error: { message: error.message } };
     }
   },

@@ -165,10 +165,20 @@ const ImageConversion = () => {
           <label htmlFor="output-format">Formato de salida:</label>
           <div className="format-options">
             {outputFormats.map(format => (
-              <div 
+              <div
                 key={format.value}
                 className={`format-option ${outputFormat === format.value ? 'selected' : ''}`}
                 onClick={() => setOutputFormat(format.value)}
+                data-format={format.value}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15) !important',
+                  borderLeft: `4px solid ${
+                    format.value === 'pdf' ? '#dc2626' :
+                    format.value === 'docx' ? '#2563eb' :
+                    format.value === 'txt' ? '#059669' :
+                    format.value === 'html' ? '#ea580c' : '#10b981'
+                  }`
+                }}
               >
                 <div className="format-icon">
                   {getOutputFormatIcon(format.value)}
@@ -184,12 +194,13 @@ const ImageConversion = () => {
       </div>
 
       <div className="upload-section">
-        <div 
+        <div
           className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${isConverting ? 'converting' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          data-format={outputFormat}
         >
           <input
             ref={fileInputRef}
@@ -247,6 +258,12 @@ const ImageConversion = () => {
                     <span className="formats-list">JPG, PNG, WebP, TIFF</span>
                     <span className="formats-size">(máx. 10MB)</span>
                   </p>
+                  <div className="format-preview">
+                    <span className="preview-label">Formato de salida:</span>
+                    <span className="preview-format" data-format={outputFormat}>
+                      {outputFormats.find(f => f.value === outputFormat)?.label}
+                    </span>
+                  </div>
                 </div>
                 <button className="upload-button">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -143,10 +143,11 @@ const WordConversion = () => {
           <label htmlFor="output-format">Formato de salida:</label>
           <div className="format-options">
             {outputFormats.map(format => (
-              <div 
+              <div
                 key={format.value}
                 className={`format-option ${outputFormat === format.value ? 'selected' : ''}`}
                 onClick={() => setOutputFormat(format.value)}
+                data-format={format.value}
               >
                 <div className="format-icon">
                   {getOutputFormatIcon(format.value)}
@@ -219,6 +220,12 @@ const WordConversion = () => {
                 </div>
                 <div className="upload-text">
                   <h3>Arrastra archivos aquí para convertir a Word</h3>
+                  <div className="format-preview">
+                    <span className="preview-label">Formato seleccionado:</span>
+                    <span className={`preview-format preview-${outputFormat}`}>
+                      {outputFormats.find(f => f.value === outputFormat)?.label}
+                    </span>
+                  </div>
                   <p className="upload-formats">
                     <span className="formats-label">Formatos soportados:</span>
                     <span className="formats-list">PDF, JPG, PNG, WebP, TIFF</span>
