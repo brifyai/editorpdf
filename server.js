@@ -339,6 +339,43 @@ app.get('/api/get-ai-config/:userId', async (req, res) => {
   }
 });
 
+/**
+ * Health check endpoint
+ */
+app.get('/api/health', (req, res) => {
+  try {
+    const healthData = {
+      success: true,
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      environment: process.env.NODE_ENV || 'production',
+      services: {
+        api: 'operational',
+        server: 'operational',
+        groq_api: process.env.GROQ_API_KEY ? 'configured' : 'not_configured',
+        chutes_api: process.env.CHUTES_API_KEY ? 'configured' : 'not_configured',
+        database: isDatabaseAvailable() ? 'connected' : 'disconnected'
+      },
+      uptime: process.uptime(),
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024)
+      },
+      port: PORT
+    };
+
+    res.json(healthData);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
 // Aplicar rate limiting general a otros endpoints de análisis
 app.use('/api', analysisRoutes);
 
