@@ -1,4 +1,103 @@
-import { supabase } from './supabase';
+import axios from 'axios';
+
+// Configuración para usar Netlify Functions
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+// Cliente API personalizado que usa Netlify Functions
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Mock de cliente Supabase para compatibilidad
+export const supabase = {
+  auth: {
+    async signUp({ email, password }) {
+      try {
+        const response = await apiClient.post('/auth/signup', { email, password });
+        return { data: response.data, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data || error.message };
+      }
+    },
+    
+    async signInWithPassword({ email, password }) {
+      try {
+        const response = await apiClient.post('/auth/signin', { email, password });
+        return { data: response.data, error: null };
+      } catch (error) {
+        return { data: null, error: error.response?.data || error.message };
+      }
+    },
+    
+    async signOut() {
+      try {
+        await apiClient.post('/auth/signout');
+        return { error: null };
+      } catch (error) {
+        return { error: error.response?.data || error.message };
+      }
+    },
+    
+    async getUser() {
+      try {
+        const response = await apiClient.get('/auth/me');
+        return { user: response.data.user, error: null };
+      } catch (error) {
+        return { user: null, error: error.response?.data || error.message };
+      }
+    },
+    
+    async getSession() {
+      try {
+        const response = await apiClient.get('/auth/me');
+        return { data: { session: response.data.session }, error: null };
+      } catch (error) {
+        return { data: { session: null }, error: error.response?.data || error.message };
+      }
+    }
+  },
+  
+  from: (table) => ({
+    select: () => ({
+      eq: () => ({
+        single: async () => {
+          // Mock response para compatibilidad
+          return { data: null, error: null };
+        },
+        limit: async () => {
+          // Mock response para compatibilidad
+          return { data: [], error: null, count: 0 };
+        }
+      }),
+      limit: async () => {
+        // Mock response para compatibilidad
+        return { data: [], error: null, count: 0 };
+      }
+    }),
+    
+    insert: async () => {
+      // Mock response para compatibilidad
+      return { data: null, error: null };
+    },
+    
+    update: () => ({
+      eq: async () => {
+        // Mock response para compatibilidad
+        return { data: null, error: null };
+      }
+    }),
+    
+    delete: () => ({
+      eq: async () => {
+        // Mock response para compatibilidad
+        return { data: null, error: null };
+      }
+    })
+  })
+};
 
 // =====================================================
 // SERVICIOS DE BASE DE DATOS PARA EDITOR PDF
