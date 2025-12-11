@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Configuración para usar Netlify Functions
+// Configuración para usar servidor local o Netlify Functions
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-// Cliente API personalizado que usa Netlify Functions
+// Cliente API personalizado que usa el servidor local
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,13 +11,31 @@ const apiClient = axios.create({
   },
 });
 
-// Mock de cliente Supabase para compatibilidad
+// Cliente API compatible con Supabase para el servidor local
 export const supabaseReal = {
   auth: {
-    async signUp({ email, password }) {
+    async signUp({ email, password, name }) {
       try {
-        const response = await apiClient.post('/auth/signup', { email, password });
-        return { data: response.data, error: null };
+        const response = await apiClient.post('/auth/register', {
+          email,
+          password,
+          username: email.split('@')[0],
+          firstName: name || email.split('@')[0],
+          lastName: ''
+        });
+        
+        // Transformar respuesta del servidor a formato Supabase
+        const userData = {
+          user: {
+            id: response.data.data.user.id,
+            email: response.data.data.user.email,
+            name: response.data.data.user.firstName + ' ' + response.data.data.user.lastName,
+            role: response.data.data.user.role
+          },
+          token: response.data.data.token
+        };
+        
+        return { data: userData, error: null };
       } catch (error) {
         return { data: null, error: error.response?.data || error.message };
       }
@@ -25,8 +43,20 @@ export const supabaseReal = {
     
     async signInWithPassword({ email, password }) {
       try {
-        const response = await apiClient.post('/auth/signin', { email, password });
-        return { data: response.data, error: null };
+        const response = await apiClient.post('/auth/login', { email, password });
+        
+        // Transformar respuesta del servidor a formato Supabase
+        const userData = {
+          user: {
+            id: response.data.data.user.id,
+            email: response.data.data.user.email,
+            name: response.data.data.user.firstName + ' ' + response.data.data.user.lastName,
+            role: response.data.data.user.role
+          },
+          token: response.data.data.token
+        };
+        
+        return { data: userData, error: null };
       } catch (error) {
         return { data: null, error: error.response?.data || error.message };
       }
@@ -34,7 +64,7 @@ export const supabaseReal = {
     
     async signOut() {
       try {
-        await apiClient.post('/auth/signout');
+        await apiClient.post('/auth/logout');
         return { error: null };
       } catch (error) {
         return { error: error.response?.data || error.message };
@@ -43,8 +73,8 @@ export const supabaseReal = {
     
     async getUser() {
       try {
-        const response = await apiClient.get('/auth/me');
-        return { user: response.data.user, error: null };
+        const response = await apiClient.get('/auth/profile');
+        return { user: response.data.data.user, error: null };
       } catch (error) {
         return { user: null, error: error.response?.data || error.message };
       }
@@ -52,8 +82,16 @@ export const supabaseReal = {
     
     async getSession() {
       try {
-        const response = await apiClient.get('/auth/me');
-        return { data: { session: response.data.session }, error: null };
+        const response = await apiClient.get('/auth/profile');
+        return {
+          data: {
+            session: {
+              user: response.data.data.user,
+              access_token: response.data.data.token
+            }
+          },
+          error: null
+        };
       } catch (error) {
         return { data: { session: null }, error: error.response?.data || error.message };
       }
