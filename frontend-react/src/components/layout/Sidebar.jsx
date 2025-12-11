@@ -27,9 +27,9 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'documents', label: 'Análisis de PDFs', icon: '📄', path: '/documents', badge: null },
-        { id: 'images', label: 'Análisis de Imágenes', icon: '🖼️', path: '/images', badge: null },
-        { id: 'history', label: 'Historial de Análisis', icon: '📋', path: '/history', badge: null }
+        { id: 'documents', label: 'Análisis de PDFs', icon: '📄', path: '/analisis-documentos', badge: null },
+        { id: 'images', label: 'Análisis de Imágenes', icon: '🖼️', path: '/analisis-imagenes', badge: null },
+        { id: 'history', label: 'Historial de Análisis', icon: '📋', path: '/historial-analisis', badge: null }
       ]
     },
     {
@@ -42,9 +42,9 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'ocr-processing', label: 'OCR de Imágenes', icon: '🔍', path: '/ocr', badge: null },
-        { id: 'pdf-conversion', label: 'Conversión a PDF', icon: '📄', path: '/ocr/convert', badge: null },
-        { id: 'word-conversion', label: 'Conversión a Word', icon: '📝', path: '/word-convert', badge: null }
+        { id: 'ocr-processing', label: 'OCR de Imágenes', icon: '🔍', path: '/ocr-conversion', badge: null },
+        { id: 'pdf-conversion', label: 'Conversión a PDF', icon: '📄', path: '/conversion-pdf', badge: null },
+        { id: 'word-conversion', label: 'Conversión a Word', icon: '📝', path: '/conversion-word', badge: null }
       ]
     },
     {
@@ -60,8 +60,8 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/batch', badge: null },
-        { id: 'batch-tools', label: 'Herramientas Batch', icon: '🛠️', path: '/batch/tools', badge: null }
+        { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch', badge: null },
+        { id: 'batch-tools', label: 'Herramientas Batch', icon: '🛠️', path: '/herramientas-batch', badge: null }
       ]
     },
     {
@@ -76,9 +76,9 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'ai-config', label: 'Configuración de IA', icon: '⚙️', path: '/ai', badge: null },
-        { id: 'ai-metrics', label: 'Métricas de IA', icon: '📊', path: '/ai/metrics', badge: null },
-        { id: 'model-comparison', label: 'Comparación de Modelos', icon: '📈', path: '/ai/comparison', badge: null }
+        { id: 'ai-config', label: 'Configuración de IA', icon: '⚙️', path: '/inteligencia-artificial', badge: null },
+        { id: 'ai-metrics', label: 'Métricas de IA', icon: '📊', path: '/metricas-ia', badge: null },
+        { id: 'model-comparison', label: 'Comparación de Modelos', icon: '📈', path: '/comparacion-modelos', badge: null }
       ]
     },
     {
@@ -92,8 +92,8 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'export-tools', label: 'Exportación Avanzada', icon: '💾', path: '/export', badge: null },
-        { id: 'statistics', label: 'Estadísticas', icon: '📊', path: '/statistics', badge: null }
+        { id: 'export-tools', label: 'Exportación Avanzada', icon: '💾', path: '/exportacion-avanzada', badge: null },
+        { id: 'statistics', label: 'Estadísticas', icon: '📊', path: '/estadisticas', badge: null }
       ]
     },
     {
@@ -105,8 +105,8 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </svg>
       ),
       items: [
-        { id: 'settings', label: 'Configuración', icon: '⚙️', path: '/settings', badge: null },
-        { id: 'help', label: 'Ayuda y Soporte', icon: '❓', path: '/help', badge: null }
+        { id: 'settings', label: 'Configuración', icon: '⚙️', path: '/configuracion', badge: null },
+        { id: 'help', label: 'Ayuda y Soporte', icon: '❓', path: '/ayuda-soporte', badge: null }
       ]
     }
   ];
@@ -178,7 +178,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
               onClick={() => handleNavigation('/')}
             >
               <div className="dashboard-nav-icon">🏠</div>
-              <span className="dashboard-nav-label">Dashboard Principal</span>
+              <span className="dashboard-nav-label">Panel Principal</span>
             </button>
           </div>
 

@@ -35,6 +35,15 @@ const Settings = React.lazy(() => import('./components/features/settings/Setting
 const Statistics = React.lazy(() => import('./components/features/statistics/Statistics'));
 const Help = React.lazy(() => import('./components/features/help/Help'));
 
+// PDF Tools Components
+const MergePDF = React.lazy(() => import('./components/features/pdf/MergePDF'));
+const SplitPDF = React.lazy(() => import('./components/features/pdf/SplitPDF'));
+const OrganizePages = React.lazy(() => import('./components/features/pdf/OrganizePages'));
+const CompressPDF = React.lazy(() => import('./components/features/pdf/CompressPDF'));
+const RepairPDF = React.lazy(() => import('./components/features/pdf/RepairPDF'));
+const WordToPDF = React.lazy(() => import('./components/features/pdf/WordToPDF'));
+const PDFToolGenerator = React.lazy(() => import('./components/features/pdf/PDFToolsGenerator'));
+
 // Styles
 import './styles/App.css';
 import './styles/premium.css';
@@ -116,7 +125,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/documents" element={
+      <Route path="/analisis-documentos" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -126,148 +135,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/history" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <AnalysisHistory />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ocr" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <OCRProcessing />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ocr/convert" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <ImageConversion />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ocr/settings" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <OCRSettings />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/batch" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <BatchAnalysis />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/batch/tools" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <BatchTools />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ai" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <AIConfiguration />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ai/models" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <ModelSelection />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ai/comparison" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <ModelComparison />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/ai/metrics" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <AIMetrics />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/export" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <ExportTools />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <Settings />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/statistics" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <Statistics />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/help" element={
-        <ProtectedRoute>
-          <AppLayout>
-            <LazyWrapper>
-              <Help />
-            </LazyWrapper>
-          </AppLayout>
-        </ProtectedRoute>
-      } />
-      
-      {/* Rutas adicionales para el Sidebar */}
-      <Route path="/images" element={
+      <Route path="/analisis-imagenes" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -277,7 +145,27 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/pdf-convert" element={
+      <Route path="/historial-analisis" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <AnalysisHistory />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/ocr-conversion" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <OCRProcessing />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/conversion-pdf" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -287,7 +175,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/word-convert" element={
+      <Route path="/conversion-word" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -297,7 +185,27 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/ai-config" element={
+      <Route path="/procesamiento-batch" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <BatchAnalysis />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas-batch" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <BatchTools />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/inteligencia-artificial" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -307,7 +215,7 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/ai-metrics" element={
+      <Route path="/metricas-ia" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -317,17 +225,37 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      <Route path="/models" element={
+      <Route path="/comparacion-modelos" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
-              <ModelSelection />
+              <ModelComparison />
             </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>
       } />
       
-      <Route path="/stats" element={
+      <Route path="/exportacion-avanzada" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <ExportTools />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/configuracion" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <Settings />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/estadisticas" element={
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
@@ -336,6 +264,319 @@ const AppRoutes = () => {
           </AppLayout>
         </ProtectedRoute>
       } />
+      
+      <Route path="/ayuda-soporte" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <Help />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Rutas para herramientas específicas PDF */}
+      <Route path="/herramientas/unir-documentos" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <MergePDF />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/separar-documentos" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <SplitPDF />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/organizar-paginas" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <OrganizePages />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/optimizar-tamano" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <CompressPDF />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/restaurar-documento" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <RepairPDF />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/word-a-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <WordToPDF />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/powerpoint-a-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="powerpoint-a-pdf" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/excel-a-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="excel-a-pdf" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/web-a-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="web-a-pdf" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/imagenes-a-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="imagenes-a-pdf" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/pdf-a-word" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="pdf-a-word" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/pdf-a-powerpoint" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="pdf-a-powerpoint" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/pdf-a-excel" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="pdf-a-excel" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/pdf-a-imagenes" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="pdf-a-imagenes" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/editor-avanzado" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="editor-avanzado" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/firmar-documento" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="firmar-documento" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/marca-de-agua" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="marca-de-agua" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/rotar-paginas" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="rotar-paginas" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/proteger-contrasena" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="proteger-contrasena" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/desbloquear-pdf" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="desbloquear-pdf" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/numeracion-paginas" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="numeracion-paginas" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/recortar-documento" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="recortar-documento" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/reconocimiento-texto" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="reconocimiento-texto" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/escaner-movil" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="escaner-movil" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/comparar-documentos" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="comparar-documentos" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/censurar-informacion" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="censurar-informacion" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/analisis-inteligente" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="analisis-inteligente" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/ocr-inteligente" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="ocr-inteligente" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/herramientas/extraccion-inteligente" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <LazyWrapper>
+              <PDFToolGenerator toolId="extraccion-inteligente" />
+            </LazyWrapper>
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      
+      {/* Rutas legacy para compatibilidad */}
+      <Route path="/documents" element={<Navigate to="/analisis-documentos" replace />} />
+      <Route path="/images" element={<Navigate to="/analisis-imagenes" replace />} />
+      <Route path="/history" element={<Navigate to="/historial-analisis" replace />} />
+      <Route path="/ocr" element={<Navigate to="/ocr-conversion" replace />} />
+      <Route path="/batch" element={<Navigate to="/procesamiento-batch" replace />} />
+      <Route path="/ai" element={<Navigate to="/inteligencia-artificial" replace />} />
+      <Route path="/export" element={<Navigate to="/exportacion-avanzada" replace />} />
+      <Route path="/settings" element={<Navigate to="/configuracion" replace />} />
+      <Route path="/statistics" element={<Navigate to="/estadisticas" replace />} />
+      <Route path="/help" element={<Navigate to="/ayuda-soporte" replace />} />
       
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSweetAlert } from '../hooks/useSweetAlert';
 import './Dashboard.css';
@@ -6,9 +7,12 @@ import './Dashboard.css';
 const Dashboard = () => {
   const { user } = useAuth();
   const { showInfo } = useSweetAlert();
+  const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const toolCategories = [
     {
+      id: 'combine-organize',
       title: "Combinar y Organizar",
       description: "Gestiona múltiples documentos PDF de forma eficiente",
       icon: "📚",
@@ -37,6 +41,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'optimize-compress',
       title: "Optimizar y Comprimir",
       description: "Mejora la calidad y reduce el tamaño de tus documentos",
       icon: "⚡",
@@ -58,6 +63,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'convert-to-pdf',
       title: "Convertir a PDF",
       description: "Transforma otros formatos al estándar PDF",
       icon: "➡️",
@@ -100,6 +106,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'convert-from-pdf',
       title: "Convertir desde PDF",
       description: "Extrae y convierte contenido de documentos PDF",
       icon: "⬅️",
@@ -135,6 +142,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'edit-customize',
       title: "Editar y Personalizar",
       description: "Modifica y personaliza tus documentos PDF",
       icon: "✏️",
@@ -170,6 +178,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'security-management',
       title: "Gestión y Seguridad",
       description: "Controla el acceso y protección de tus documentos",
       icon: "🔒",
@@ -205,6 +214,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'specialized-processing',
       title: "Procesamiento Especializado",
       description: "Herramientas avanzadas para necesidades específicas",
       icon: "🔬",
@@ -240,6 +250,7 @@ const Dashboard = () => {
       ]
     },
     {
+      id: 'ai-analysis',
       title: "Análisis con Inteligencia Artificial",
       description: "Procesamiento inteligente de documentos con IA",
       icon: "🤖",
@@ -269,13 +280,86 @@ const Dashboard = () => {
     }
   ];
 
+  const handleCategoryClick = (categoryId) => {
+    console.log('Categoría seleccionada:', categoryId);
+    
+    if (selectedCategory === categoryId) {
+      // Si ya está seleccionada, deseleccionar y mostrar todas
+      setSelectedCategory(null);
+    } else {
+      // Si no está seleccionada, seleccionar para filtrar
+      setSelectedCategory(categoryId);
+    }
+  };
+
   const handleToolClick = (toolId) => {
     console.log('Herramienta seleccionada:', toolId);
-    showInfo(
-      'Funcionalidad en Desarrollo',
-      `La herramienta "${toolId}" estará disponible próximamente. Esta es una vista previa del nuevo dashboard de EditorPDF.`
-    );
+    
+    // Mapeo de herramientas a URLs específicas únicas en español
+    const toolRoutes = {
+      // Combinar y Organizar
+      'merge-pdf': '/herramientas/unir-documentos',
+      'split-pdf': '/herramientas/separar-documentos',
+      'organize-pages': '/herramientas/organizar-paginas',
+      
+      // Optimizar y Comprimir
+      'compress-pdf': '/herramientas/optimizar-tamano',
+      'repair-pdf': '/herramientas/restaurar-documento',
+      
+      // Convertir a PDF
+      'word-to-pdf': '/herramientas/word-a-pdf',
+      'ppt-to-pdf': '/herramientas/powerpoint-a-pdf',
+      'excel-to-pdf': '/herramientas/excel-a-pdf',
+      'html-to-pdf': '/herramientas/web-a-pdf',
+      'image-to-pdf': '/herramientas/imagenes-a-pdf',
+      
+      // Convertir desde PDF
+      'pdf-to-word': '/herramientas/pdf-a-word',
+      'pdf-to-ppt': '/herramientas/pdf-a-powerpoint',
+      'pdf-to-excel': '/herramientas/pdf-a-excel',
+      'pdf-to-images': '/herramientas/pdf-a-imagenes',
+      
+      // Editar y Personalizar
+      'edit-pdf': '/herramientas/editor-avanzado',
+      'sign-pdf': '/herramientas/firmar-documento',
+      'watermark': '/herramientas/marca-de-agua',
+      'rotate-pdf': '/herramientas/rotar-paginas',
+      
+      // Gestión y Seguridad
+      'protect-pdf': '/herramientas/proteger-contrasena',
+      'unlock-pdf': '/herramientas/desbloquear-pdf',
+      'page-numbers': '/herramientas/numeracion-paginas',
+      'crop-pdf': '/herramientas/recortar-documento',
+      
+      // Procesamiento Especializado
+      'ocr-pdf': '/herramientas/reconocimiento-texto',
+      'scan-to-pdf': '/herramientas/escaner-movil',
+      'compare-pdf': '/herramientas/comparar-documentos',
+      'censor-pdf': '/herramientas/censurar-informacion',
+      
+      // Análisis con IA
+      'ai-analysis': '/herramientas/analisis-inteligente',
+      'ai-ocr': '/herramientas/ocr-inteligente',
+      'ai-extract': '/herramientas/extraccion-inteligente'
+    };
+    
+    const route = toolRoutes[toolId];
+    
+    if (route) {
+      navigate(route);
+    } else {
+      // Si no hay ruta específica, mostrar mensaje informativo
+      showInfo(
+        'Funcionalidad en Desarrollo',
+        `La herramienta "${toolId}" estará disponible próximamente. Redirigiendo a la sección más relacionada.`
+      );
+      navigate('/documents'); // Redirigir a documentos por defecto
+    }
   };
+
+  const displayedCategories = selectedCategory
+    ? toolCategories.filter(category => category.id === selectedCategory)
+    : toolCategories;
 
   return (
     <div className="dashboard-container">
@@ -283,76 +367,61 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <div className="header-content">
           <div className="welcome-section">
-            <h1 className="dashboard-title">
-              ¡Bienvenido a EditorPDF Pro! 
-              <span className="title-highlight"> {user?.name || 'Usuario'}</span>
-            </h1>
-            <p className="dashboard-subtitle">
-              Tu plataforma completa para el manejo profesional de documentos PDF
-            </p>
-          </div>
-          
-          <div className="header-stats">
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <div className="stat-number">25+</div>
-                <div className="stat-label">Herramientas</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">⚡</div>
-              <div className="stat-content">
-                <div className="stat-number">100%</div>
-                <div className="stat-label">Gratuito</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🔒</div>
-              <div className="stat-content">
-                <div className="stat-number">Seguro</div>
-                <div className="stat-label">Privacidad</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Grid de Categorías */}
+      {/* Navegación Rápida de Categorías */}
+      <div className="category-navigation">
+        <div className="nav-buttons-container">
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('combine-organize')}>
+            📚 Combinar y Organizar
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('optimize-compress')}>
+            ⚡ Optimizar y Comprimir
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('convert-to-pdf')}>
+            ➡️ Convertir a PDF
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('convert-from-pdf')}>
+            ⬅️ Convertir desde PDF
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('edit-customize')}>
+            ✏️ Editar y Personalizar
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('security-management')}>
+            🔒 Gestión y Seguridad
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('specialized-processing')}>
+            🔬 Procesamiento Especializado
+          </button>
+          <button className="nav-category-btn" onClick={() => handleCategoryClick('ai-analysis')}>
+            🤖 Análisis con Inteligencia Artificial
+          </button>
+        </div>
+      </div>
+
+      {/* Grid de Herramientas */}
       <div className="dashboard-content">
-        {toolCategories.map((category, categoryIndex) => (
-          <div key={categoryIndex} className="category-section">
-            <div className="category-header">
-              <div className="category-icon">{category.icon}</div>
-              <div className="category-info">
-                <h2 className="category-title">{category.title}</h2>
-                <p className="category-description">{category.description}</p>
-              </div>
-            </div>
-            
-            <div className="tools-grid">
-              {category.tools.map((tool, toolIndex) => (
-                <div
-                  key={toolIndex}
-                  className="tool-card"
-                  onClick={() => handleToolClick(tool.id)}
-                >
-                  <div className={`tool-card-bg ${tool.color}`}></div>
-                  <div className="tool-card-content">
-                    <div className="tool-icon">{tool.icon}</div>
-                    <h3 className="tool-name">{tool.name}</h3>
-                    <p className="tool-description">{tool.description}</p>
-                    <div className="tool-arrow">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M7 17L17 7M17 7H7M17 7V17"/>
-                      </svg>
-                    </div>
+        <div className="tools-grid-compact-all">
+          {displayedCategories.map((category, categoryIndex) =>
+            category.tools.map((tool, toolIndex) => (
+              <div
+                key={`${categoryIndex}-${toolIndex}`}
+                className="tool-card-compact"
+                onClick={() => handleToolClick(tool.id)}
+              >
+                <div className="tool-card-content-compact">
+                  <div className="tool-icon-compact">{tool.icon}</div>
+                  <div className="tool-info-compact">
+                    <h3 className="tool-name-compact">{tool.name}</h3>
+                    <p className="tool-description-compact">{tool.description}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        ))}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Footer del Dashboard */}
