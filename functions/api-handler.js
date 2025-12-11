@@ -27,7 +27,110 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // ENDPOINTS DE AUTENTICACIÓN
 // =====================================================
 
-// Login endpoint
+// Login endpoint (alias para compatibilidad)
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Basic validation
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Email and password are required'
+    });
+  }
+  
+  try {
+    // Consultar usuario en la tabla real de Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      console.error('Error querying user:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+    
+    // Verificar contraseña (compatible con hash y texto plano)
+    let passwordMatch = false;
+    
+    try {
+      // Primero intentar con bcrypt (para contraseñas hasheadas)
+      const bcrypt = require('bcrypt');
+      passwordMatch = await bcrypt.compare(password, user.password_hash);
+    } catch (bcryptError) {
+      // Si falla bcrypt (probablemente porque es texto plano), comparar directamente
+      console.log('🔍 DEBUG - bcrypt falló, comparando texto plano...');
+      passwordMatch = password === user.password_hash;
+    }
+    
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+    
+    // Actualizar last_login
+    await supabase
+      .from('users')
+      .update({
+        last_login: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+    
+    // Formatear respuesta del usuario
+    const userSession = {
+      id: user.id,
+      email: user.email,
+      username: user.username || user.email.split('@')[0],
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role || 'user',
+      subscriptionTier: user.subscription_tier || 'free',
+      apiUsageLimit: user.api_usage_limit || 100,
+      monthlyApiCount: user.monthly_api_count || 0,
+      storageQuotaMb: user.storage_quota_mb || 100,
+      storageUsedMb: user.storage_used_mb || 0,
+      isActive: user.is_active,
+      emailVerified: user.email_verified,
+      lastLogin: user.last_login,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      userIntId: user.user_int_id,
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        user: userSession,
+        token: 'token-' + Date.now() + '-' + user.id,
+        message: 'Login successful'
+      }
+    });
+  } catch (error) {
+    console.error('Error in login:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+// Login endpoint (alias para compatibilidad)
 app.post('/api/auth/signin', async (req, res) => {
   const { email, password } = req.body;
   
@@ -63,9 +166,20 @@ app.post('/api/auth/signin', async (req, res) => {
       });
     }
     
-    // En producción, aquí validarías el password_hash
-    // Por ahora, aceptamos cualquier password para demo
-    if (user.password_hash !== password) {
+    // Verificar contraseña (compatible con hash y texto plano)
+    let passwordMatch = false;
+    
+    try {
+      // Primero intentar con bcrypt (para contraseñas hasheadas)
+      const bcrypt = require('bcrypt');
+      passwordMatch = await bcrypt.compare(password, user.password_hash);
+    } catch (bcryptError) {
+      // Si falla bcrypt (probablemente porque es texto plano), comparar directamente
+      console.log('🔍 DEBUG - bcrypt falló, comparando texto plano...');
+      passwordMatch = password === user.password_hash;
+    }
+    
+    if (!passwordMatch) {
       return res.status(401).json({
         success: false,
         error: 'Invalid credentials'
@@ -85,9 +199,9 @@ app.post('/api/auth/signin', async (req, res) => {
     const userSession = {
       id: user.id,
       email: user.email,
-      name: user.first_name && user.last_name
-        ? `${user.first_name} ${user.last_name}`
-        : user.username || user.email.split('@')[0],
+      username: user.username || user.email.split('@')[0],
+      firstName: user.first_name,
+      lastName: user.last_name,
       role: user.role || 'user',
       subscriptionTier: user.subscription_tier || 'free',
       apiUsageLimit: user.api_usage_limit || 100,
