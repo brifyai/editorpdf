@@ -9,6 +9,12 @@ require('dotenv').config();
 const express = require('express');
 const serverless = require('serverless-http');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
+
+// Configurar cliente de Supabase
+const supabaseUrl = process.env.SUPABASE_URL || 'https://zolffzfbxkgiozfbbjnm.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvbGZmemZieGtnaW96ZmJiam5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwNzQ2MTksImV4cCI6MjA4MDY1MDYxOX0.1iX0EZXQv8T-jdJJYHwXaDX0CK5xvlpUZui_E7zifq0';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 
@@ -22,7 +28,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // =====================================================
 
 // Login endpoint
-app.post('/api/auth/signin', (req, res) => {
+app.post('/api/auth/signin', async (req, res) => {
   const { email, password } = req.body;
   
   // Basic validation
@@ -33,26 +39,88 @@ app.post('/api/auth/signin', (req, res) => {
     });
   }
   
-  // For demo purposes, accept any credentials
-  const user = {
-    id: 'demo-user-123',
-    email: email,
-    name: 'Demo User',
-    role: 'user'
-  };
-  
-  res.json({
-    success: true,
-    data: {
-      user: user,
-      token: 'demo-token-' + Date.now(),
-      message: 'Login successful'
+  try {
+    // Consultar usuario en la tabla real de Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      console.error('Error querying user:', error);
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
     }
-  });
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+    
+    // En producción, aquí validarías el password_hash
+    // Por ahora, aceptamos cualquier password para demo
+    if (user.password_hash !== password) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid credentials'
+      });
+    }
+    
+    // Actualizar last_login
+    await supabase
+      .from('users')
+      .update({
+        last_login: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+    
+    // Formatear respuesta del usuario
+    const userSession = {
+      id: user.id,
+      email: user.email,
+      name: user.first_name && user.last_name
+        ? `${user.first_name} ${user.last_name}`
+        : user.username || user.email.split('@')[0],
+      role: user.role || 'user',
+      subscriptionTier: user.subscription_tier || 'free',
+      apiUsageLimit: user.api_usage_limit || 100,
+      monthlyApiCount: user.monthly_api_count || 0,
+      storageQuotaMb: user.storage_quota_mb || 100,
+      storageUsedMb: user.storage_used_mb || 0,
+      isActive: user.is_active,
+      emailVerified: user.email_verified,
+      lastLogin: user.last_login,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+      userIntId: user.user_int_id,
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        user: userSession,
+        token: 'token-' + Date.now() + '-' + user.id,
+        message: 'Login successful'
+      }
+    });
+  } catch (error) {
+    console.error('Error in signin:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
 });
 
 // Register endpoint
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
   const { email, password, name } = req.body;
   
   // Basic validation
@@ -63,22 +131,98 @@ app.post('/api/auth/signup', (req, res) => {
     });
   }
   
-  // For demo purposes, create a user
-  const user = {
-    id: 'demo-user-' + Date.now(),
-    email: email,
-    name: name,
-    role: 'user'
-  };
-  
-  res.json({
-    success: true,
-    data: {
-      user: user,
-      token: 'demo-token-' + Date.now(),
-      message: 'Registration successful'
+  try {
+    // Verificar si el email ya existe
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+    
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email already registered'
+      });
     }
-  });
+    
+    // Obtener el próximo user_int_id
+    const { data: lastUser } = await supabase
+      .from('users')
+      .select('user_int_id')
+      .order('user_int_id', { ascending: false })
+      .limit(1)
+      .single();
+    
+    const nextUserIntId = (lastUser?.user_int_id || 0) + 1;
+    
+    // Crear nuevo usuario
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        email: email,
+        password_hash: password, // En producción, hashear la password
+        first_name: name.split(' ')[0] || name,
+        last_name: name.split(' ').slice(1).join(' ') || null,
+        role: 'user',
+        subscription_tier: 'free',
+        api_usage_limit: 100,
+        monthly_api_count: 0,
+        storage_quota_mb: 100,
+        storage_used_mb: 0,
+        preferences: {},
+        is_active: true,
+        email_verified: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_int_id: nextUserIntId,
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating user:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Error creating user'
+      });
+    }
+    
+    // Formatear respuesta del usuario
+    const userSession = {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.first_name && newUser.last_name
+        ? `${newUser.first_name} ${newUser.last_name}`
+        : newUser.username || newUser.email.split('@')[0],
+      role: newUser.role || 'user',
+      subscriptionTier: newUser.subscription_tier || 'free',
+      apiUsageLimit: newUser.api_usage_limit || 100,
+      monthlyApiCount: newUser.monthly_api_count || 0,
+      storageQuotaMb: newUser.storage_quota_mb || 100,
+      storageUsedMb: newUser.storage_used_mb || 0,
+      isActive: newUser.is_active,
+      emailVerified: newUser.email_verified,
+      createdAt: newUser.created_at,
+      updatedAt: newUser.updated_at,
+      userIntId: newUser.user_int_id,
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        user: userSession,
+        token: 'token-' + Date.now() + '-' + newUser.id,
+        message: 'Registration successful'
+      }
+    });
+  } catch (error) {
+    console.error('Error in signup:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
 });
 
 // Logout endpoint
