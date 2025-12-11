@@ -1,26 +1,23 @@
 .dashboard-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   padding: 0;
   margin: 0;
 }
 
 /* Header del Dashboard */
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 0;
-  margin-bottom: 0.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
 }
 
 /* Navegación Rápida de Categorías */
 .category-navigation {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1rem 0;
-  margin-bottom: 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
 }
 
 .nav-buttons-container {
@@ -34,12 +31,11 @@
 }
 
 .nav-category-btn {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 25px;
   padding: 0.75rem 1.25rem;
-  color: white;
+  color: #1a202c;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -51,10 +47,10 @@
 }
 
 .nav-category-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #e2e8f0;
+  border-color: #cbd5e0;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .nav-category-btn:active {
@@ -80,7 +76,7 @@
 .dashboard-title {
   font-size: 2rem;
   font-weight: 700;
-  color: white;
+  color: #1a202c;
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
 }
@@ -94,7 +90,7 @@
 
 .dashboard-subtitle {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #4a5568;
   margin: 0;
   font-weight: 400;
 }
@@ -106,9 +102,8 @@
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 0.75rem 1rem;
   display: flex;
@@ -120,7 +115,7 @@
 
 .stat-card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.2);
+  background: #e2e8f0;
 }
 
 .stat-icon {
@@ -134,13 +129,13 @@
 .stat-number {
   font-size: 1.1rem;
   font-weight: 700;
-  color: white;
+  color: #1a202c;
   line-height: 1;
 }
 
 .stat-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #4a5568;
   margin-top: 0.25rem;
 }
 
@@ -171,9 +166,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
 }
 
 .category-info {
@@ -183,13 +178,13 @@
 .category-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: white;
+  color: #1a202c;
   margin: 0 0 0.25rem 0;
 }
 
 .category-description {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #4a5568;
   margin: 0;
 }
 
@@ -212,9 +207,8 @@
 /* Tarjetas de Herramientas Compactas */
 .tool-card-compact {
   position: relative;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 0.75rem;
   cursor: pointer;
@@ -228,9 +222,9 @@
 
 .tool-card-compact:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e0;
+  background: #f8fafc;
 }
 
 .tool-card-content-compact {
@@ -257,7 +251,7 @@
 .tool-name-compact {
   font-size: 0.9rem;
   font-weight: 600;
-  color: white;
+  color: #1a202c;
   margin: 0 0 0.25rem 0;
   line-height: 1.2;
   white-space: nowrap;
@@ -267,7 +261,7 @@
 
 .tool-description-compact {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #4a5568;
   margin: 0;
   line-height: 1.3;
   display: -webkit-box;
@@ -283,7 +277,7 @@
 }
 
 .category-header:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: #f8fafc;
   border-radius: 12px;
   padding: 0.5rem;
   margin: -0.5rem;
@@ -376,11 +370,10 @@
 
 /* Footer del Dashboard */
 .dashboard-footer {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2rem 0;
-  margin-top: 4rem;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 1.5rem 0;
+  margin-top: 2rem;
 }
 
 .footer-content {
@@ -397,12 +390,12 @@
 .footer-info h3 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: white;
+  color: #1a202c;
   margin: 0 0 0.5rem 0;
 }
 
 .footer-info p {
-  color: rgba(255, 255, 255, 0.7);
+  color: #4a5568;
   margin: 0;
 }
 
@@ -416,7 +409,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #4a5568;
   font-size: 0.9rem;
 }
 

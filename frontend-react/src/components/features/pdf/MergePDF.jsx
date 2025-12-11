@@ -3,6 +3,7 @@ import { Upload, FileText, Download, X, MoveUp, MoveDown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
+import { getRealMetrics } from '../../../services/database';
 import './MergePDF.css';
 
 const MergePDF = () => {
@@ -10,6 +11,17 @@ const MergePDF = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { showSuccess, showError } = useSweetAlert();
+
+  // Función para actualizar las estadísticas en tiempo real
+  const updateStatistics = async () => {
+    try {
+      console.log('📊 Actualizando estadísticas después de procesar PDF...');
+      await getRealMetrics();
+      console.log('✅ Estadísticas actualizadas');
+    } catch (error) {
+      console.warn('⚠️ Error actualizando estadísticas:', error);
+    }
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -48,7 +60,7 @@ const MergePDF = () => {
     addFiles(pdfFiles);
   };
 
-  const addFiles = (newFiles) => {
+  const addFiles = async (newFiles) => {
     const filesWithId = newFiles.map((file, index) => ({
       id: Date.now() + index,
       file,
@@ -58,6 +70,9 @@ const MergePDF = () => {
     }));
     
     setFiles(prev => [...prev, ...filesWithId]);
+    
+    // Actualizar estadísticas cuando se agregan archivos
+    await updateStatistics();
   };
 
   const removeFile = (id) => {
@@ -166,11 +181,14 @@ const MergePDF = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     
-    console.log('✅ PDF combinado descargado con PDF-lib');
-    showSuccess('¡Éxito!', `Los ${files.length} documentos han sido unidos correctamente (PDF-lib)`);
-    setFiles([]);
+    // Esperar un momento y luego mostrar mensaje de descarga completada
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      console.log('✅ PDF combinado descargado con PDF-lib');
+      showSuccess('¡Descarga Completada!', `Los ${files.length} documentos han sido unidos y descargados correctamente`);
+      setFiles([]);
+    }, 500); // Pequeña espera para asegurar que la descarga inicie
   };
 
   // Función para unir con jsPDF (fallback)
@@ -219,11 +237,17 @@ const MergePDF = () => {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     
-    console.log('✅ PDF de unión descargado con jsPDF');
-    showSuccess('¡Éxito!', `Se ha creado un PDF de unión con jsPDF (fallback)`);
-    setFiles([]);
+    // Esperar un momento y luego mostrar mensaje de descarga completada
+    setTimeout(async () => {
+      URL.revokeObjectURL(url);
+      console.log('✅ PDF de unión descargado con jsPDF');
+      showSuccess('¡Descarga Completada!', `Se ha creado un PDF de unión y descargado correctamente (jsPDF)`);
+      setFiles([]);
+      
+      // Actualizar estadísticas después de procesar
+      await updateStatistics();
+    }, 500); // Pequeña espera para asegurar que la descarga inicie
   };
 
   return (

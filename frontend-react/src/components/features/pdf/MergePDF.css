@@ -2,6 +2,8 @@
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  background: #ffffff;
+  border-radius: 12px;
 }
 
 .merge-pdf-header {
@@ -10,28 +12,30 @@
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  color: white;
+  color: #1a202c;
 }
 
 .header-icon {
   font-size: 3rem;
-  background: rgba(255, 255, 255, 0.2);
+  background: #f8fafc;
   padding: 1rem;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
+  color: #667eea;
 }
 
 .header-content h1 {
   margin: 0 0 0.5rem 0;
   font-size: 2rem;
   font-weight: 700;
+  color: #1a202c;
 }
 
 .header-content p {
   margin: 0;
-  opacity: 0.9;
+  color: #4a5568;
   font-size: 1.1rem;
 }
 
@@ -81,8 +85,8 @@
 }
 
 .select-files-btn {
-  background: #667eea;
-  color: white;
+  background: #667eea !important;
+  color: #ffffff !important;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -92,8 +96,13 @@
 }
 
 .select-files-btn:hover {
-  background: #5a67d8;
+  background: #5a67d8 !important;
+  color: #ffffff !important;
   transform: translateY(-2px);
+}
+
+.select-files-btn:focus {
+  color: #ffffff !important;
 }
 
 /* Lista de archivos */
@@ -126,6 +135,7 @@
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   transition: all 0.3s ease;
+  min-height: 60px; /* Asegurar altura consistente */
 }
 
 .file-item:hover {
@@ -138,6 +148,7 @@
   align-items: center;
   gap: 0.75rem;
   flex: 1;
+  min-width: 0; /* Permitir que el contenido se encoja */
 }
 
 .file-icon {
@@ -149,11 +160,18 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0; /* Permitir que el texto se encoja */
+  flex: 1;
 }
 
 .file-name {
   font-weight: 600;
   color: #2d3748;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px; /* Aumentar el ancho máximo para nombres largos */
+  display: inline-block;
 }
 
 .file-size {
@@ -169,7 +187,7 @@
 
 .file-order {
   background: #667eea;
-  color: white;
+  color: #ffffff !important;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -220,8 +238,8 @@
 }
 
 .merge-btn {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-  color: white;
+  background: #667eea !important;
+  color: #ffffff !important;
   border: none;
   padding: 1rem 2rem;
   border-radius: 12px;
@@ -232,12 +250,29 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .merge-btn:hover:not(:disabled) {
+  background: #5a67d8 !important;
+  color: #ffffff !important;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.merge-btn:focus {
+  color: #ffffff !important;
+}
+
+/* Asegurar que el icono SVG también sea blanco */
+.merge-btn svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.merge-btn:hover:not(:disabled) svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .merge-btn:disabled {

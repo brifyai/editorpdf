@@ -363,40 +363,32 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Header del Dashboard */}
-      <div className="dashboard-header">
-        <div className="header-content">
-          <div className="welcome-section">
-          </div>
-        </div>
-      </div>
-
       {/* Navegación Rápida de Categorías */}
       <div className="category-navigation">
         <div className="nav-buttons-container">
           <button className="nav-category-btn" onClick={() => handleCategoryClick('combine-organize')}>
-            📚 Combinar y Organizar
+            Combinar y Organizar
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('optimize-compress')}>
-            ⚡ Optimizar y Comprimir
+            Optimizar y Comprimir
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('convert-to-pdf')}>
-            ➡️ Convertir a PDF
+            Convertir a PDF
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('convert-from-pdf')}>
-            ⬅️ Convertir desde PDF
+            Convertir desde PDF
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('edit-customize')}>
-            ✏️ Editar y Personalizar
+            Editar y Personalizar
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('security-management')}>
-            🔒 Gestión y Seguridad
+            Gestión y Seguridad
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('specialized-processing')}>
-            🔬 Procesamiento Especializado
+            Procesamiento Especializado
           </button>
           <button className="nav-category-btn" onClick={() => handleCategoryClick('ai-analysis')}>
-            🤖 Análisis con Inteligencia Artificial
+            Análisis con Inteligencia Artificial
           </button>
         </div>
       </div>

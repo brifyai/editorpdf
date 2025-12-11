@@ -270,19 +270,27 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     try {
       setLoadingMetrics(true);
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/metrics`);
+      console.log('🔄 Cargando métricas desde el frontend...');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/metrics`);
       const data = await response.json();
       
+      console.log('📊 Respuesta del servidor:', data);
+      
       if (data.success && data.data) {
-        setMetrics({
+        const newMetrics = {
           totalRequests: data.data.totalRequests || 0,
           successRate: data.data.successRate || 0,
           activeModels: data.data.activeModels || 0,
           averageResponseTime: data.data.averageResponseTime || 0
-        });
+        };
+        
+        console.log('✅ Nuevas métricas establecidas:', newMetrics);
+        setMetrics(newMetrics);
+      } else {
+        console.warn('⚠️ Respuesta sin éxito o sin datos:', data);
       }
     } catch (error) {
-      console.error('Error cargando métricas:', error);
+      console.error('❌ Error cargando métricas:', error);
     } finally {
       setLoadingMetrics(false);
     }
@@ -293,16 +301,22 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     let timeoutId;
     let isCancelled = false;
 
-    // Carga inicial con debounce
+    // Carga inicial inmediata sin debounce para depuración
+    console.log('🚀 Iniciando carga de métricas...');
+    loadMetrics();
+    
+    // También cargar después de 2 segundos para asegurar actualización
     timeoutId = setTimeout(() => {
       if (!isCancelled) {
+        console.log('🔄 Recargando métricas después de 2 segundos...');
         loadMetrics();
       }
-    }, 1000);
+    }, 2000);
     
     // Actualizar métricas cada 5 minutos
     const interval = setInterval(() => {
       if (!isCancelled) {
+        console.log('⏰ Actualización programada de métricas...');
         loadMetrics();
       }
     }, 300000);

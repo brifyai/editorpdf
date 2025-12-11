@@ -1677,37 +1677,6 @@ const SplitPDF = () => {
                   <p>Total de páginas: {totalPages}</p>
                   <p>Páginas seleccionadas: {selectedPages.length}</p>
                   
-                  {/* Indicador de estado de EmbedPDF */}
-                  <div className="html2canvas-enabled-notice">
-                    <p className="notice-text">
-                      ✅ Vistas previas profesionales con EmbedPDF
-                    </p>
-                    <p className="notice-subtext">
-                      Usando EmbedPDF con motor PDFium para generar vistas previas reales de las {totalPages} páginas.
-                    </p>
-                  </div>
-                  
-                  {/* Botón de generación forzada */}
-                  <div className="force-generation">
-                    <button
-                      className="force-preview-btn"
-                      onClick={() => forceGeneratePreviews()}
-                      disabled={loadingPreviews}
-                    >
-                      {loadingPreviews ? `⚡ Generando (${Object.keys(pagePreviews).length}/${totalPages})...` : `⚡ Generar Todas las Vistas Previas (${totalPages} páginas)`}
-                    </button>
-                  </div>
-                  
-                  {totalPages > 50 && (
-                    <div className="large-document-notice">
-                      <p className="notice-text">
-                        📄 Documento con {totalPages} páginas
-                      </p>
-                      <p className="notice-subtext">
-                        Las vistas previas se generan instantáneamente al hacer clic en cada página. Optimizado para velocidad máxima.
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="pages-grid">
@@ -1746,7 +1715,6 @@ const SplitPDF = () => {
                               title="Clic para vista previa instantánea"
                             >
                               <FileText size={24} />
-                              <span>⚡ Página {pageNumber}</span>
                             </div>
                           )}
                         </div>
