@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, FileText, Download, X, Scissors, Settings, Plus, Minus, Crown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
+import { PDFDocument } from 'pdf-lib';
 import EnhancedPDFPreview from './EnhancedPDFPreview';
 import ProfessionalPDFViewer from './ProfessionalPDFViewer';
 import PDFMarqueeCapture from './PDFMarqueeCapture';
@@ -1386,30 +1387,76 @@ const SplitPDF = () => {
     setIsProcessing(true);
     
     try {
-      // Simular procesamiento
-      await new Promise(resolve => setTimeout(resolve, 4000));
+      console.log('🔄 Iniciando procesamiento REAL de PDF con PDF-lib...');
+      
+      // Cargar el PDF original
+      const existingPdfBytes = await file.file.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      
+      console.log(`📄 PDF cargado: ${pdfDoc.getPageCount()} páginas`);
       
       const fileName = file.name.replace('.pdf', '');
       const splitCount = rangesToProcess.length;
+      let processedCount = 0;
       
+      // Procesar cada rango
       for (let i = 0; i < splitCount; i++) {
-        const splitPdf = new Blob([`PDF separado ${rangesToProcess[i]} simulado`], { type: 'application/pdf' });
-        const url = URL.createObjectURL(splitPdf);
+        const range = rangesToProcess[i];
+        console.log(`📋 Procesando rango: ${range}`);
+        
+        // Parsear el rango (ej: "1-5" o "3-3")
+        const [startStr, endStr] = range.split('-');
+        const startPage = parseInt(startStr);
+        const endPage = parseInt(endStr);
+        
+        // Validar rango
+        if (startPage < 1 || endPage > pdfDoc.getPageCount() || startPage > endPage) {
+          console.warn(`⚠️ Rango inválido: ${range}, saltando...`);
+          continue;
+        }
+        
+        // Crear un nuevo PDF para este rango
+        const newPdfDoc = await PDFDocument.create();
+        
+        // Copiar las páginas del rango
+        const pagesToCopy = [];
+        for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+          const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [pageNum - 1]); // PDF-lib usa 0-based index
+          pagesToCopy.push(copiedPage);
+        }
+        
+        // Agregar las páginas copiadas al nuevo PDF
+        pagesToCopy.forEach(page => newPdfDoc.addPage(page));
+        
+        // Guardar el nuevo PDF
+        const newPdfBytes = await newPdfDoc.save();
+        
+        // Crear blob y descargar
+        const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${fileName}_pagina_${rangesToProcess[i]}.pdf`;
+        a.download = `${fileName}_paginas_${range.replace('-', '_al_')}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        
+        processedCount++;
+        console.log(`✅ Rango ${range} procesado y descargado`);
       }
       
-      showSuccess('¡Éxito!', `El documento ha sido separado en ${splitCount} archivos`);
-      removeFile();
+      if (processedCount > 0) {
+        showSuccess('¡Éxito!', `El documento ha sido separado en ${processedCount} archivos correctamente`);
+        removeFile();
+      } else {
+        showError('Error', 'No se pudo procesar ningún rango válido');
+      }
       
     } catch (error) {
-      showError('Error', 'No se pudo separar el documento');
+      console.error('❌ Error procesando PDF:', error);
+      showError('Error', `No se pudo separar el documento: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
