@@ -1,0 +1,22 @@
+{
+  "name": "editorpdf-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Document Analyzer",
+  "main": "api-handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "serverless-http": "^3.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "netlify",
+    "functions",
+    "document-analyzer"
+  ],
+  "author": "Document Analyzer Team",
+  "license": "MIT"
+}
