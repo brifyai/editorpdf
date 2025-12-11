@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Upload, FileText, Download, X, Scissors, Settings, Plus, Minus, Crown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
+import * as pdfjsLib from 'pdfjs-dist';
 import './SplitPDF.css';
+
+// Configurar worker de PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const SplitPDF = () => {
   const [file, setFile] = useState(null);
@@ -16,6 +20,8 @@ const SplitPDF = () => {
   const [rangeEnd, setRangeEnd] = useState('');
   const [selectedPages, setSelectedPages] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
+  const [pagePreviews, setPagePreviews] = useState({});
+  const [loadingPreviews, setLoadingPreviews] = useState(false);
   const { showSuccess, showError } = useSweetAlert();
 
   const handleDragOver = (e) => {
@@ -64,6 +70,7 @@ const SplitPDF = () => {
     };
     
     setFile(fileData);
+    setLoadingPreviews(true);
     
     // Obtener el número total de páginas del PDF
     try {
@@ -72,8 +79,21 @@ const SplitPDF = () => {
       // Inicializar con todas las páginas seleccionadas por defecto
       const allPages = Array.from({ length: total }, (_, i) => i + 1);
       setSelectedPages(allPages);
+      
+      // Generar vistas previas para todas las páginas
+      const previews = {};
+      for (let i = 1; i <= total; i++) {
+        const preview = await generatePagePreview(selectedFile, i);
+        if (preview) {
+          previews[i] = preview;
+        }
+      }
+      setPagePreviews(previews);
+      
     } catch (error) {
       showError('Error', 'No se pudo leer el archivo PDF');
+    } finally {
+      setLoadingPreviews(false);
     }
   };
 
@@ -84,6 +104,8 @@ const SplitPDF = () => {
     setFixedRanges([]);
     setSelectedPages([]);
     setTotalPages(0);
+    setPagePreviews({});
+    setLoadingPreviews(false);
   };
 
   const formatFileSize = (bytes) => {
@@ -94,11 +116,45 @@ const SplitPDF = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Función para simular obtener el número total de páginas del PDF
+  // Función para obtener el número real de páginas del PDF
   const getTotalPages = async (file) => {
-    // En una implementación real, aquí se analizaría el PDF
-    // Por ahora simulamos un PDF con 10 páginas
-    return 10;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      return pdf.numPages;
+    } catch (error) {
+      console.error('Error leyendo PDF:', error);
+      showError('Error', 'No se pudo leer el archivo PDF');
+      return 0;
+    }
+  };
+
+  // Función para generar vista previa de una página específica
+  const generatePagePreview = async (file, pageNumber) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(pageNumber);
+      
+      const scale = 0.5; // Escala reducida para vista previa
+      const viewport = page.getViewport({ scale });
+      
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+      };
+      
+      await page.render(renderContext).promise;
+      return canvas.toDataURL();
+    } catch (error) {
+      console.error('Error generando vista previa:', error);
+      return null;
+    }
   };
 
   // Función para manejar la selección de páginas individuales
@@ -430,21 +486,44 @@ const SplitPDF = () => {
                 </div>
 
                 <div className="pages-grid">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
-                    <div
-                      key={pageNumber}
-                      className={`page-item ${selectedPages.includes(pageNumber) ? 'selected' : ''}`}
-                      onClick={() => togglePageSelection(pageNumber)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedPages.includes(pageNumber)}
-                        onChange={() => togglePageSelection(pageNumber)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <span>Página {pageNumber}</span>
+                  {loadingPreviews ? (
+                    <div className="loading-previews">
+                      <div className="spinner"></div>
+                      <p>Cargando vistas previas...</p>
                     </div>
-                  ))}
+                  ) : (
+                    Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
+                      <div
+                        key={pageNumber}
+                        className={`page-item ${selectedPages.includes(pageNumber) ? 'selected' : ''}`}
+                        onClick={() => togglePageSelection(pageNumber)}
+                      >
+                        <div className="page-preview-container">
+                          {pagePreviews[pageNumber] ? (
+                            <img
+                              src={pagePreviews[pageNumber]}
+                              alt={`Página ${pageNumber}`}
+                              className="page-preview-image"
+                            />
+                          ) : (
+                            <div className="page-preview-placeholder">
+                              <FileText size={24} />
+                              <span>Página {pageNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="page-selection-overlay">
+                          <input
+                            type="checkbox"
+                            checked={selectedPages.includes(pageNumber)}
+                            onChange={() => togglePageSelection(pageNumber)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="page-number-label">Página {pageNumber}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
