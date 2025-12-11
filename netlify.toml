@@ -176,9 +176,8 @@
 # CONFIGURACIÓN DE PLUGINS
 # =====================================================
 
-# Plugin para manejar variables de entorno
-[[plugins]]
-  package = "@netlify/plugin-functions-core"
+# Nota: No se requieren plugins externos para Netlify Functions
+# Las funciones se manejan automáticamente con serverless-http
 
 # =====================================================
 # CONFIGURACIÓN DE EDGE FUNCTIONS (OPCIONAL)
