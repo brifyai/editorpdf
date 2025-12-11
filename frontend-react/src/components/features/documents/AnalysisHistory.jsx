@@ -170,6 +170,9 @@ const AnalysisHistory = () => {
           aiModel: analysis.ai_model_used || 'Desconocido',
           // URLs de descarga desde diferentes fuentes
           storageUrl: analysis.storageUrl || analysis.documents?.file_path || analysis.file_path || analysis.metadata?.storage_url,
+          // Información adicional para mejor UX
+          processingType: analysis.analysis_type || 'document',
+          hasAI: analysis.ai_model_used && analysis.ai_model_used !== 'none',
           // Información adicional para debugging
           _rawData: analysis // Mantener datos originales para debugging
         };
@@ -346,6 +349,28 @@ const AnalysisHistory = () => {
           <div className="header-text">
             <h1>Historial de Análisis</h1>
             <p>Revisa todos tus análisis anteriores y su estado</p>
+            <div className="header-actions">
+              <button
+                className="action-btn primary"
+                onClick={() => window.location.href = '/'}
+                title="Ir a análisis de documentos"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Nuevo Análisis
+              </button>
+              <button
+                className="action-btn secondary"
+                onClick={() => window.location.href = '/ai-config'}
+                title="Configurar IA"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Configurar IA
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -386,6 +411,91 @@ const AnalysisHistory = () => {
             <option value="name">Ordenar por nombre</option>
             <option value="size">Ordenar por tamaño</option>
           </select>
+        </div>
+      </div>
+
+      {/* Sección de ayuda y orientación */}
+      <div className="help-section" style={{
+        maxWidth: '1200px',
+        margin: '0 auto 2rem auto',
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '12px',
+        padding: '1.5rem',
+        animation: 'fadeInUp 0.6s ease-out 0.3s both'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981' }}>
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+            <path d="M12 17h.01"/>
+          </svg>
+          <h3 style={{ margin: 0, color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
+            ¿Qué puedes hacer aquí?
+          </h3>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1rem',
+          color: 'rgba(255, 255, 255, 0.8)',
+          fontSize: '0.9rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
+              <path d="M9 12l2 2 4-4"/>
+              <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+            </svg>
+            <div>
+              <strong style={{ color: 'white' }}>Ver Detalles:</strong> Haz clic en "Ver detalles" para obtener información completa del análisis, incluyendo métricas de confianza y modelo utilizado.
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <path d="M7 10l5 5 5-5"/>
+              <path d="M12 15V3"/>
+            </svg>
+            <div>
+              <strong style={{ color: 'white' }}>Descargar:</strong> Usa el botón "Descargar" para obtener el archivo original desde Supabase Storage.
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            <div>
+              <strong style={{ color: 'white' }}>Nuevo Análisis:</strong> Haz clic en "Nuevo Análisis" para subir y analizar más documentos con IA.
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
+              <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <div>
+              <strong style={{ color: 'white' }}>Configurar IA:</strong> Ve a "Configurar IA" para ajustar modelos, API keys y parámetros de análisis.
+            </div>
+          </div>
+        </div>
+        <div style={{
+          marginTop: '1rem',
+          padding: '1rem',
+          background: 'rgba(16, 185, 129, 0.1)',
+          borderRadius: '8px',
+          border: '1px solid rgba(16, 185, 129, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981' }}>
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <strong style={{ color: 'white', fontSize: '0.9rem' }}>Tipos de Análisis:</strong>
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+            <span style={{ color: '#10b981' }}>• Análisis Básico:</span> Extracción de texto y estadísticas simples<br/>
+            <span style={{ color: '#10b981' }}>• IA Avanzada:</span> Análisis con modelos de IA (Llama, Mixtral) para insights profundos<br/>
+            <span style={{ color: '#10b981' }}>• OCR:</span> Reconocimiento óptico de caracteres para imágenes
+          </div>
         </div>
       </div>
 
@@ -443,7 +553,23 @@ const AnalysisHistory = () => {
                     {analysis.aiModel && (
                       <div className="info-item">
                         <span className="info-label">Modelo IA:</span>
-                        <span className="info-value">{analysis.aiModel}</span>
+                        <span className="info-value">
+                          {analysis.aiModel === 'Desconocido' ?
+                            (analysis.hasAI ? 'IA Básica' : 'Análisis Básico') :
+                            analysis.aiModel
+                          }
+                        </span>
+                      </div>
+                    )}
+                    {analysis.processingType && (
+                      <div className="info-item">
+                        <span className="info-label">Tipo:</span>
+                        <span className="info-value">
+                          {analysis.processingType === 'ai_enhanced' ? 'IA Avanzada' :
+                           analysis.processingType === 'advanced' ? 'Análisis Avanzado' :
+                           analysis.processingType === 'ocr' ? 'OCR' :
+                           'Análisis Básico'}
+                        </span>
                       </div>
                     )}
                   </div>
