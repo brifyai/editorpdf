@@ -14,6 +14,8 @@ const SplitPDF = () => {
   const [pagesPerFile, setPagesPerFile] = useState(1);
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
+  const [selectedPages, setSelectedPages] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
   const { showSuccess, showError } = useSweetAlert();
 
   const handleDragOver = (e) => {
@@ -46,7 +48,7 @@ const SplitPDF = () => {
     });
   };
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const selectedFile = e.target.files[0];
     
     if (!selectedFile || selectedFile.type !== 'application/pdf') {
@@ -54,12 +56,25 @@ const SplitPDF = () => {
       return;
     }
     
-    setFile({
+    const fileData = {
       id: Date.now(),
       file: selectedFile,
       name: selectedFile.name,
       size: selectedFile.size
-    });
+    };
+    
+    setFile(fileData);
+    
+    // Obtener el número total de páginas del PDF
+    try {
+      const total = await getTotalPages(selectedFile);
+      setTotalPages(total);
+      // Inicializar con todas las páginas seleccionadas por defecto
+      const allPages = Array.from({ length: total }, (_, i) => i + 1);
+      setSelectedPages(allPages);
+    } catch (error) {
+      showError('Error', 'No se pudo leer el archivo PDF');
+    }
   };
 
   const removeFile = () => {
@@ -67,6 +82,8 @@ const SplitPDF = () => {
     setPageRanges([]);
     setCustomRanges([]);
     setFixedRanges([]);
+    setSelectedPages([]);
+    setTotalPages(0);
   };
 
   const formatFileSize = (bytes) => {
@@ -75,6 +92,35 @@ const SplitPDF = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Función para simular obtener el número total de páginas del PDF
+  const getTotalPages = async (file) => {
+    // En una implementación real, aquí se analizaría el PDF
+    // Por ahora simulamos un PDF con 10 páginas
+    return 10;
+  };
+
+  // Función para manejar la selección de páginas individuales
+  const togglePageSelection = (pageNumber) => {
+    setSelectedPages(prev => {
+      if (prev.includes(pageNumber)) {
+        return prev.filter(p => p !== pageNumber);
+      } else {
+        return [...prev, pageNumber].sort((a, b) => a - b);
+      }
+    });
+  };
+
+  // Función para seleccionar todas las páginas
+  const selectAllPages = () => {
+    const allPages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    setSelectedPages(allPages);
+  };
+
+  // Función para deseleccionar todas las páginas
+  const deselectAllPages = () => {
+    setSelectedPages([]);
   };
 
   const addCustomRange = () => {
@@ -138,7 +184,12 @@ const SplitPDF = () => {
         rangesToProcess = fixedRanges;
         break;
       case 'paginas':
-        rangesToProcess = [`1-${pagesPerFile}`];
+        if (selectedPages.length === 0) {
+          showError('Error', 'Selecciona al menos una página');
+          return;
+        }
+        // Crear rangos para cada página seleccionada
+        rangesToProcess = selectedPages.map(page => `${page}-${page}`);
         break;
       case 'tamano':
         rangesToProcess = ['1-999']; // Por tamaño
@@ -168,7 +219,7 @@ const SplitPDF = () => {
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${fileName}_rango_${rangesToProcess[i]}.pdf`;
+        a.download = `${fileName}_pagina_${rangesToProcess[i]}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -353,18 +404,48 @@ const SplitPDF = () => {
             {/* Configuración de Páginas */}
             {splitMode === 'paginas' && (
               <div className="pages-configuration">
-                <label htmlFor="pages-per-file">Páginas por archivo:</label>
-                <select
-                  id="pages-per-file"
-                  value={pagesPerFile}
-                  onChange={(e) => setPagesPerFile(parseInt(e.target.value))}
-                >
-                  <option value={1}>1 página por archivo</option>
-                  <option value={2}>2 páginas por archivo</option>
-                  <option value={3}>3 páginas por archivo</option>
-                  <option value={5}>5 páginas por archivo</option>
-                  <option value={10}>10 páginas por archivo</option>
-                </select>
+                <div className="pages-header">
+                  <h4>Seleccionar Páginas</h4>
+                  <div className="pages-actions">
+                    <button
+                      type="button"
+                      className="select-all-btn"
+                      onClick={selectAllPages}
+                    >
+                      Seleccionar Todas
+                    </button>
+                    <button
+                      type="button"
+                      className="deselect-all-btn"
+                      onClick={deselectAllPages}
+                    >
+                      Deseleccionar Todas
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="pages-info">
+                  <p>Total de páginas: {totalPages}</p>
+                  <p>Páginas seleccionadas: {selectedPages.length}</p>
+                </div>
+
+                <div className="pages-grid">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
+                    <div
+                      key={pageNumber}
+                      className={`page-item ${selectedPages.includes(pageNumber) ? 'selected' : ''}`}
+                      onClick={() => togglePageSelection(pageNumber)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedPages.includes(pageNumber)}
+                        onChange={() => togglePageSelection(pageNumber)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span>Página {pageNumber}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
