@@ -13,10 +13,10 @@
 
 [build.environment]
   # Versión de Node.js
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   
   # Versión de npm
-  NPM_VERSION = "9"
+  NPM_VERSION = "10"
   
   # Entorno de producción
   NODE_ENV = "production"
