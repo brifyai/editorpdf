@@ -91,7 +91,7 @@ app.get('/api/test-connections', (req, res) => {
 // =====================================================
 
 // Login endpoint
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/signin', (req, res) => {
   const { email, password } = req.body;
   
   // Basic validation
@@ -122,7 +122,7 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 // Register endpoint
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/signup', (req, res) => {
   const { email, password, name } = req.body;
   
   // Basic validation
@@ -152,7 +152,7 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 // Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/signout', (req, res) => {
   res.json({
     success: true,
     data: {
