@@ -16,6 +16,7 @@ import AuthPage from './components/auth/AuthPage';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // LAZY LOADING - Cargar componentes solo cuando se necesiten
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const DocumentAnalysis = React.lazy(() => import('./components/features/documents/DocumentAnalysis'));
 const ImageAnalysis = React.lazy(() => import('./components/features/documents/ImageAnalysis'));
 const AnalysisHistory = React.lazy(() => import('./components/features/documents/AnalysisHistory'));
@@ -109,7 +110,7 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <AppLayout>
             <LazyWrapper>
-              <DocumentAnalysis />
+              <Dashboard />
             </LazyWrapper>
           </AppLayout>
         </ProtectedRoute>

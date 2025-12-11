@@ -159,7 +159,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
               </div>
             </div>
             
-            <button 
+            <button
               className="sidebar-close-premium"
               onClick={onToggle}
               aria-label="Cerrar sidebar"
@@ -168,6 +168,17 @@ const Sidebar = ({ isOpen, onToggle }) => {
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
+            </button>
+          </div>
+
+          {/* Dashboard Navigation */}
+          <div className="sidebar-dashboard-nav">
+            <button
+              className="dashboard-nav-item"
+              onClick={() => handleNavigation('/')}
+            >
+              <div className="dashboard-nav-icon">🏠</div>
+              <span className="dashboard-nav-label">Dashboard Principal</span>
             </button>
           </div>
 

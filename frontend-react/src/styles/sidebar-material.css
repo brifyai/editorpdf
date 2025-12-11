@@ -589,3 +589,96 @@
 .right-sidebar .sidebar-toggle {
   margin-left: auto;
 }
+
+/* ===================================
+   DASHBOARD NAVIGATION STYLES
+   =================================== */
+
+.sidebar-dashboard-nav {
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+}
+
+.dashboard-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-nav-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dashboard-nav-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.dashboard-nav-label {
+  font-weight: 600;
+}
+
+/* Dark theme support for dashboard nav */
+[data-theme='dark'] .sidebar-dashboard-nav {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .dashboard-nav-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+[data-theme='dark'] .dashboard-nav-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Light theme support for dashboard nav */
+[data-theme='light'] .sidebar-dashboard-nav {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .dashboard-nav-item {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1a202c;
+}
+
+[data-theme='light'] .dashboard-nav-item:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-dashboard-nav {
+    padding: 12px 15px;
+  }
+  
+  .dashboard-nav-item {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .dashboard-nav-icon {
+    font-size: 16px;
+    width: 20px;
+  }
+}
