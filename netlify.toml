@@ -9,7 +9,7 @@
   publish = "frontend-react/dist"
   
   # Directorio de funciones serverless
-  functions = "netlify/functions"
+  functions = "functions"
 
 [build.environment]
   # Versión de Node.js
@@ -72,6 +72,12 @@
 [[redirects]]
   from = "/api/get-ai-config/*"
   to = "/.netlify/functions/get-ai-config/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
   status = 200
   force = true
 
