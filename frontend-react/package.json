@@ -22,7 +22,8 @@
     "react-dom": "^19.2.0",
     "react-dropzone": "^14.3.8",
     "react-hot-toast": "^2.6.0",
-    "react-router-dom": "^7.10.1"
+    "react-router-dom": "^7.10.1",
+    "sweetalert2": "^11.26.4"
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",

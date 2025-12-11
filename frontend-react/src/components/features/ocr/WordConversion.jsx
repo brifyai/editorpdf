@@ -45,11 +45,11 @@ const WordConversion = () => {
   const handleFiles = useCallback((newFiles) => {
     const validFiles = newFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG, PNG, WebP y TIFF.`);
+        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG, PNG, WebP y TIFF.`);
         return false;
       }
       if (file.size > maxFileSize) {
-        alert(`El archivo ${file.name} es demasiado grande. El tamaño máximo es 15MB.`);
+        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 15MB.`);
         return false;
       }
       return true;

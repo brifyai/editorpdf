@@ -1,9 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './DocumentAnalysis.css';
 
 const DocumentAnalysis = () => {
   const { user } = useAuth();
+  const { showError, showSuccess, showWarning, showInfo } = useSweetAlert();
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -45,13 +47,13 @@ const DocumentAnalysis = () => {
       }
     } catch (error) {
       console.error('Error en característica:', error);
-      alert('Error al procesar la característica: ' + error.message);
+      showError('Error', 'Error al procesar la característica: ' + error.message);
     }
   };
 
   const performSmartAnalysis = async () => {
     if (files.length === 0) {
-      alert('Por favor, sube primero un documento para analizar');
+      showWarning('Archivo requerido', 'Por favor, sube primero un documento para analizar');
       return;
     }
     
@@ -83,18 +85,17 @@ const DocumentAnalysis = () => {
       const result = await response.json();
       
       if (result.success) {
-        alert('✅ Análisis inteligente completado\\n\\n' +
-              '• Texto extraído y procesado\\n' +
-              '• Tablas identificadas y estructuradas\\n' +
-              '• Datos clave extraídos automáticamente\\n' +
-              '• Análisis de contenido completado');
+        showSuccess(
+          'Análisis inteligente completado',
+          '✅ Texto extraído y procesado\n✅ Tablas identificadas y estructuradas\n✅ Datos clave extraídos automáticamente\n✅ Análisis de contenido completado'
+        );
       } else {
         throw new Error(result.error?.message || 'Error en el análisis');
       }
       
     } catch (error) {
       console.error('Error en análisis inteligente:', error);
-      alert('❌ Error en análisis inteligente: ' + error.message);
+      showError('Error en análisis', '❌ Error en análisis inteligente: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -103,7 +104,7 @@ const DocumentAnalysis = () => {
 
   const performFastProcessing = async () => {
     if (files.length === 0) {
-      alert('Por favor, sube primero un documento para procesar');
+      showWarning('Archivo requerido', 'Por favor, sube primero un documento para procesar');
       return;
     }
     
@@ -135,18 +136,17 @@ const DocumentAnalysis = () => {
       const result = await response.json();
       
       if (result.success) {
-        alert('⚡ Procesamiento rápido completado\\n\\n' +
-              '• Análisis en segundos\\n' +
-              '• Tecnología IA avanzada\\n' +
-              '• Resultados optimizados\\n' +
-              '• Velocidad máxima');
+        showSuccess(
+          'Procesamiento rápido completado',
+          '⚡ Análisis en segundos\n⚡ Tecnología IA avanzada\n⚡ Resultados optimizados\n⚡ Velocidad máxima'
+        );
       } else {
         throw new Error(result.error?.message || 'Error en el procesamiento');
       }
       
     } catch (error) {
       console.error('Error en procesamiento rápido:', error);
-      alert('❌ Error en procesamiento rápido: ' + error.message);
+      showError('Error en procesamiento', '❌ Error en procesamiento rápido: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -154,17 +154,15 @@ const DocumentAnalysis = () => {
   };
 
   const showMultipleFormats = () => {
-    alert('📄 Múltiples Formatos Disponibles\\n\\n' +
-          '✅ PDF - Documentos portátiles\\n' +
-          '✅ JPG/JPEG - Imágenes comprimidas\\n' +
-          '✅ PNG - Imágenes con transparencia\\n' +
-          '✅ Alta calidad en todos los formatos\\n\\n' +
-          'Arrastra tus archivos o haz clic en "Seleccionar Archivos"');
+    showInfo(
+      'Múltiples Formatos Disponibles',
+      '📄 PDF - Documentos portátiles\n📷 JPG/JPEG - Imágenes comprimidas\n🖼️ PNG - Imágenes con transparencia\n✅ Alta calidad en todos los formatos\n\nArrastra tus archivos o haz clic en "Seleccionar Archivos"'
+    );
   };
 
   const showDetailedResults = async () => {
     if (files.length === 0) {
-      alert('Por favor, sube primero un documento para ver resultados detallados');
+      showWarning('Archivo requerido', 'Por favor, sube primero un documento para ver resultados detallados');
       return;
     }
     
@@ -197,20 +195,17 @@ const DocumentAnalysis = () => {
       
       if (result.success && result.data) {
         const analysis = result.data;
-        alert('📊 Resultados Detallados\\n\\n' +
-              '✅ Análisis completado\\n' +
-              '✅ Informe generado\\n' +
-              '✅ Recomendaciones incluidas\\n' +
-              '✅ Resultados optimizados\\n\\n' +
-              'Tiempo: ' + (analysis.processingTime || 'N/A') + '\\n' +
-              'Confianza: ' + (analysis.confidence || 'N/A') + '%');
+        showSuccess(
+          'Resultados Detallados',
+          `📊 Análisis completado\n📋 Informe generado\n💡 Recomendaciones incluidas\n✅ Resultados optimizados\n\nTiempo: ${analysis.processingTime || 'N/A'}\n🎯 Confianza: ${analysis.confidence || 'N/A'}%`
+        );
       } else {
         throw new Error(result.error?.message || 'Error obteniendo resultados detallados');
       }
       
     } catch (error) {
       console.error('Error en resultados detallados:', error);
-      alert('❌ Error en resultados detallados: ' + error.message);
+      showError('Error en resultados', '❌ Error en resultados detallados: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -243,11 +238,11 @@ const DocumentAnalysis = () => {
   const handleFiles = useCallback((newFiles) => {
     const validFiles = newFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG y PNG.`);
+        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG y PNG.`);
         return false;
       }
       if (file.size > maxFileSize) {
-        alert(`El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
+        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
         return false;
       }
       return true;
@@ -299,16 +294,16 @@ const DocumentAnalysis = () => {
         
         if (result.success) {
           console.log('✅ Análisis completado:', result.data);
-          alert('✅ Análisis completado exitosamente\\n\\n' +
-                '• Documentos procesados con IA\\n' +
-                '• Texto extraído y analizado\\n' +
-                '• Resultados disponibles en el historial');
+          showSuccess(
+            'Análisis completado',
+            '✅ Documentos procesados con IA\n✅ Texto extraído y analizado\n✅ Resultados disponibles en el historial'
+          );
         } else {
           throw new Error(result.error?.message || 'Error en el análisis');
         }
       } catch (error) {
         console.error('❌ Error en el análisis:', error);
-        alert('❌ Error en el análisis: ' + error.message);
+        showError('Error en análisis', '❌ Error en el análisis: ' + error.message);
       } finally {
         setIsUploading(false);
         setUploadProgress(0);
@@ -387,34 +382,23 @@ const DocumentAnalysis = () => {
     
     // Ofrecer opciones al usuario
     setTimeout(() => {
-      const choice = confirm(
-        `✅ ${type === 'inteligente' ? 'Análisis inteligente' :
-           type === 'rápido' ? 'Procesamiento rápido' :
-           type === 'detallado' ? 'Resultados detallados' : 'Análisis'} completado exitosamente!\n\n` +
-        `¿Qué te gustaría hacer ahora?\n\n` +
-        `1. Ver el historial de análisis\n` +
-        `2. Exportar los resultados\n` +
-        `3. Realizar otro análisis\n\n` +
-        `Selecciona una opción:`
-      );
-      
-      if (choice) {
-        const option = prompt(
-          'Elige una opción:\n' +
-          '1. Ver historial\n' +
-          '2. Exportar resultados\n' +
-          '3. Nuevo análisis',
-          '1'
-        );
-        
-        if (option === '1') {
-          window.open('/history', '_blank');
-        } else if (option === '2') {
-          window.open('/export', '_blank');
-        } else if (option === '3') {
-          window.location.reload();
+      showSuccess(
+        `${type === 'inteligente' ? 'Análisis inteligente' :
+         type === 'rápido' ? 'Procesamiento rápido' :
+         type === 'detallado' ? 'Resultados detallados' : 'Análisis'} completado exitosamente!`,
+        '¿Qué te gustaría hacer ahora?\n\n1. Ver el historial de análisis\n2. Exportar los resultados\n3. Realizar otro análisis'
+      ).then((result) => {
+        if (result.isConfirmed) {
+          showInfo(
+            'Opciones disponibles',
+            '1. Ver historial\n2. Exportar resultados\n3. Nuevo análisis'
+          ).then((optionResult) => {
+            if (optionResult.isConfirmed) {
+              window.open('/history', '_blank');
+            }
+          });
         }
-      }
+      });
     }, 2000);
   };
 

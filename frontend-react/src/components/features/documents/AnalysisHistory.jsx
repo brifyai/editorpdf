@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabaseHelpers } from '../../../services/supabase';
 import { supabaseRealHelpers } from '../../../services/supabase-real';
 import { useAuth } from '../../../hooks/useAuth';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './AnalysisHistory.css';
 
 const AnalysisHistory = () => {
@@ -12,23 +13,28 @@ const AnalysisHistory = () => {
   const [sortBy, setSortBy] = useState('date');
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useAuth();
+  const { showInfo, showSuccess } = useSweetAlert();
 
   // Función para ver detalles del análisis
   const handleViewDetails = (analysis) => {
     console.log('Ver detalles del análisis:', analysis);
-    // Aquí se puede abrir un modal o navegar a una página de detalles
-    alert(`Ver detalles de: ${analysis.filename}\nTipo: ${analysis.type}\nEstado: ${analysis.status}\nConfianza: ${analysis.confidence}%`);
+    showInfo(
+      'Detalles del Análisis',
+      `📄 Archivo: ${analysis.filename}\n📋 Tipo: ${analysis.type}\n📊 Estado: ${analysis.status === 'completed' ? 'Completado' : analysis.status === 'processing' ? 'Procesando' : 'Fallido'}\n🎯 Confianza: ${analysis.confidence || 0}%\n🤖 Modelo IA: ${analysis.aiModel || 'No especificado'}`
+    );
   };
 
   // Función para descargar análisis
   const handleDownload = (analysis) => {
     console.log('Descargar análisis:', analysis);
-    // Aquí se puede iniciar la descarga del análisis
     if (analysis.documentId && analysis.documents?.storage_url) {
-      // Si hay una URL de storage, abrir en nueva ventana
       window.open(analysis.documents.storage_url, '_blank');
+      showSuccess('Descarga iniciada', `Descargando: ${analysis.filename}`);
     } else {
-      alert(`Función de descarga para: ${analysis.filename} (en desarrollo)`);
+      showInfo(
+        'Función en desarrollo',
+        `La función de descarga para: ${analysis.filename} estará disponible próximamente`
+      );
     }
   };
 

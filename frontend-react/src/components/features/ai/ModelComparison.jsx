@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './ModelComparison.css';
 
 const ModelComparison = () => {
@@ -13,6 +14,7 @@ const ModelComparison = () => {
   const [availableModels, setAvailableModels] = useState([]);
   const [modelMetrics, setModelMetrics] = useState([]);
   const { user } = useAuth();
+  const { showError, showWarning } = useSweetAlert();
 
   const comparisonTypes = [
     { value: 'performance', label: 'Rendimiento' },
@@ -248,7 +250,7 @@ const ModelComparison = () => {
 
   const runRealTest = useCallback(async () => {
     if (selectedModels.length === 0) {
-      alert('Por favor selecciona al menos un modelo para probar');
+      showWarning('Sin modelos', 'Por favor selecciona al menos un modelo para probar');
       return;
     }
 
@@ -319,12 +321,12 @@ const ModelComparison = () => {
         
       } else {
         console.error('❌ Error en la prueba:', data.error);
-        alert('Error ejecutando prueba: ' + (data.error?.message || 'Error desconocido'));
+        showError('Error en prueba', 'Error ejecutando prueba: ' + (data.error?.message || 'Error desconocido'));
       }
       
     } catch (error) {
       console.error('❌ Error ejecutando prueba real:', error);
-      alert('Error de conexión: ' + error.message);
+      showError('Error de conexión', 'Error de conexión: ' + error.message);
     } finally {
       setIsRunningTest(false);
       setTestProgress(100);

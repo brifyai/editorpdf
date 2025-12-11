@@ -37,11 +37,11 @@ const ImageAnalysis = () => {
   const handleFiles = useCallback((newFiles) => {
     const validFiles = newFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`El archivo ${file.name} no es un formato válido. Solo se permiten JPG, PNG y WebP.`);
+        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten JPG, PNG y WebP.`);
         return false;
       }
       if (file.size > maxFileSize) {
-        alert(`El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
+        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
         return false;
       }
       return true;

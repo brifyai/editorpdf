@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './BatchAnalysis.css';
 
 const BatchAnalysis = () => {
+  const { showError, showSuccess, showWarning } = useSweetAlert();
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -69,17 +71,17 @@ const BatchAnalysis = () => {
 
   const handleFiles = useCallback((newFiles) => {
     if (files.length + newFiles.length > maxFiles) {
-      alert(`Máximo ${maxFiles} archivos permitidos por lote.`);
+      showError('Límite excedido', `Máximo ${maxFiles} archivos permitidos por lote.`);
       return;
     }
 
     const validFiles = newFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        alert(`El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG, PNG, WebP y TIFF.`);
+        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG, PNG, WebP y TIFF.`);
         return false;
       }
       if (file.size > maxFileSize) {
-        alert(`El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
+        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
         return false;
       }
       return true;
@@ -117,11 +119,11 @@ const BatchAnalysis = () => {
 
   const startBatchProcessing = useCallback(() => {
     if (files.length === 0) {
-      alert('Por favor selecciona al menos un archivo para procesar.');
+      showWarning('Sin archivos', 'Por favor selecciona al menos un archivo para procesar.');
       return;
     }
     if (!batchName.trim()) {
-      alert('Por favor ingresa un nombre para el lote.');
+      showWarning('Nombre requerido', 'Por favor ingresa un nombre para el lote.');
       return;
     }
     simulateProcessing(files);

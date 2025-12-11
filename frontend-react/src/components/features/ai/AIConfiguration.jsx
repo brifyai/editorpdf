@@ -103,7 +103,7 @@ const AIConfiguration = () => {
   const saveConfiguration = useCallback(async () => {
     if (!user?.id) {
       console.error('Usuario no autenticado');
-      alert('Error: Usuario no autenticado');
+      showError('Error', 'Error: Usuario no autenticado');
       return;
     }
 
