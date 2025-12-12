@@ -7,6 +7,7 @@ import { StatisticsProvider } from './contexts/StatisticsContext';
 // Layout Components (cargar inmediatamente)
 import Sidebar from './components/layout/Sidebar';
 import Main from './components/layout/Main';
+import Header from './components/layout/Header';
 
 // Auth Components
 import LoginPage from './components/auth/LoginPage';
@@ -72,6 +73,7 @@ import './styles/App.css';
 import './styles/premium.css';
 import './styles/Sidebar.css';
 import './styles/Main.css';
+import './styles/Header.css';
 import './styles/animations.css';
 import './styles/auth.css';
 import './styles/sidebar-material.css';
@@ -96,6 +98,7 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="app-container">
+      <Header />
       <div className="app-main">
         <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <Main sidebarOpen={isSidebarOpen}>{children}</Main>

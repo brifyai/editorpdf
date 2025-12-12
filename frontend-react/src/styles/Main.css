@@ -35,7 +35,7 @@
   width: calc(100% - 320px);
   background: #ffffff;
   margin-left: 320px;
-  padding-top: 9px;
+  padding-top: 80px; /* Espacio para el header fijo */
   padding-bottom: 45px; /* Espacio para el footer fijo de 40px */
   position: relative;
   overflow-x: hidden;
