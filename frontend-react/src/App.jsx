@@ -257,7 +257,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/separar-documentos" element={
+      <Route path="/herramientas/separar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <SplitPDF />
@@ -265,7 +265,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/organizar-paginas" element={
+      <Route path="/herramientas/organizar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <OrganizePages />
@@ -273,7 +273,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/optimizar-tamano" element={
+      <Route path="/herramientas/optimizar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <CompressPDF />
@@ -281,7 +281,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/restaurar-documento" element={
+      <Route path="/herramientas/restaurar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <RepairPDF />
@@ -441,7 +441,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/comparar-documentos" element={
+      <Route path="/herramientas/comparar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <CompareDocuments />
@@ -449,7 +449,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/censurar-informacion" element={
+      <Route path="/herramientas/censurar-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <CensurarInformacion />
@@ -457,7 +457,7 @@ const AppRoutes = () => {
         </AppLayout>
       } />
       
-      <Route path="/herramientas/analisis-inteligente" element={
+      <Route path="/herramientas/analisis-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <AnalisisInteligente />

@@ -29,25 +29,25 @@ const Main = React.memo(({ children, sidebarOpen }) => {
       icon: '🔗',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     },
-    '/herramientas/separar-documentos': {
+    '/herramientas/separar-pdf': {
       title: 'Separar Documentos PDF',
       subtitle: 'Extrae páginas específicas o divide cada página en archivos independientes',
       icon: '✂️',
       gradient: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)'
     },
-    '/herramientas/organizar-paginas': {
+    '/herramientas/organizar-pdf': {
       title: 'Organizar Páginas PDF',
       subtitle: 'Reordena, elimina o añade páginas según tus necesidades',
       icon: '📋',
       gradient: 'linear-gradient(135deg, #9c27b0 0%, #673ab7 100%)'
     },
-    '/herramientas/optimizar-tamano': {
+    '/herramientas/optimizar-pdf': {
       title: 'Optimizar Tamaño PDF',
       subtitle: 'Reduce el peso del documento manteniendo la máxima calidad posible',
       icon: '🗜️',
       gradient: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
     },
-    '/herramientas/restaurar-documento': {
+    '/herramientas/restaurar-pdf': {
       title: 'Restaurar Documento PDF',
       subtitle: 'Repara archivos PDF dañados y recupera datos perdidos',
       icon: '🔧',
@@ -167,19 +167,19 @@ const Main = React.memo(({ children, sidebarOpen }) => {
       icon: '📱',
       gradient: 'linear-gradient(135deg, #e91e63 0%, #c2185b 100%)'
     },
-    '/herramientas/comparar-documentos': {
+    '/herramientas/comparar-pdf': {
       title: 'Comparar Documentos PDF',
       subtitle: 'Compara dos archivos simultáneamente para identificar diferencias',
       icon: '⚖️',
       gradient: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)'
     },
-    '/herramientas/censurar-informacion': {
+    '/herramientas/censurar-pdf': {
       title: 'Censurar Información PDF',
       subtitle: 'Elimina permanentemente texto y gráficos sensibles',
       icon: '🚫',
       gradient: 'linear-gradient(135deg, #f44336 0%, #c62828 100%)'
     },
-    '/herramientas/analisis-inteligente': {
+    '/herramientas/analisis-pdf': {
       title: 'Análisis Inteligente con IA',
       subtitle: 'Analiza documentos con IA para extraer insights y métricas avanzadas',
       icon: '🧠',
