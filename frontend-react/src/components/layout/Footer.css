@@ -5,7 +5,7 @@
   width: 100%;
   position: relative;
   overflow: hidden;
-  margin-top: 2rem;
+  margin-top: 0;
   box-sizing: border-box;
 }
 
@@ -138,7 +138,7 @@
 @media (max-width: 768px) {
   .app-footer {
     padding: 0.75rem 0 0.5rem 0;
-    margin-top: 1.5rem;
+    margin-top: 0;
   }
   
   .footer-content {
@@ -177,7 +177,7 @@
 @media (max-width: 480px) {
   .app-footer {
     padding: 0.5rem 0 0.25rem 0;
-    margin-top: 1rem;
+    margin-top: 0;
   }
   
   .footer-content {
