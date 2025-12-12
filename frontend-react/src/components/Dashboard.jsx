@@ -15,21 +15,21 @@ const Dashboard = () => {
       tools: [
         {
           id: 'merge-pdf',
-          name: 'Unir Documentos',
+          name: 'Unir PDF',
           description: 'Combina varios PDFs en un solo archivo manteniendo el orden deseado',
           icon: '🔗',
           color: 'from-blue-500 to-blue-600'
         },
         {
           id: 'split-pdf',
-          name: 'Separar Documentos',
+          name: 'Separar PDF',
           description: 'Extrae páginas específicas o divide cada página en archivos independientes',
           icon: '✂️',
           color: 'from-green-500 to-green-600'
         },
         {
           id: 'organize-pages',
-          name: 'Organizar Páginas',
+          name: 'Organizar PDF',
           description: 'Reordena, elimina o añade páginas según tus necesidades',
           icon: '📋',
           color: 'from-purple-500 to-purple-600'
@@ -44,14 +44,14 @@ const Dashboard = () => {
       tools: [
         {
           id: 'compress-pdf',
-          name: 'Optimizar Tamaño',
+          name: 'Optimizar PDF',
           description: 'Reduce el peso del documento manteniendo la máxima calidad posible',
           icon: '🗜️',
           color: 'from-orange-500 to-orange-600'
         },
         {
           id: 'repair-pdf',
-          name: 'Restaurar Documento',
+          name: 'Restaurar PDF',
           description: 'Repara archivos PDF dañados y recupera datos perdidos',
           icon: '🔧',
           color: 'from-red-500 to-red-600'
@@ -231,14 +231,14 @@ const Dashboard = () => {
         },
         {
           id: 'compare-pdf',
-          name: 'Comparar Documentos',
+          name: 'Comparar PDF',
           description: 'Compara dos archivos simultáneamente para identificar diferencias',
           icon: '⚖️',
           color: 'from-orange-700 to-orange-800'
         },
         {
           id: 'censor-pdf',
-          name: 'Censurar Información',
+          name: 'Censurar PDF',
           description: 'Elimina permanentemente texto y gráficos sensibles',
           icon: '🚫',
           color: 'from-red-700 to-red-800'
@@ -253,7 +253,7 @@ const Dashboard = () => {
       tools: [
         {
           id: 'ai-analysis',
-          name: 'Análisis Inteligente',
+          name: 'Análisis PDF',
           description: 'Analiza documentos con IA para extraer insights y métricas avanzadas',
           icon: '🧠',
           color: 'from-violet-500 to-violet-600'
