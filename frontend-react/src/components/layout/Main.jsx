@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useStatistics } from '../../contexts/StatisticsContext';
+import Footer from './Footer';
 
 // Memoizar el componente Main para evitar re-renders innecesarios
 const Main = React.memo(({ children, sidebarOpen }) => {
@@ -354,6 +355,9 @@ const Main = React.memo(({ children, sidebarOpen }) => {
           <div className="floating-orb orb-2"></div>
           <div className="floating-orb orb-3"></div>
         </div>
+
+        {/* Footer - Visible on all pages */}
+        <Footer />
       </main>
     </>
   );

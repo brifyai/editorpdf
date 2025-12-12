@@ -407,34 +407,6 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-      {/* Footer del Dashboard */}
-      <div className="dashboard-footer">
-        <div className="footer-content">
-          <div className="footer-info">
-            <h3>EditorPDF Pro</h3>
-            <p>La solución completa para el manejo profesional de documentos PDF</p>
-          </div>
-          <div className="footer-features">
-            <div className="feature-item">
-              <span className="feature-icon">✅</span>
-              <span>Procesamiento Local</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">✅</span>
-              <span>Sin Límites de Tamaño</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">✅</span>
-              <span>Privacidad Garantizada</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">✅</span>
-              <span>Inteligencia Artificial</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
