@@ -294,7 +294,7 @@ const Dashboard = () => {
     // Mapeo de herramientas a URLs específicas únicas en español
     const toolRoutes = {
       // Combinar y Organizar
-      'merge-pdf': '/herramientas/unir-documentos',
+      'merge-pdf': '/herramientas/unir-pdf',
       'split-pdf': '/herramientas/separar-documentos',
       'organize-pages': '/herramientas/organizar-paginas',
       

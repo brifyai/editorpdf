@@ -23,7 +23,7 @@ const Main = React.memo(({ children, sidebarOpen }) => {
       icon: '',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     },
-    '/herramientas/unir-documentos': {
+    '/herramientas/unir-pdf': {
       title: 'Unir Documentos PDF',
       subtitle: 'Combina varios archivos PDF en un solo documento',
       icon: '🔗',

@@ -249,7 +249,7 @@ const AppRoutes = () => {
       } />
       
       {/* Rutas para herramientas específicas PDF */}
-      <Route path="/herramientas/unir-documentos" element={
+      <Route path="/herramientas/unir-pdf" element={
         <AppLayout>
           <LazyWrapper>
             <MergePDF />
