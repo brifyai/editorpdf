@@ -68,6 +68,22 @@ const Header = () => {
           </div>
 
           <div className="header-right">
+            <div className="auth-buttons-premium">
+              <button
+                className="auth-button access-button"
+                onClick={() => navigate('/login')}
+                aria-label="Acceso"
+              >
+                Acceso
+              </button>
+              <button
+                className="auth-button register-button"
+                onClick={() => navigate('/register')}
+                aria-label="Registro"
+              >
+                Registro
+              </button>
+            </div>
             <div className="time-display-premium">
               <div className="time-text-premium">
                 {formatTime(currentTime)}

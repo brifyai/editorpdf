@@ -8,6 +8,10 @@ import { StatisticsProvider } from './contexts/StatisticsContext';
 import Sidebar from './components/layout/Sidebar';
 import Main from './components/layout/Main';
 
+// Auth Components
+import LoginPage from './components/auth/LoginPage';
+import RegisterPage from './components/auth/RegisterPage';
+
 // Error Boundary
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -119,6 +123,10 @@ const LazyWrapper = ({ children }) => (
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Rutas de autenticación - SIN layout */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      
       {/* Ruta principal - Dashboard público */}
       <Route path="/" element={
         <AppLayout>
