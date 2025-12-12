@@ -295,12 +295,12 @@ const Dashboard = () => {
     const toolRoutes = {
       // Combinar y Organizar
       'merge-pdf': '/herramientas/unir-pdf',
-      'split-pdf': '/herramientas/separar-documentos',
-      'organize-pages': '/herramientas/organizar-paginas',
-      
+      'split-pdf': '/herramientas/separar-pdf',
+      'organize-pages': '/herramientas/organizar-pdf',
+
       // Optimizar y Comprimir
-      'compress-pdf': '/herramientas/optimizar-tamano',
-      'repair-pdf': '/herramientas/restaurar-documento',
+      'compress-pdf': '/herramientas/optimizar-pdf',
+      'repair-pdf': '/herramientas/restaurar-pdf',
       
       // Convertir a PDF
       'word-to-pdf': '/herramientas/word-a-pdf',
@@ -330,11 +330,11 @@ const Dashboard = () => {
       // Procesamiento Especializado
       'ocr-pdf': '/herramientas/reconocimiento-texto',
       'scan-to-pdf': '/herramientas/escaner-movil',
-      'compare-pdf': '/herramientas/comparar-documentos',
-      'censor-pdf': '/herramientas/censurar-informacion',
-      
+      'compare-pdf': '/herramientas/comparar-pdf',
+      'censor-pdf': '/herramientas/censurar-pdf',
+
       // Análisis con IA
-      'ai-analysis': '/herramientas/analisis-inteligente',
+      'ai-analysis': '/herramientas/analisis-pdf',
       'ai-ocr': '/herramientas/ocr-inteligente',
       'ai-extract': '/herramientas/extraccion-inteligente'
     };
