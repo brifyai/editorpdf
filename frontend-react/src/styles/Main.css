@@ -35,7 +35,7 @@
   width: calc(100% - 320px);
   background: #ffffff;
   margin-left: 320px;
-  padding-top: 80px; /* Espacio para el header fijo */
+  padding-top: 9px;
   padding-bottom: 45px; /* Espacio para el footer fijo de 40px */
   position: relative;
   overflow-x: hidden;
@@ -168,6 +168,69 @@
   gap: 0.75rem;
   margin-bottom: 0.5rem;
   flex-wrap: wrap;
+}
+
+/* Page Title with Buttons */
+.page-title-with-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-title-premium {
+  flex: 1;
+  min-width: 200px;
+}
+
+.title-auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.title-auth-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.title-auth-button.access-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.title-auth-button.access-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+}
+
+.title-auth-button.register-button {
+  background: linear-gradient(135deg, #00d4ff, #9d00ff);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.title-auth-button.register-button:hover {
+  background: linear-gradient(135deg, #00b8e6, #8a00e6);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
 }
 
 .page-icon-wrapper {
@@ -543,6 +606,17 @@
     gap: 1.5rem;
   }
   
+  .page-title-with-buttons {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .title-auth-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
   .page-title-premium {
     font-size: 2rem;
   }
@@ -578,6 +652,12 @@
   
   .page-title-premium {
     font-size: 1.5rem;
+  }
+  
+  .title-auth-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 70px;
   }
   
   .page-subtitle-premium {

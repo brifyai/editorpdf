@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../contexts/StatisticsContext';
 import Footer from './Footer';
 
 // Memoizar el componente Main para evitar re-renders innecesarios
 const Main = React.memo(({ children, sidebarOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isContentVisible, setIsContentVisible] = useState(false);
   const {
@@ -296,7 +297,23 @@ const Main = React.memo(({ children, sidebarOpen }) => {
             {/* Page Title Section */}
             <div className="page-title-section-premium">
               <div className="page-title-content-premium">
-                <h1 className="page-title-premium">{currentPage.title}</h1>
+                <div className="page-title-with-buttons">
+                  <h1 className="page-title-premium">{currentPage.title}</h1>
+                  <div className="title-auth-buttons">
+                    <button
+                      className="title-auth-button access-button"
+                      onClick={() => navigate('/login')}
+                    >
+                      Acceso
+                    </button>
+                    <button
+                      className="title-auth-button register-button"
+                      onClick={() => navigate('/register')}
+                    >
+                      Registro
+                    </button>
+                  </div>
+                </div>
                 <p className="page-subtitle-premium">{currentPage.subtitle}</p>
               </div>
             </div>
