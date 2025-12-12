@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabaseHelpers } from '../../../services/supabase';
 import { supabaseRealHelpers } from '../../../services/supabase-real';
-import { useAuth } from '../../../hooks/useAuth';
-import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './AnalysisHistory.css';
 
 const AnalysisHistory = () => {
@@ -12,16 +10,11 @@ const AnalysisHistory = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [searchTerm, setSearchTerm] = useState('');
-  const { user } = useAuth();
-  const { showInfo, showSuccess } = useSweetAlert();
 
   // Función para ver detalles del análisis
   const handleViewDetails = (analysis) => {
     console.log('Ver detalles del análisis:', analysis);
-    showInfo(
-      'Detalles del Análisis',
-      `📄 Archivo: ${analysis.filename}\n📋 Tipo: ${analysis.type}\n📊 Estado: ${analysis.status === 'completed' ? 'Completado' : analysis.status === 'processing' ? 'Procesando' : 'Fallido'}\n🎯 Confianza: ${analysis.confidence || 0}%\n🤖 Modelo IA: ${analysis.aiModel || 'No especificado'}`
-    );
+    alert(`📄 Detalles del Análisis\n\n📄 Archivo: ${analysis.filename}\n📋 Tipo: ${analysis.type}\n📊 Estado: ${analysis.status === 'completed' ? 'Completado' : analysis.status === 'processing' ? 'Procesando' : 'Fallido'}\n🎯 Confianza: ${analysis.confidence || 0}%\n🤖 Modelo IA: ${analysis.aiModel || 'No especificado'}`);
   };
 
   // Función para descargar análisis
@@ -57,50 +50,37 @@ const AnalysisHistory = () => {
       link.click();
       document.body.removeChild(link);
       
-      showSuccess('Descarga iniciada', `Descargando: ${analysis.filename}`);
+      alert(`✅ Descarga iniciada\n\nDescargando: ${analysis.filename}`);
     } else {
-      showInfo(
-        'Descarga no disponible',
-        `No se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`
-      );
+      alert(`❌ Descarga no disponible\n\nNo se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`);
     }
   };
 
   // Cargar historial real de análisis
   useEffect(() => {
-    if (user?.id) {
-      loadAnalysisHistory();
-    }
-  }, [user]);
+    loadAnalysisHistory();
+  }, []);
 
   const loadAnalysisHistory = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Verificar que el usuario tenga un ID válido
-      if (!user?.id) {
-        console.warn('Usuario no autenticado o sin ID válido');
-        setAnalyses([]);
-        setLoading(false);
-        return;
-      }
-
-      console.log('Cargando historial REAL para usuario:', user.id);
+      console.log('Cargando historial público...');
       
       // PRIMERO: Intentar obtener datos reales de Supabase
       let data, fetchError;
       
       try {
-        // Intentar con el cliente real de Supabase
-        const result = await supabaseRealHelpers.getAnalysisHistory(user.id, 50);
+        // Intentar con el cliente real de Supabase usando un ID por defecto
+        const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
         data = result.data;
         fetchError = result.error;
         
         if (fetchError || !data) {
           console.log('No se pudieron obtener datos reales, intentando con método alternativo...');
           // Si falla, intentar con el método original
-          const fallbackResult = await supabaseHelpers.getAnalysisHistory(user.id, 50);
+          const fallbackResult = await supabaseHelpers.getAnalysisHistory(1, 50);
           data = fallbackResult.data;
           fetchError = fallbackResult.error;
         }
@@ -116,10 +96,10 @@ const AnalysisHistory = () => {
         // Si el error es por tabla no encontrada, generar datos de prueba reales
         if (fetchError.code === 'PGRST116') {
           console.log('Generando datos de prueba reales...');
-          const testData = await supabaseRealHelpers.generateTestData(user.id);
+          const testData = await supabaseRealHelpers.generateTestData(1);
           if (testData.success) {
             // Intentar obtener los datos generados
-            const result = await supabaseRealHelpers.getAnalysisHistory(user.id, 50);
+            const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
             data = result.data;
           } else {
             setError('La base de datos aún no está configurada. Los análisis aparecerán aquí cuando realices tu primer análisis.');
@@ -139,10 +119,10 @@ const AnalysisHistory = () => {
       // Si no hay datos, generar datos de prueba para demostración
       if (!data || data.length === 0) {
         console.log('No se encontraron análisis reales, generando datos de demostración...');
-        const testData = await supabaseRealHelpers.generateTestData(user.id);
+        const testData = await supabaseRealHelpers.generateTestData(1);
         if (testData.success) {
           // Intentar obtener los datos generados
-          const result = await supabaseRealHelpers.getAnalysisHistory(user.id, 50);
+          const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
           data = result.data;
         } else {
           setAnalyses([]);

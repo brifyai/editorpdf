@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { useSweetAlert } from '../hooks/useSweetAlert';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const { showInfo } = useSweetAlert();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -348,12 +344,8 @@ const Dashboard = () => {
     if (route) {
       navigate(route);
     } else {
-      // Si no hay ruta específica, mostrar mensaje informativo
-      showInfo(
-        'Funcionalidad en Desarrollo',
-        `La herramienta "${toolId}" estará disponible próximamente. Redirigiendo a la sección más relacionada.`
-      );
-      navigate('/documents'); // Redirigir a documentos por defecto
+      // Si no hay ruta específica, redirigir al dashboard
+      navigate('/');
     }
   };
 

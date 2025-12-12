@@ -55,7 +55,8 @@
     "serverless-http": "^3.2.0",
     "sharp": "^0.34.5",
     "tesseract.js": "^6.0.1",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "depcheck": "^1.4.7",

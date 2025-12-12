@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useStatistics } from '../../contexts/StatisticsContext';
 
 // Memoizar el componente Main para evitar re-renders innecesarios
 const Main = React.memo(({ children, sidebarOpen }) => {
   const location = useLocation();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isContentVisible, setIsContentVisible] = useState(false);
-  const [metrics, setMetrics] = useState({
-    totalRequests: 0,
-    successRate: 0,
-    activeModels: 0,
-    averageResponseTime: 0
-  });
-  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  const {
+    documentsCount,
+    successRate,
+    activeModels,
+    averageResponseTime,
+    loading: loadingMetrics
+  } = useStatistics();
 
   // Page configuration
   const pageConfig = {
@@ -265,77 +266,14 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Memoizar la función de carga de métricas para evitar re-creaciones
-  const loadMetrics = useCallback(async () => {
-    try {
-      setLoadingMetrics(true);
-      
-      console.log('🔄 Cargando métricas desde el frontend...');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/metrics`);
-      const data = await response.json();
-      
-      console.log('📊 Respuesta del servidor:', data);
-      
-      if (data.success && data.data) {
-        const newMetrics = {
-          totalRequests: data.data.totalRequests || 0,
-          successRate: data.data.successRate || 0,
-          activeModels: data.data.activeModels || 0,
-          averageResponseTime: data.data.averageResponseTime || 0
-        };
-        
-        console.log('✅ Nuevas métricas establecidas:', newMetrics);
-        setMetrics(newMetrics);
-      } else {
-        console.warn('⚠️ Respuesta sin éxito o sin datos:', data);
-      }
-    } catch (error) {
-      console.error('❌ Error cargando métricas:', error);
-    } finally {
-      setLoadingMetrics(false);
-    }
-  }, []);
-
-  // Cargar métricas reales desde el servidor (optimizado)
-  useEffect(() => {
-    let timeoutId;
-    let isCancelled = false;
-
-    // Carga inicial inmediata sin debounce para depuración
-    console.log('🚀 Iniciando carga de métricas...');
-    loadMetrics();
-    
-    // También cargar después de 2 segundos para asegurar actualización
-    timeoutId = setTimeout(() => {
-      if (!isCancelled) {
-        console.log('🔄 Recargando métricas después de 2 segundos...');
-        loadMetrics();
-      }
-    }, 2000);
-    
-    // Actualizar métricas cada 5 minutos
-    const interval = setInterval(() => {
-      if (!isCancelled) {
-        console.log('⏰ Actualización programada de métricas...');
-        loadMetrics();
-      }
-    }, 300000);
-    
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
-      clearInterval(interval);
-    };
-  }, [loadMetrics]);
-
   // Memoizar los valores de métricas para evitar re-renders
   const memoizedMetrics = useMemo(() => ({
-    totalRequests: metrics.totalRequests,
-    successRate: metrics.successRate,
-    activeModels: metrics.activeModels,
-    averageResponseTime: metrics.averageResponseTime,
+    totalRequests: documentsCount,
+    successRate: successRate,
+    activeModels: activeModels,
+    averageResponseTime: averageResponseTime,
     loading: loadingMetrics
-  }), [metrics, loadingMetrics]);
+  }), [documentsCount, successRate, activeModels, averageResponseTime, loadingMetrics]);
 
   return (
     <>

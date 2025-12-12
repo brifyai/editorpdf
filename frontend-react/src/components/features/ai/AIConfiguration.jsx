@@ -1,10 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import './AIConfiguration.css';
-import { useAuth } from '../../../hooks/useAuth';
-import { supabaseHelpers } from '../../../services/supabase';
 
 const AIConfiguration = () => {
-  const { user } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState('groq');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -101,18 +98,11 @@ const AIConfiguration = () => {
   }, [simulateProcessing]);
 
   const saveConfiguration = useCallback(async () => {
-    if (!user?.id) {
-      console.error('Usuario no autenticado');
-      showError('Error', 'Error: Usuario no autenticado');
-      return;
-    }
-
     setIsProcessing(true);
     
     try {
-      // Preparar configuración para enviar al backend
+      // Simular guardado local de configuración
       const config = {
-        user_id: user.id,
         groq_api_key: configuration.groq.apiKey,
         chutes_api_key: configuration.chutes.apiKey,
         groq_model: configuration.groq.model,
@@ -125,37 +115,9 @@ const AIConfiguration = () => {
         chutes_stream: configuration.chutes.stream
       };
 
-      // Enviar al backend - USAR PUERTO CORRECTO 8080
-      const response = await fetch(`http://localhost:8080/api/save-ai-config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(config)
-      });
-
-      // Verificar si la respuesta es exitosa antes de parsear JSON
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error de respuesta:', response.status, errorText);
-        throw new Error(`Error ${response.status}: ${errorText}`);
-      }
-
-      // Intentar parsear JSON
-      let result;
-      try {
-        result = await response.json();
-      } catch (parseError) {
-        console.error('Error parseando JSON:', parseError);
-        // Si no puede parsear JSON, asumir éxito si el status es 200
-        result = { message: 'Configuración guardada exitosamente' };
-      }
+      // Guardar en localStorage para acceso público
+      localStorage.setItem('aiConfiguration', JSON.stringify(config));
       
-      // Validar que el resultado tenga la estructura esperada
-      if (result && result.success === false) {
-        throw new Error(result.error || 'Error al guardar configuración');
-      }
-
       console.log('✅ Configuración guardada exitosamente');
       alert('Configuración guardada correctamente');
       
@@ -165,7 +127,7 @@ const AIConfiguration = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user, configuration]);
+  }, [configuration]);
 
   const getCurrentProvider = () => {
     return providers.find(p => p.id === selectedProvider);
@@ -175,34 +137,13 @@ const AIConfiguration = () => {
     return configuration[selectedProvider];
   };
 
-  // Cargar configuración al montar el componente - CORREGIDO PARA USAR BACKEND
+  // Cargar configuración al montar el componente
   useEffect(() => {
-    const loadConfiguration = async () => {
-      if (!user?.id) return;
-
+    const loadConfiguration = () => {
       try {
-        console.log('📂 Cargando configuración guardada para usuario:', user.id);
-        
-        // Intentar obtener configuración desde el backend - USAR PUERTO CORRECTO 8080
-        const response = await fetch(`http://localhost:8080/api/get-ai-config/${user.id}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.warn('⚠️ No se pudo cargar configuración del backend:', response.status, errorText);
-          return;
-        }
-
-        let result;
-        try {
-          result = await response.json();
-        } catch (parseError) {
-          console.error('Error parseando JSON de configuración:', parseError);
-          console.log('Respuesta completa:', await response.text());
-          return;
-        }
-        
-        if (result.success && result.data?.configuration) {
-          const config = result.data.configuration;
+        const savedConfig = localStorage.getItem('aiConfiguration');
+        if (savedConfig) {
+          const config = JSON.parse(savedConfig);
           console.log('✅ Configuración cargada exitosamente:', config);
           
           setConfiguration(prev => ({
@@ -225,7 +166,7 @@ const AIConfiguration = () => {
             }
           }));
         } else {
-          console.log('ℹ️ No hay configuración guardada o está vacía');
+          console.log('ℹ️ No hay configuración guardada, usando configuración por defecto');
         }
       } catch (error) {
         console.error('❌ Error cargando configuración:', error);
@@ -233,7 +174,7 @@ const AIConfiguration = () => {
     };
 
     loadConfiguration();
-  }, [user]);
+  }, []);
 
   return (
     <div className="ai-configuration-container">

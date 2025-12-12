@@ -3,6 +3,7 @@ import { Upload, FileText, Download, X, Scissors, Settings, Plus, Minus, Crown }
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import { PDFDocument } from 'pdf-lib';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import EnhancedPDFPreview from './EnhancedPDFPreview';
 import ProfessionalPDFViewer from './ProfessionalPDFViewer';
 import PDFMarqueeCapture from './PDFMarqueeCapture';
@@ -23,6 +24,7 @@ const SplitPDF = () => {
   const [customRanges, setCustomRanges] = useState([]);
   const [fixedRanges, setFixedRanges] = useState([]);
   const [pagesPerFile, setPagesPerFile] = useState(1);
+  const [maxFileSize, setMaxFileSize] = useState(1); // en MB
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
   const [selectedPages, setSelectedPages] = useState([]);
@@ -1358,11 +1360,36 @@ const SplitPDF = () => {
       return;
     }
 
+    // Validar que haya una configuración válida según el modo
+    if (splitMode === 'rango' && fixedRanges.length === 0) {
+      showError('Error', 'Debes agregar al menos un rango de páginas');
+      return;
+    }
+    
+    if (splitMode === 'paginas' && selectedPages.length === 0) {
+      showError('Error', 'Debes seleccionar al menos una página');
+      return;
+    }
+    
+    if (splitMode === 'tamano' && maxFileSize <= 0) {
+      showError('Error', 'Debes especificar un tamaño máximo de archivo válido');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      console.log('🔄 Iniciando procesamiento SIMPLIFICADO de PDF...');
+      console.log('🔄 Iniciando procesamiento de PDF...');
       console.log('📁 Archivo:', file.name, 'Tamaño:', file.size);
+      console.log('🔧 Modo:', splitMode);
+      
+      if (splitMode === 'rango') {
+        console.log('📋 Rangos configurados:', fixedRanges);
+      } else if (splitMode === 'paginas') {
+        console.log('📋 Páginas seleccionadas:', selectedPages);
+      } else if (splitMode === 'tamano') {
+        console.log('📋 Tamaño máximo configurado:', maxFileSize, 'MB');
+      }
       
       // Intentar primero con PDF-lib
       try {
@@ -1394,21 +1421,97 @@ const SplitPDF = () => {
     
     const fileName = file.name.replace('.pdf', '');
     
-    // VERSIÓN SIMPLIFICADA: Solo extraer la primera página para probar
-    console.log('📋 Creando PDF con solo la primera página (prueba)...');
+    // Determinar qué páginas procesar según el modo seleccionado
+    let pagesToProcess = [];
+    
+    if (splitMode === 'rango' && fixedRanges.length > 0) {
+      // Procesar rangos específicos
+      console.log('📋 Procesando rangos específicos:', fixedRanges);
+      
+      for (const range of fixedRanges) {
+        const [start, end] = range.split('-').map(num => parseInt(num.trim()));
+        console.log(`📄 Procesando rango ${start}-${end}`);
+        
+        // Validar que el rango esté dentro del documento
+        const validStart = Math.max(1, start);
+        const validEnd = Math.min(pdfDoc.getPageCount(), end);
+        
+        if (validStart <= validEnd) {
+          // Convertir a índices basados en 0 (PDF-lib usa 0-based)
+          for (let i = validStart - 1; i < validEnd; i++) {
+            pagesToProcess.push(i);
+          }
+          console.log(`✅ Rango ${validStart}-${validEnd} añadido (${validEnd - validStart + 1} páginas)`);
+        } else {
+          console.warn(`⚠️ Rango inválido: ${start}-${end} (documento tiene ${pdfDoc.getPageCount()} páginas)`);
+        }
+      }
+    } else if (splitMode === 'paginas' && selectedPages.length > 0) {
+      // Procesar páginas seleccionadas individualmente
+      console.log('📋 Procesando páginas seleccionadas:', selectedPages);
+      // Convertir a índices basados en 0
+      pagesToProcess = selectedPages.map(pageNum => pageNum - 1).filter(index => index >= 0 && index < pdfDoc.getPageCount());
+      console.log(`✅ ${pagesToProcess.length} páginas válidas seleccionadas`);
+    } else if (splitMode === 'tamano') {
+      // Procesar por tamaño máximo de archivo - crear múltiples archivos
+      console.log('📋 Procesando por tamaño máximo:', maxFileSize, 'MB');
+      
+      // Calcular tamaño aproximado por página
+      const totalSizeBytes = file.file.size;
+      const avgPageSizeBytes = totalSizeBytes / pdfDoc.getPageCount();
+      const maxFileSizeBytes = maxFileSize * 1024 * 1024; // Convertir MB a bytes
+      
+      console.log(`📊 Tamaño total: ${formatFileSize(totalSizeBytes)}`);
+      console.log(`📊 Tamaño promedio por página: ${formatFileSize(avgPageSizeBytes)}`);
+      console.log(`📊 Límite máximo: ${formatFileSize(maxFileSizeBytes)}`);
+      
+      // Calcular cuántas páginas caben en cada archivo
+      const pagesPerFile = Math.floor(maxFileSizeBytes / avgPageSizeBytes);
+      
+      if (pagesPerFile < 1) {
+        throw new Error(`El tamaño máximo (${maxFileSize}MB) es muy pequeño para incluso una página (tamaño promedio: ${formatFileSize(avgPageSizeBytes)})`);
+      }
+      
+      console.log(`📄 Se pueden incluir ${pagesPerFile} páginas por archivo`);
+      
+      // Para modo tamaño, procesamos de manera diferente - creamos múltiples archivos
+      return await processWithPdfLibBySize(pdfDoc, fileName, pagesPerFile, maxFileSize);
+      
+    } else {
+      // Si no hay selección específica, procesar todas las páginas
+      console.log('📋 No hay selección específica, procesando todas las páginas');
+      pagesToProcess = Array.from({ length: pdfDoc.getPageCount() }, (_, i) => i);
+    }
+    
+    // Eliminar duplicados y ordenar
+    pagesToProcess = [...new Set(pagesToProcess)].sort((a, b) => a - b);
+    
+    if (pagesToProcess.length === 0) {
+      throw new Error('No hay páginas válidas para procesar');
+    }
+    
+    console.log(`📄 Total de páginas a procesar: ${pagesToProcess.length}`);
+    console.log(`📄 Índices de páginas: [${pagesToProcess.join(', ')}]`);
     
     // Crear un nuevo PDF
     const newPdfDoc = await PDFDocument.create();
     console.log('📝 Nuevo PDF creado');
     
-    // Copiar solo la primera página (índice 0)
-    if (pdfDoc.getPageCount() > 0) {
-      console.log('📄 Copiando primera página (índice 0)');
-      const [copiedPage] = await newPdfDoc.copyPages(pdfDoc, [0]);
-      newPdfDoc.addPage(copiedPage);
-      console.log('✅ Primera página copiada y agregada');
-    } else {
-      throw new Error('El PDF no tiene páginas');
+    // Copiar las páginas seleccionadas
+    console.log(`📄 Copiando ${pagesToProcess.length} páginas...`);
+    
+    try {
+      const copiedPages = await newPdfDoc.copyPages(pdfDoc, pagesToProcess);
+      
+      // Agregar las páginas copiadas al nuevo documento
+      copiedPages.forEach((copiedPage, index) => {
+        newPdfDoc.addPage(copiedPage);
+        console.log(`✅ Página ${pagesToProcess[index] + 1} copiada y agregada`);
+      });
+      
+    } catch (copyError) {
+      console.error('❌ Error copiando páginas:', copyError);
+      throw new Error(`Error al copiar páginas: ${copyError.message}`);
     }
     
     // Guardar el nuevo PDF
@@ -1429,16 +1532,123 @@ const SplitPDF = () => {
     const url = URL.createObjectURL(blob);
     console.log('🔗 URL creada:', url);
     
+    // Determinar nombre de archivo según el modo
+    let downloadName = '';
+    if (splitMode === 'rango' && fixedRanges.length > 0) {
+      downloadName = `${fileName}_rango_${fixedRanges.join('-')}.pdf`;
+    } else if (splitMode === 'paginas' && selectedPages.length > 0) {
+      downloadName = `${fileName}_paginas_${selectedPages.join('-')}.pdf`;
+    } else if (splitMode === 'tamano') {
+      downloadName = `${fileName}_tamano_${maxFileSize}MB.pdf`;
+    } else {
+      downloadName = `${fileName}_completo.pdf`;
+    }
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${fileName}_primera_pagina_pdflib.pdf`;
+    a.download = downloadName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    console.log('✅ PDF de prueba procesado y descargado con PDF-lib');
-    showSuccess('¡Éxito!', `Se ha creado un PDF con la primera página (PDF-lib)`);
+    console.log('✅ PDF procesado y descargado con PDF-lib');
+    showSuccess('¡Éxito!', `Se ha creado un PDF con ${pagesToProcess.length} página(s)`);
+    removeFile();
+  };
+
+  // Función para procesar por tamaño con múltiples archivos
+  const processWithPdfLibBySize = async (pdfDoc, fileName, pagesPerFile, maxFileSize) => {
+    console.log('📚 Procesando por tamaño - creando múltiples archivos...');
+    
+    const totalPageCount = pdfDoc.getPageCount();
+    const totalFiles = Math.ceil(totalPageCount / pagesPerFile);
+    
+    console.log(`📄 Total de páginas: ${totalPageCount}`);
+    console.log(`📄 Páginas por archivo: ${pagesPerFile}`);
+    console.log(`📁 Total de archivos a crear: ${totalFiles}`);
+    
+    const filesCreated = [];
+    
+    // Crear cada archivo por separado
+    for (let fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
+      const startPage = fileIndex * pagesPerFile;
+      const endPage = Math.min(startPage + pagesPerFile, totalPageCount);
+      const pagesInThisFile = Array.from({ length: endPage - startPage }, (_, i) => startPage + i);
+      
+      console.log(`📁 Creando archivo ${fileIndex + 1}/${totalFiles}: páginas ${startPage + 1}-${endPage}`);
+      
+      try {
+        // Crear un nuevo PDF para este archivo
+        const newPdfDoc = await PDFDocument.create();
+        
+        // Copiar las páginas para este archivo
+        const copiedPages = await newPdfDoc.copyPages(pdfDoc, pagesInThisFile);
+        
+        // Agregar las páginas copiadas
+        copiedPages.forEach((copiedPage) => {
+          newPdfDoc.addPage(copiedPage);
+        });
+        
+        // Guardar el PDF
+        const newPdfBytes = await newPdfDoc.save();
+        
+        // Verificar que el PDF no esté vacío
+        if (newPdfBytes.byteLength < 1000) {
+          console.warn(`⚠️ El archivo ${fileIndex + 1} parece muy pequeño`);
+        }
+        
+        // Crear blob y descargar
+        const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // Nombre del archivo
+        const downloadName = `${fileName}_parte${fileIndex + 1}_de${totalFiles}_tamano${maxFileSize}MB.pdf`;
+        
+        // Crear y disparar la descarga
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Limpiar URL después de un breve retraso
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+        
+        filesCreated.push({
+          index: fileIndex + 1,
+          name: downloadName,
+          pages: pagesInThisFile.length,
+          size: blob.size
+        });
+        
+        console.log(`✅ Archivo ${fileIndex + 1} creado: ${downloadName} (${pagesInThisFile.length} páginas, ${formatFileSize(blob.size)})`);
+        
+        // Pequeña pausa entre archivos para no sobrecargar el navegador
+        if (fileIndex < totalFiles - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+      } catch (error) {
+        console.error(`❌ Error creando archivo ${fileIndex + 1}:`, error);
+        throw new Error(`Error al crear el archivo ${fileIndex + 1}: ${error.message}`);
+      }
+    }
+    
+    console.log(`🎉 Todos los ${totalFiles} archivos han sido creados y descargados`);
+    
+    // Mostrar resumen
+    const totalSize = filesCreated.reduce((sum, file) => sum + file.size, 0);
+    const totalPages = filesCreated.reduce((sum, file) => sum + file.pages, 0);
+    
+    showSuccess(
+      '¡Éxito!',
+      `Se han creado ${totalFiles} archivos con ${totalPages} páginas totales (${formatFileSize(totalSize)})`
+    );
+    
     removeFile();
   };
 
@@ -1737,7 +1947,88 @@ const SplitPDF = () => {
             {/* Configuración de Tamaño */}
             {splitMode === 'tamano' && (
               <div className="size-configuration">
-                <p>Esta función estará disponible próximamente</p>
+                <div className="size-mode">
+                  <h4>Separar por Tamaño de Archivo</h4>
+                  <div className="size-input-group">
+                    <label htmlFor="max-file-size">
+                      Tamaño máximo por archivo (MB):
+                    </label>
+                    <input
+                      id="max-file-size"
+                      type="number"
+                      placeholder="Ej: 5"
+                      value={maxFileSize}
+                      onChange={(e) => setMaxFileSize(parseFloat(e.target.value) || 1)}
+                      min="0.1"
+                      max="100"
+                      step="0.1"
+                    />
+                    <span>MB</span>
+                  </div>
+                  
+                  <div className="size-info">
+                    <div className="info-item">
+                      <strong>Tamaño original:</strong> {formatFileSize(file.size)}
+                    </div>
+                    <div className="info-item">
+                      <strong>Total de páginas:</strong> {totalPages}
+                    </div>
+                    <div className="info-item">
+                      <strong>Tamaño promedio por página:</strong> {formatFileSize(file.size / totalPages)}
+                    </div>
+                    <div className="info-item">
+                      <strong>Páginas estimadas por archivo:</strong> {
+                        (() => {
+                          const maxFileSizeBytes = maxFileSize * 1024 * 1024;
+                          const avgPageSize = file.size / totalPages;
+                          const pagesPerFile = avgPageSize > 0 ? Math.floor(maxFileSizeBytes / avgPageSize) : 1;
+                          return Math.max(1, Math.min(pagesPerFile, totalPages));
+                        })()
+                      }
+                    </div>
+                    <div className="info-item">
+                      <strong>Archivos estimados:</strong> {Math.ceil(file.size / (maxFileSize * 1024 * 1024))}
+                    </div>
+                  </div>
+                  
+                  <div className="size-options">
+                    <div className="preset-sizes">
+                      <h5>Tamaños predefinidos:</h5>
+                      <div className="preset-buttons">
+                        <button
+                          className="preset-btn"
+                          onClick={() => setMaxFileSize(1)}
+                        >
+                          1 MB
+                        </button>
+                        <button
+                          className="preset-btn"
+                          onClick={() => setMaxFileSize(2)}
+                        >
+                          2 MB
+                        </button>
+                        <button
+                          className="preset-btn"
+                          onClick={() => setMaxFileSize(5)}
+                        >
+                          5 MB
+                        </button>
+                        <button
+                          className="preset-btn"
+                          onClick={() => setMaxFileSize(10)}
+                        >
+                          10 MB
+                        </button>
+                        <button
+                          className="preset-btn"
+                          onClick={() => setMaxFileSize(25)}
+                        >
+                          25 MB
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

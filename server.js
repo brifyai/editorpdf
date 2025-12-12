@@ -54,6 +54,69 @@ const docxConverter = new ImageToDocxConverter();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const server = require('http').createServer(app);
+const WebSocket = require('ws');
+
+// Configurar WebSocket server
+const wss = new WebSocket.Server({ server, path: '/ws' });
+
+// Almacenar conexiones WebSocket activas
+const wsClients = new Set();
+
+// Función para broadcasting de actualizaciones de estadísticas
+function broadcastStatisticsUpdate(statistics) {
+  const message = JSON.stringify({
+    type: 'STATISTICS_UPDATE',
+    statistics: statistics,
+    timestamp: new Date().toISOString()
+  });
+
+  wsClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      try {
+        client.send(message);
+      } catch (error) {
+        console.error('Error enviando mensaje a cliente WebSocket:', error);
+        wsClients.delete(client);
+      }
+    }
+  });
+}
+
+// Manejar conexiones WebSocket
+wss.on('connection', (ws, req) => {
+  console.log('🔌 Nueva conexión WebSocket establecida');
+  wsClients.add(ws);
+
+  // Enviar estadísticas actuales al conectar
+  (async () => {
+    try {
+      const metrics = await getRealMetrics('7d');
+      ws.send(JSON.stringify({
+        type: 'STATISTICS_UPDATE',
+        statistics: {
+          documentsCount: metrics.totalRequests || 0,
+          successRate: metrics.successRate || 0,
+          activeModels: metrics.activeModels || 0,
+          averageResponseTime: metrics.averageResponseTime || 0
+        },
+        timestamp: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Error enviando estadísticas iniciales:', error);
+    }
+  })();
+
+  ws.on('close', () => {
+    console.log('🔌 Conexión WebSocket cerrada');
+    wsClients.delete(ws);
+  });
+
+  ws.on('error', (error) => {
+    console.error('❌ Error en WebSocket:', error);
+    wsClients.delete(ws);
+  });
+});
 
 // Middleware base
 app.use(cors());
@@ -847,6 +910,14 @@ app.get('/api/metrics', async (req, res) => {
     // Obtener métricas reales de la base de datos
     const metrics = await getRealMetrics(timeRange, userId);
     
+    // Hacer broadcasting de las estadísticas actualizadas
+    broadcastStatisticsUpdate({
+      documentsCount: metrics.totalRequests || 0,
+      successRate: metrics.successRate || 0,
+      activeModels: metrics.activeModels || 0,
+      averageResponseTime: metrics.averageResponseTime || 0
+    });
+    
     res.json(createResponse(true, metrics));
   } catch (error) {
     console.error('Error obteniendo métricas:', error);
@@ -1503,21 +1574,23 @@ async function startServer() {
     initializeAIAnalyzer();
     
     // Iniciar servidor
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Servidor optimizado corriendo en http://localhost:${PORT}`);
       console.log(`📁 Directorio de uploads: ${path.join(__dirname, 'uploads')}`);
       console.log(`🤖 APIs de IA disponibles: Verifica en /api/ai-status`);
       console.log(`💾 Base de datos: ${isDatabaseAvailable() ? 'Conectada' : 'No disponible'}`);
       console.log(`🔑 API Key de Groq: ${process.env.GROQ_API_KEY ? 'Configurada' : 'No configurada'}`);
       console.log(`📊 Endpoints optimizados y modulares activos`);
+      console.log(`🔌 WebSocket server activo en ws://localhost:${PORT}/ws`);
     });
   } catch (error) {
     console.error('❌ Error iniciando servidor:', error);
     // Iniciar servidor de todas formas con configuración por defecto
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Servidor optimizado corriendo en http://localhost:${PORT} (modo fallback)`);
       console.log(`📁 Directorio de uploads: ${path.join(__dirname, 'uploads')}`);
       console.log(`⚠️  Usando configuración por defecto - verifica /api/ai-status`);
+      console.log(`🔌 WebSocket server activo en ws://localhost:${PORT}/ws`);
     });
   }
 }

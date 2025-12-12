@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
 import { supabaseHelpers } from '../services/supabase';
 
 const AppContext = createContext({});
@@ -106,29 +105,35 @@ const appReducer = (state, action) => {
 
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
-  const { user, isAuthenticated } = useAuth();
 
-  // Load user configuration when user changes
+  // Load configuration and data on mount
   useEffect(() => {
-    if (isAuthenticated && user) {
-      loadUserConfiguration();
-      loadAnalysisHistory();
-      loadBatchJobs();
-    }
-  }, [user, isAuthenticated]);
+    loadUserConfiguration();
+    loadAnalysisHistory();
+    loadBatchJobs();
+  }, []);
 
   const loadUserConfiguration = async () => {
     try {
-      const { data, error } = await supabaseHelpers.getUserConfiguration(
-        user.id
-      );
+      // Try to load from database first
+      const { data, error } = await supabaseHelpers.getUserConfiguration(1);
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading user config:', error);
-        return;
       }
 
       if (data) {
         dispatch({ type: ACTIONS.SET_USER_CONFIG, payload: data });
+      } else {
+        // Load from localStorage as fallback
+        const savedConfig = localStorage.getItem('userConfig');
+        if (savedConfig) {
+          try {
+            const config = JSON.parse(savedConfig);
+            dispatch({ type: ACTIONS.SET_USER_CONFIG, payload: config });
+          } catch (e) {
+            console.error('Error parsing saved config:', e);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading user configuration:', error);
@@ -137,7 +142,7 @@ export const AppProvider = ({ children }) => {
 
   const loadAnalysisHistory = async () => {
     try {
-      const { data, error } = await supabaseHelpers.getAnalysisHistory(user.id);
+      const { data, error } = await supabaseHelpers.getAnalysisHistory(1);
       if (error) {
         console.error('Error loading analysis history:', error);
         return;
@@ -151,7 +156,7 @@ export const AppProvider = ({ children }) => {
 
   const loadBatchJobs = async () => {
     try {
-      const { data, error } = await supabaseHelpers.getBatchJobs(user.id);
+      const { data, error } = await supabaseHelpers.getBatchJobs(1);
       if (error) {
         console.error('Error loading batch jobs:', error);
         return;
@@ -191,14 +196,17 @@ export const AppProvider = ({ children }) => {
     try {
       dispatch({ type: ACTIONS.SET_USER_CONFIG, payload: config });
 
-      if (isAuthenticated && user) {
-        const { error } = await supabaseHelpers.saveUserConfiguration(
-          user.id,
-          config
-        );
+      // Save to localStorage
+      localStorage.setItem('userConfig', JSON.stringify(config));
+
+      // Try to save to database
+      try {
+        const { error } = await supabaseHelpers.saveUserConfiguration(1, config);
         if (error) {
-          console.error('Error saving user config:', error);
+          console.error('Error saving user config to database:', error);
         }
+      } catch (dbError) {
+        console.error('Database save failed, using localStorage only:', dbError);
       }
     } catch (error) {
       console.error('Error updating user config:', error);

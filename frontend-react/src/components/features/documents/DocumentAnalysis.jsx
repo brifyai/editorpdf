@@ -1,11 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import './DocumentAnalysis.css';
 
 const DocumentAnalysis = () => {
-  const { user } = useAuth();
-  const { showError, showSuccess, showWarning, showInfo } = useSweetAlert();
   const [files, setFiles] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -47,13 +43,13 @@ const DocumentAnalysis = () => {
       }
     } catch (error) {
       console.error('Error en característica:', error);
-      showError('Error', 'Error al procesar la característica: ' + error.message);
+      alert('Error al procesar la característica: ' + error.message);
     }
   };
 
   const performSmartAnalysis = async () => {
     if (files.length === 0) {
-      showWarning('Archivo requerido', 'Por favor, sube primero un documento para analizar');
+      alert('Por favor, sube primero un documento para analizar');
       return;
     }
     
@@ -76,26 +72,21 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${user?.id || 1}`,
-          'X-User-ID': user?.id || 1
+          'Accept': 'application/json'
         }
       });
       
       const result = await response.json();
       
       if (result.success) {
-        showSuccess(
-          'Análisis inteligente completado',
-          '✅ Texto extraído y procesado\n✅ Tablas identificadas y estructuradas\n✅ Datos clave extraídos automáticamente\n✅ Análisis de contenido completado'
-        );
+        alert('✅ Análisis inteligente completado\n\n✅ Texto extraído y procesado\n✅ Tablas identificadas y estructuradas\n✅ Datos clave extraídos automáticamente\n✅ Análisis de contenido completado');
       } else {
         throw new Error(result.error?.message || 'Error en el análisis');
       }
       
     } catch (error) {
       console.error('Error en análisis inteligente:', error);
-      showError('Error en análisis', '❌ Error en análisis inteligente: ' + error.message);
+      alert('❌ Error en análisis inteligente: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -104,7 +95,7 @@ const DocumentAnalysis = () => {
 
   const performFastProcessing = async () => {
     if (files.length === 0) {
-      showWarning('Archivo requerido', 'Por favor, sube primero un documento para procesar');
+      alert('Por favor, sube primero un documento para procesar');
       return;
     }
     
@@ -127,26 +118,21 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${user?.id || 1}`,
-          'X-User-ID': user?.id || 1
+          'Accept': 'application/json'
         }
       });
       
       const result = await response.json();
       
       if (result.success) {
-        showSuccess(
-          'Procesamiento rápido completado',
-          '⚡ Análisis en segundos\n⚡ Tecnología IA avanzada\n⚡ Resultados optimizados\n⚡ Velocidad máxima'
-        );
+        alert('⚡ Procesamiento rápido completado\n\n⚡ Análisis en segundos\n⚡ Tecnología IA avanzada\n⚡ Resultados optimizados\n⚡ Velocidad máxima');
       } else {
         throw new Error(result.error?.message || 'Error en el procesamiento');
       }
       
     } catch (error) {
       console.error('Error en procesamiento rápido:', error);
-      showError('Error en procesamiento', '❌ Error en procesamiento rápido: ' + error.message);
+      alert('❌ Error en procesamiento rápido: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -154,15 +140,12 @@ const DocumentAnalysis = () => {
   };
 
   const showMultipleFormats = () => {
-    showInfo(
-      'Múltiples Formatos Disponibles',
-      '📄 PDF - Documentos portátiles\n📷 JPG/JPEG - Imágenes comprimidas\n🖼️ PNG - Imágenes con transparencia\n✅ Alta calidad en todos los formatos\n\nArrastra tus archivos o haz clic en "Seleccionar Archivos"'
-    );
+    alert('📄 Múltiples Formatos Disponibles\n\n📄 PDF - Documentos portátiles\n📷 JPG/JPEG - Imágenes comprimidas\n🖼️ PNG - Imágenes con transparencia\n✅ Alta calidad en todos los formatos\n\nArrastra tus archivos o haz clic en "Seleccionar Archivos"');
   };
 
   const showDetailedResults = async () => {
     if (files.length === 0) {
-      showWarning('Archivo requerido', 'Por favor, sube primero un documento para ver resultados detallados');
+      alert('Por favor, sube primero un documento para ver resultados detallados');
       return;
     }
     
@@ -185,9 +168,7 @@ const DocumentAnalysis = () => {
         method: 'POST',
         body: formData,
         headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${user?.id || 1}`,
-          'X-User-ID': user?.id || 1
+          'Accept': 'application/json'
         }
       });
       
@@ -195,17 +176,14 @@ const DocumentAnalysis = () => {
       
       if (result.success && result.data) {
         const analysis = result.data;
-        showSuccess(
-          'Resultados Detallados',
-          `📊 Análisis completado\n📋 Informe generado\n💡 Recomendaciones incluidas\n✅ Resultados optimizados\n\nTiempo: ${analysis.processingTime || 'N/A'}\n🎯 Confianza: ${analysis.confidence || 'N/A'}%`
-        );
+        alert(`📊 Resultados Detallados\n\n📊 Análisis completado\n📋 Informe generado\n💡 Recomendaciones incluidas\n✅ Resultados optimizados\n\nTiempo: ${analysis.processingTime || 'N/A'}\n🎯 Confianza: ${analysis.confidence || 'N/A'}%`);
       } else {
         throw new Error(result.error?.message || 'Error obteniendo resultados detallados');
       }
       
     } catch (error) {
       console.error('Error en resultados detallados:', error);
-      showError('Error en resultados', '❌ Error en resultados detallados: ' + error.message);
+      alert('❌ Error en resultados detallados: ' + error.message);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -238,11 +216,11 @@ const DocumentAnalysis = () => {
   const handleFiles = useCallback((newFiles) => {
     const validFiles = newFiles.filter(file => {
       if (!allowedTypes.includes(file.type)) {
-        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG y PNG.`);
+        alert(`El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG y PNG.`);
         return false;
       }
       if (file.size > maxFileSize) {
-        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
+        alert(`El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
         return false;
       }
       return true;
@@ -284,9 +262,7 @@ const DocumentAnalysis = () => {
           method: 'POST',
           body: formData,
           headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${user?.id || 1}`,
-            'X-User-ID': user?.id || 1
+            'Accept': 'application/json'
           }
         });
         
@@ -294,16 +270,13 @@ const DocumentAnalysis = () => {
         
         if (result.success) {
           console.log('✅ Análisis completado:', result.data);
-          showSuccess(
-            'Análisis completado',
-            '✅ Documentos procesados con IA\n✅ Texto extraído y analizado\n✅ Resultados disponibles en el historial'
-          );
+          alert('✅ Análisis completado\n\n✅ Documentos procesados con IA\n✅ Texto extraído y analizado\n✅ Resultados disponibles en el historial');
         } else {
           throw new Error(result.error?.message || 'Error en el análisis');
         }
       } catch (error) {
         console.error('❌ Error en el análisis:', error);
-        showError('Error en análisis', '❌ Error en el análisis: ' + error.message);
+        alert('❌ Error en el análisis: ' + error.message);
       } finally {
         setIsUploading(false);
         setUploadProgress(0);

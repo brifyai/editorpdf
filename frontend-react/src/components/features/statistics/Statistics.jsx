@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { supabaseHelpers } from '../../../services/supabase';
-import { useAuth } from '../../../hooks/useAuth';
 import './Statistics.css';
 
 const Statistics = () => {
@@ -27,8 +26,6 @@ const Statistics = () => {
     topDocuments: [],
     performanceMetrics: []
   });
-  const { user } = useAuth();
-
   const periods = [
     { value: '7d', label: '7 Días' },
     { value: '30d', label: '30 Días' },
@@ -46,10 +43,8 @@ const Statistics = () => {
 
   // Cargar estadísticas reales
   useEffect(() => {
-    if (user?.id) {
-      loadStatistics();
-    }
-  }, [user, selectedPeriod]);
+    loadStatistics();
+  }, [selectedPeriod]);
 
   const loadStatistics = async () => {
     try {
@@ -57,23 +52,23 @@ const Statistics = () => {
       setError(null);
 
       // Cargar estadísticas de uso reales
-      const { data: usageData, error: usageError } = await supabaseHelpers.getUsageStatistics(user.id, selectedPeriod);
+      const { data: usageData, error: usageError } = await supabaseHelpers.getUsageStatistics(1, selectedPeriod);
       if (usageError) throw usageError;
 
       // Cargar métricas de IA reales
-      const { data: aiMetrics, error: aiError } = await supabaseHelpers.getAIModelMetrics(user.id, 100);
+      const { data: aiMetrics, error: aiError } = await supabaseHelpers.getAIModelMetrics(1, 100);
       if (aiError) throw aiError;
 
       // Cargar documentos reales
-      const { data: documents, error: docError } = await supabaseHelpers.getDocumentStats(user.id);
+      const { data: documents, error: docError } = await supabaseHelpers.getDocumentStats(1);
       if (docError) throw docError;
 
       // Cargar procesos OCR reales
-      const { data: ocrProcesses, error: ocrError } = await supabaseHelpers.getOCRProcesses(user.id, 50);
+      const { data: ocrProcesses, error: ocrError } = await supabaseHelpers.getOCRProcesses(1, 50);
       if (ocrError) throw ocrError;
 
       // Cargar conversiones reales
-      const { data: conversions, error: convError } = await supabaseHelpers.getDocumentConversions(user.id, 50);
+      const { data: conversions, error: convError } = await supabaseHelpers.getDocumentConversions(1, 50);
       if (convError) throw convError;
 
       // Procesar y transformar datos reales
@@ -88,7 +83,7 @@ const Statistics = () => {
       setStats(processedStats);
     } catch (err) {
       console.error('Error loading statistics:', err);
-      setError('Error al cargar las estadísticas');
+      alert('Error al cargar las estadísticas: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -279,7 +274,7 @@ const Statistics = () => {
             </svg>
           </div>
           <h3>Error al cargar estadísticas</h3>
-          <p>{error}</p>
+          <p>Error al cargar las estadísticas. Intenta recargar la página.</p>
           <button className="retry-button" onClick={loadStatistics}>
             Reintentar
           </button>
