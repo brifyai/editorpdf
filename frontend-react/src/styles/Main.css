@@ -36,7 +36,7 @@
   background: #ffffff;
   margin-left: 320px;
   padding-top: 9px;
-  padding-bottom: 25px; /* Espacio para el footer fijo de 20px */
+  padding-bottom: 45px; /* Espacio para el footer fijo de 40px */
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
