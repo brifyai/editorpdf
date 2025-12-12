@@ -36,6 +36,7 @@
   background: #ffffff;
   margin-left: 320px;
   padding-top: 9px;
+  padding-bottom: 25px; /* Espacio para el footer fijo de 20px */
   position: relative;
   overflow-x: hidden;
   overflow-y: auto;
@@ -436,7 +437,7 @@
 .main-content-premium {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0 2rem 2rem;
+  padding: 0 2rem 0;
   position: relative;
   z-index: 2;
 }
@@ -529,7 +530,7 @@
   }
   
   .main-content-premium {
-    padding: 0 1rem 1rem;
+    padding: 0 1rem 0;
   }
   
   .content-wrapper-premium {

@@ -355,10 +355,10 @@ const Main = React.memo(({ children, sidebarOpen }) => {
           <div className="floating-orb orb-2"></div>
           <div className="floating-orb orb-3"></div>
         </div>
-
-        {/* Footer - Visible on all pages */}
-        <Footer />
       </main>
+
+      {/* Footer - Fixed at bottom, visible on all pages */}
+      <Footer />
     </>
   );
 });
