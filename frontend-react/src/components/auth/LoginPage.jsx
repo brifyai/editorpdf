@@ -106,7 +106,7 @@ const LoginPage = () => {
               </div>
             </div>
             
-            <div className="feature-item">
+            <div className="feature-item desktop-only">
               <div className="feature-icon">🤖</div>
               <div className="feature-text">
                 <h3>IA Integrada</h3>
@@ -114,7 +114,7 @@ const LoginPage = () => {
               </div>
             </div>
             
-            <div className="feature-item">
+            <div className="feature-item desktop-only">
               <div className="feature-icon">🔄</div>
               <div className="feature-text">
                 <h3>Conversión Inteligente</h3>
