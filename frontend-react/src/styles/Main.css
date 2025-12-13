@@ -664,6 +664,11 @@
     font-size: 0.9rem;
   }
   
+  /* ✅ AGREGADO: Ocultar subtítulo en móvil para ahorrar espacio */
+  .page-subtitle-premium {
+    display: none !important;
+  }
+  
   .quick-action-btn-premium {
     padding: 0.75rem 1rem;
     font-size: 0.85rem;

@@ -878,4 +878,9 @@
     transform: translateY(-10px) !important;
     margin-top: 0 !important;
   }
+  
+  /* ✅ AGREGADO: Ocultar subtítulo en móvil para ahorrar espacio */
+  .page-subtitle-premium {
+    display: none !important;
+  }
 }

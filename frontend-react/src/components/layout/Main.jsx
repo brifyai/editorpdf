@@ -349,7 +349,10 @@ const Main = React.memo(({ children, sidebarOpen, onToggleSidebar }) => {
                     </button>
                   </div>
                 </div>
-                <p className="page-subtitle-premium">{currentPage.subtitle}</p>
+                {/* ✅ AGREGADO: No mostrar subtítulo en móvil para ahorrar espacio */}
+                {!isMobile && (
+                  <p className="page-subtitle-premium">{currentPage.subtitle}</p>
+                )}
               </div>
             </div>
 
