@@ -120,7 +120,7 @@ const RegisterPage = () => {
               </div>
             </div>
             
-            <div className="feature-item">
+            <div className="feature-item desktop-only">
               <div className="feature-icon">🤖</div>
               <div className="feature-text">
                 <h3>IA Integrada</h3>
@@ -128,7 +128,7 @@ const RegisterPage = () => {
               </div>
             </div>
             
-            <div className="feature-item">
+            <div className="feature-item desktop-only">
               <div className="feature-icon">🔄</div>
               <div className="feature-text">
                 <h3>Conversión Inteligente</h3>
@@ -144,7 +144,7 @@ const RegisterPage = () => {
             </div>
             <div className="stat-item">
               <div className="stat-number">50+</div>
-              <div className="stat-label">Formatos Soportados</div>
+              <div className="stat-label">Formatos</div>
             </div>
             <div className="stat-item">
               <div className="stat-number">99.9%</div>

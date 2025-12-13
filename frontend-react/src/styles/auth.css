@@ -571,15 +571,18 @@ body {
   }
   
   .register-sidebar {
-    padding: 2rem 1rem 1.5rem; /* Más espacio arriba, menos abajo */
+    padding: 1.5rem 1rem 1rem; /* Más espacio arriba, menos abajo */
+    min-height: 40vh; /* Altura mínima para sidebar en móvil */
   }
   
   .register-form-container {
     padding: 1rem;
+    min-height: 60vh; /* Altura mínima para formulario en móvil */
   }
   
   .register-form-card {
     padding: 1.5rem;
+    margin: 0 auto;
   }
   
   .form-title {
@@ -605,6 +608,11 @@ body {
   
   .sidebar-features {
     margin-bottom: 1.5rem; /* Espacio antes de estadísticas */
+  }
+  
+  /* Ocultar features no esenciales en móvil */
+  .feature-item.desktop-only {
+    display: none;
   }
   
   .feature-item {
@@ -645,6 +653,75 @@ body {
   
   .stat-label {
     font-size: 0.7rem; /* Etiquetas más pequeñas */
+  }
+  
+  /* Optimizaciones táctiles para móvil */
+  .form-input {
+    padding: 1rem; /* Más espacio para dedos */
+    font-size: 16px; /* Evita zoom en iOS */
+    border-radius: 0.75rem; /* Bordes más redondeados */
+  }
+  
+  .register-submit-btn {
+    padding: 1rem 1.5rem; /* Botón más grande para táctil */
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    min-height: 48px; /* Altura mínima para accesibilidad táctil */
+  }
+  
+  .form-label {
+    font-size: 0.9rem; /* Labels más grandes */
+    margin-bottom: 0.25rem;
+  }
+  
+  .footer-link {
+    padding: 0.5rem 0.75rem; /* Área de toque más grande */
+    font-size: 0.9rem;
+  }
+}
+
+/* Optimizaciones específicas para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .register-sidebar {
+    padding: 1rem 0.75rem 0.75rem;
+  }
+  
+  .register-form-container {
+    padding: 0.75rem;
+  }
+  
+  .register-form-card {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
+  
+  .sidebar-title {
+    font-size: 1.25rem;
+  }
+  
+  .sidebar-description {
+    font-size: 0.8rem;
+  }
+  
+  .form-title {
+    font-size: 1.375rem;
+  }
+  
+  .sidebar-stats {
+    gap: 0.25rem;
+  }
+  
+  .stat-item {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .stat-number {
+    font-size: 1.1rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
   }
 }
 
