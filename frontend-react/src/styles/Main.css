@@ -634,6 +634,7 @@
     grid-template-columns: repeat(2, 1fr); /* CAMBIADO: De 1fr a 2 columnas para mejor uso del espacio */
     gap: 0.75rem; /* REDUCIDO: De 1rem a 0.75rem para más compacto */
     margin-top: 1rem; /* AGREGADO: Mejor espaciado */
+    background: red !important; /* TEMPORAL: Para verificar que los estilos se aplican */
   }
   
   /* ✅ AGREGADO: Optimización de tarjetas de estadísticas para móvil */
