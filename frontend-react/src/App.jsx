@@ -7,6 +7,7 @@ import { StatisticsProvider } from './contexts/StatisticsContext';
 // Layout Components (cargar inmediatamente)
 import Sidebar from './components/layout/Sidebar';
 import Main from './components/layout/Main';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 
 // Auth Components
 import LoginPage from './components/auth/LoginPage';
@@ -67,20 +68,19 @@ const OCRInteligente = React.lazy(() => import('./components/features/pdf/OCRInt
 const ExtraccionInteligente = React.lazy(() => import('./components/features/pdf/ExtraccionInteligente'));
 const PDFToolGenerator = React.lazy(() => import('./components/features/pdf/PDFToolsGenerator'));
 
-// Styles
+// Styles - IMPORT ORDER IS CRITICAL!
+// Import premium.css LAST to ensure it overrides all other styles
 import './styles/App.css';
-import './styles/premium.css';
-import './styles/Sidebar.css';
 import './styles/Main.css';
 import './styles/Header.css';
 import './styles/animations.css';
 import './styles/auth.css';
-import './styles/sidebar-material.css';
 import './styles/styles.css';
 import './styles/ui-improvements.css';
+import './styles/premium.css'; // PREMIUM CSS MUST BE LAST TO OVERRIDE EVERYTHING
 
-// Scripts
-import './scripts/interactions.js';
+// Scripts - TEMPORALMENTE DESACTIVADO PARA DEBUGGING
+// import './scripts/interactions.js';
 
 // Public Route Component (sin autenticación)
 const PublicRoute = ({ children }) => {
@@ -90,6 +90,7 @@ const PublicRoute = ({ children }) => {
 // App Layout Component
 const AppLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 769);
+  const isMobile = window.innerWidth < 769;
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -99,8 +100,12 @@ const AppLayout = ({ children }) => {
     <div className="app-container">
       <div className="app-main">
         <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
-        <Main sidebarOpen={isSidebarOpen}>{children}</Main>
+        <Main sidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar}>
+          {children}
+        </Main>
       </div>
+      {/* Mostrar bottom navigation solo en móvil */}
+      {isMobile && <MobileBottomNav />}
     </div>
   );
 };
@@ -125,8 +130,8 @@ const AppRoutes = () => {
   return (
     <Routes>
       {/* Rutas de autenticación - SIN layout */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/acceso" element={<LoginPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
       
       {/* Ruta principal - Dashboard público */}
       <Route path="/" element={

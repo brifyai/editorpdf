@@ -1,115 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSidebarSwipe } from '../../hooks/useSwipeGestures';
+
+// ✅ CORREGIDO: Breakpoint consistente
+const MOBILE_BREAKPOINT = 768;
 
 const Sidebar = ({ isOpen, onToggle }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSections, setExpandedSections] = useState({
-    analysis: true,
-    ocr: true,
-    batch: false,
-    ai: false,
-    export: false,
-    tools: false
+    'document-processing': true,
+    'advanced-tools': false,
+    'settings-export': false
   });
 
-  const menuSections = [
+  // ✅ CORREGIDO: Detectar dispositivo con listener para resize
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+
+    // Verificar inicialmente
+    checkIsMobile();
+
+    // Agregar listener para resize
+    window.addEventListener('resize', checkIsMobile);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  const quickAccessItems = [
+    { id: 'dashboard', label: 'Panel Principal', icon: '🏠', path: '/' }
+  ];
+
+  // Menú simplificado para móvil (solo funciones esenciales)
+  const mobileCategories = [
     {
-      id: 'analysis',
-      title: 'Análisis de Documentos',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"/>
-          <path d="M14 2V8H20"/>
-          <path d="M16 13H8"/>
-          <path d="M16 17H8"/>
-          <path d="M10 9H9H8"/>
-        </svg>
-      ),
+      id: 'document-processing',
+      title: '📄 Documentos',
       items: [
-        { id: 'documents', label: 'Análisis de PDFs', icon: '📄', path: '/analisis-documentos', badge: null },
-        { id: 'images', label: 'Análisis de Imágenes', icon: '🖼️', path: '/analisis-imagenes', badge: null },
-        { id: 'history', label: 'Historial de Análisis', icon: '📋', path: '/historial-analisis', badge: null }
+        { id: 'images', label: 'Análisis Imágenes', icon: '🖼️', path: '/analisis-imagenes' },
+        { id: 'history', label: 'Historial', icon: '📋', path: '/historial-analisis' },
+        { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch' }
       ]
     },
     {
-      id: 'ocr',
-      title: 'OCR y Conversión',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-      ),
+      id: 'advanced-tools',
+      title: '⚡ IA & Tools',
       items: [
-        { id: 'ocr-processing', label: 'OCR de Imágenes', icon: '🔍', path: '/ocr-conversion', badge: null },
-        { id: 'pdf-conversion', label: 'Conversión a PDF', icon: '📄', path: '/conversion-pdf', badge: null },
-        { id: 'word-conversion', label: 'Conversión a Word', icon: '📝', path: '/conversion-word', badge: null }
+        { id: 'ai-config', label: 'Configuración IA', icon: '🤖', path: '/inteligencia-artificial' },
+        { id: 'ai-metrics', label: 'Métricas', icon: '📊', path: '/metricas-ia' }
       ]
     },
     {
-      id: 'batch',
-      title: 'Procesamiento Batch',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          <path d="M7.5 4.21L12 6.81l4.5-2.6"/>
-          <path d="M12 22.81V12"/>
-          <path d="M3.27 6.96L12 12.01l8.73-5.05"/>
-          <path d="M12 8.52V22.81"/>
-        </svg>
-      ),
+      id: 'settings-export',
+      title: '⚙️ Soporte',
       items: [
-        { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch', badge: null },
-        { id: 'batch-tools', label: 'Herramientas Batch', icon: '🛠️', path: '/herramientas-batch', badge: null }
-      ]
-    },
-    {
-      id: 'ai',
-      title: 'Inteligencia Artificial',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2z"/>
-          <path d="M12 6a6 6 0 1 1-6 6"/>
-          <path d="M12 22a10 10 0 0 1 0-20"/>
-          <path d="M20 12a8 8 0 0 1-16 0"/>
-        </svg>
-      ),
-      items: [
-        { id: 'ai-config', label: 'Configuración de IA', icon: '⚙️', path: '/inteligencia-artificial', badge: null },
-        { id: 'ai-metrics', label: 'Métricas de IA', icon: '📊', path: '/metricas-ia', badge: null },
-        { id: 'model-comparison', label: 'Comparación de Modelos', icon: '📈', path: '/comparacion-modelos', badge: null }
-      ]
-    },
-    {
-      id: 'export',
-      title: 'Exportación',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <path d="M7 10l5 5 5-5"/>
-          <path d="M12 15V3"/>
-        </svg>
-      ),
-      items: [
-        { id: 'export-tools', label: 'Exportación Avanzada', icon: '💾', path: '/exportacion-avanzada', badge: null },
-        { id: 'statistics', label: 'Estadísticas', icon: '📊', path: '/estadisticas', badge: null }
-      ]
-    },
-    {
-      id: 'tools',
-      title: 'Herramientas',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-        </svg>
-      ),
-      items: [
-        { id: 'settings', label: 'Configuración', icon: '⚙️', path: '/configuracion', badge: null },
-        { id: 'help', label: 'Ayuda y Soporte', icon: '❓', path: '/ayuda-soporte', badge: null }
+        { id: 'settings', label: 'Ajustes', icon: '⚙️', path: '/configuracion' },
+        { id: 'help', label: 'Ayuda', icon: '❓', path: '/ayuda-soporte' }
       ]
     }
   ];
+
+  // Menú completo para desktop
+  const desktopCategories = [
+    {
+      id: 'document-processing',
+      title: '📄 Procesamiento de Documentos',
+      icon: null,
+      items: [
+        { id: 'images', label: 'Análisis de Imágenes', icon: '🖼️', path: '/analisis-imagenes' },
+        { id: 'history', label: 'Historial de Análisis', icon: '📋', path: '/historial-analisis' },
+        { id: 'pdf-conversion', label: 'Conversión a PDF', icon: '📄', path: '/conversion-pdf' },
+        { id: 'word-conversion', label: 'Conversión a Word', icon: '📝', path: '/conversion-word' },
+        { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch' },
+        { id: 'batch-tools', label: 'Herramientas Batch', icon: '🛠️', path: '/herramientas-batch' }
+      ]
+    },
+    {
+      id: 'advanced-tools',
+      title: '⚡ Herramientas Avanzadas',
+      icon: null,
+      items: [
+        { id: 'ai-config', label: 'Configuración de IA', icon: '🤖', path: '/inteligencia-artificial' },
+        { id: 'ai-metrics', label: 'Métricas de IA', icon: '📊', path: '/metricas-ia' },
+        { id: 'model-comparison', label: 'Comparación de Modelos', icon: '📈', path: '/comparacion-modelos' },
+        { id: 'export-tools', label: 'Exportación Avanzada', icon: '💾', path: '/exportacion-avanzada' },
+        { id: 'statistics', label: 'Estadísticas', icon: '📉', path: '/estadisticas' }
+      ]
+    },
+    {
+      id: 'settings-export',
+      title: '⚙️ Configuración & Soporte',
+      icon: null,
+      items: [
+        { id: 'settings', label: 'Configuración', icon: '⚙️', path: '/configuracion' },
+        { id: 'help', label: 'Ayuda y Soporte', icon: '❓', path: '/ayuda-soporte' }
+      ]
+    }
+  ];
+
+  // ✅ CORREGIDO: Usar isMobile en lugar de window.innerWidth
+  const mainCategories = isMobile ? mobileCategories : desktopCategories;
 
   const toggleSection = (sectionId) => {
     setExpandedSections(prev => ({
@@ -120,28 +115,34 @@ const Sidebar = ({ isOpen, onToggle }) => {
 
   const handleNavigation = (path) => {
     navigate(path);
-    if (window.innerWidth < 768) {
+    // ✅ CORREGIDO: Usar isMobile en lugar de window.innerWidth
+    if (isMobile) {
       onToggle();
     }
   };
 
-  const filteredSections = menuSections.map(section => ({
-    ...section,
-    items: section.items.filter(item =>
+  const filteredQuickAccess = quickAccessItems.filter(item =>
+    item.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCategories = mainCategories.map(category => ({
+    ...category,
+    items: category.items.filter(item =>
       item.label.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  })).filter(section => section.items.length > 0 || !searchTerm);
+  })).filter(category => category.items.length > 0 || !searchTerm);
 
-  // Auto-expand sections on hover when sidebar is collapsed
-  const [hoveredSection, setHoveredSection] = useState(null);
+  // ✅ CORREGIDO: Eliminar variable no utilizada
+  // const [hoveredSection, setHoveredSection] = useState(null);
+
+  // ✅ CORREGIDO: Solo activar gestos en móvil para evitar conflictos
+  useSidebarSwipe(isMobile ? onToggle : null, isMobile ? onToggle : null);
 
   return (
     <>
-      <div className={`premium-sidebar ${isOpen ? 'open' : ''}`}>
-        <div className="sidebar-backdrop-premium" onClick={onToggle}></div>
-        
+      <div className={`premium-sidebar ${isOpen ? 'open' : ''}`} id="sidebar-menu">
         <div className="sidebar-content">
-          {/* Sidebar Header */}
+          {/* ✅ CORREGIDO: Sidebar Header con estilos consistentes */}
           <div className="sidebar-header-premium">
             <div className="sidebar-logo-premium">
               <div className="logo-icon-premium">
@@ -150,7 +151,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
                   <path d="M14 2V8H20"/>
                   <path d="M16 13H8"/>
                   <path d="M16 17H8"/>
-                  <path d="M10 9H9H8"/>
+                  <path dName="10 9H9H8"/>
                 </svg>
               </div>
               <div className="logo-text-premium">
@@ -159,97 +160,88 @@ const Sidebar = ({ isOpen, onToggle }) => {
               </div>
             </div>
             
-            <button
-              className="sidebar-close-premium"
-              onClick={onToggle}
-              aria-label="Cerrar sidebar"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+            {/* ✅ CORREGIDO: Solo mostrar el botón de cierre en dispositivos móviles */}
+            {isMobile && (
+              <button
+                className="sidebar-close-premium"
+                onClick={onToggle}
+                aria-label="Cerrar menú lateral"
+                aria-expanded={isOpen}
+                type="button"
+              >
+                <div className="hamburger-lines">
+                  <span className="hamburger-line"></span>
+                  <span className="hamburger-line"></span>
+                  <span className="hamburger-line"></span>
+                </div>
+              </button>
+            )}
           </div>
 
-          {/* Dashboard Navigation */}
-          <div className="sidebar-dashboard-nav">
-            <button
-              className="dashboard-nav-item"
-              onClick={() => handleNavigation('/')}
-            >
-              <div className="dashboard-nav-icon">🏠</div>
-              <span className="dashboard-nav-label">Panel Principal</span>
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="sidebar-search-premium">
-            <div className="search-container-premium">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar servicios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input-sidebar-premium"
-              />
-              {searchTerm && (
+          {/* ✅ CORREGIDO: Quick Access con estilos consistentes */}
+          <div className="quick-access-section">
+            <div className="quick-access-title">Acceso Rápido</div>
+            <div className="quick-access-items">
+              {filteredQuickAccess.map((item) => (
                 <button
-                  className="search-clear-premium"
-                  onClick={() => setSearchTerm('')}
-                  aria-label="Limpiar búsqueda"
+                  key={item.id}
+                  className={`quick-access-item ${isMobile ? 'mobile-touch-target' : ''}`}
+                  onClick={() => handleNavigation(item.path)}
+                  aria-label={`Ir a ${item.label}`}
+                  type="button"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
+                  <span className="quick-access-icon">{item.icon}</span>
+                  <span>{item.label}</span>
                 </button>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Navigation Menu */}
+          {/* ✅ CORREGIDO: Search Bar eliminada completamente */}
+
+          {/* ✅ CORREGIDO: Main Categories con estilos consistentes */}
           <nav className="sidebar-nav-premium">
             <div className="nav-sections-premium">
-              {filteredSections.map((section) => (
-                <div 
-                  key={section.id} 
+              {filteredCategories.map((category) => (
+                <div
+                  key={category.id}
                   className="nav-section-premium"
-                  onMouseEnter={() => setHoveredSection(section.id)}
-                  onMouseLeave={() => setHoveredSection(null)}
                 >
                   <button
-                    className="section-header-premium"
-                    onClick={() => toggleSection(section.id)}
+                    className={`section-header-premium ${isMobile ? 'mobile-touch-target' : ''}`}
+                    onClick={() => toggleSection(category.id)}
+                    aria-expanded={expandedSections[category.id]}
+                    aria-controls={`section-${category.id}`}
+                    type="button"
                   >
                     <div className="section-info-premium">
-                      <span className="section-icon-premium">{section.icon}</span>
-                      <span className="section-title-premium">{section.title}</span>
+                      <span className="section-title-premium">{category.title}</span>
                     </div>
-                    <div className={`section-toggle-premium ${expandedSections[section.id] ? 'expanded' : ''}`}>
+                    <div className={`section-toggle-premium ${expandedSections[category.id] ? 'expanded' : ''}`}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="6,9 12,15 18,9"></polyline>
                       </svg>
                     </div>
                   </button>
                   
-                  <div className={`section-items-premium ${expandedSections[section.id] ? 'expanded' : ''}`}>
-                    {section.items.map((item) => (
+                  <div
+                    className={`section-items-premium ${expandedSections[category.id] ? 'expanded' : ''}`}
+                    id={`section-${category.id}`}
+                    role="region"
+                    aria-labelledby={`header-${category.id}`}
+                  >
+                    {category.items.map((item) => (
                       <button
                         key={item.id}
-                        className="nav-item-premium"
+                        className={`nav-item-premium ${isMobile ? 'mobile-touch-target' : ''}`}
                         onClick={() => handleNavigation(item.path)}
+                        aria-label={`Ir a ${item.label}`}
+                        type="button"
                       >
                         <div className="nav-item-content-premium">
                           <div className="nav-item-icon-premium">{item.icon}</div>
                           <span className="nav-item-label-premium">{item.label}</span>
                         </div>
-                        {item.badge && (
-                          <span className="nav-item-badge-premium">{item.badge}</span>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -258,7 +250,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
             </div>
           </nav>
 
-          {/* Sidebar Footer */}
+          {/* ✅ CORREGIDO: Sidebar Footer */}
           <div className="sidebar-footer-premium">
             <div className="sidebar-info-inline-premium">
               <div className="info-item-inline-premium">
@@ -280,9 +272,15 @@ const Sidebar = ({ isOpen, onToggle }) => {
         </div>
       </div>
 
-      {/* Mobile Overlay */}
+      {/* ✅ CORREGIDO: Mobile Overlay con mejor accesibilidad */}
       {isOpen && (
-        <div className="mobile-overlay-premium" onClick={onToggle}></div>
+        <div
+          className="mobile-overlay-premium"
+          onClick={onToggle}
+          aria-hidden="true"
+          role="button"
+          tabIndex={-1}
+        ></div>
       )}
     </>
   );

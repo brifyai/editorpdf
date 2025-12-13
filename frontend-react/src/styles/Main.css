@@ -76,7 +76,7 @@
   position: relative;
   padding: 0.5rem 0;
   margin-bottom: 0.5rem;
-  overflow: hidden;
+  overflow: visible; /* CORREGIDO: Permitir que el contenido se vea completo */
   background: #ffffff;
 }
 
@@ -223,7 +223,7 @@
 
 .title-auth-button.register-button {
   background: linear-gradient(135deg, #00d4ff, #9d00ff);
-  color: white;
+  color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -585,7 +585,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .premium-main {
-    padding-top: 70px;
+    padding-top: 20px; /* CORREGIDO: Reducido de 70px a 20px para menos espacio vacío */
   }
   
   .page-header-content {

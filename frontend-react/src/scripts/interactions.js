@@ -229,18 +229,18 @@ function initDropdownMenus() {
 // ===== MENÚ MÓVIL =====
 function initMobileMenu() {
   const mobileToggle = document.querySelector('.mobile-menu-toggle');
-  const sidebar = document.querySelector('.modern-sidebar');
+  const sidebar = document.querySelector('.premium-sidebar');
   
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('mobile-open');
+      sidebar.classList.toggle('open');
       mobileToggle.classList.toggle('active');
     });
     
     // Cerrar al hacer click fuera
     document.addEventListener('click', (e) => {
       if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
-        sidebar.classList.remove('mobile-open');
+        sidebar.classList.remove('open');
         mobileToggle.classList.remove('active');
       }
     });

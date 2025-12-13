@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState(null);
+
 
   const toolCategories = [
     {
@@ -355,6 +357,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+
       {/* Navegación Rápida de Categorías */}
       <div className="category-navigation">
         <div className="nav-buttons-container">

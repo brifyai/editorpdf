@@ -1,11 +1,134 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend-react</title>
-  </head>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- SEO Primary Meta Tags - OPTIMIZADOS PARA GOOGLE -->
+    <title>Editor PDF Online Gratis | Analizador PDF con IA | EditorPDF Pro</title>
+    <meta name="title" content="Editor PDF Online Gratis | Analizador PDF con IA | EditorPDF Pro">
+    <meta name="description" content="Editor PDF online gratuito con IA. Convierte PDF a Word, Excel, PowerPoint. OCR inteligente, procesamiento batch, análisis con inteligencia artificial. Herramientas PDF profesionales 100% online.">
+    <meta name="keywords" content="editor pdf, convertir pdf, pdf a word, pdf a excel, ocr pdf, analizador pdf, herramientas pdf, procesamiento batch pdf, pdf online gratis, editor pdf con ia">
+    <meta name="author" content="EditorPDF Pro">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://editorpdf.pro/">
+    <meta property="og:title" content="Editor PDF Online Gratis | Analizador PDF con IA | EditorPDF Pro">
+    <meta property="og:description" content="Editor PDF online gratuito con IA. Convierte PDF a Word, Excel, PowerPoint. OCR inteligente, procesamiento batch, análisis con inteligencia artificial.">
+    <meta property="og:image" content="https://editorpdf.pro/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="es_CL">
+    <meta property="og:site_name" content="EditorPDF Pro">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://editorpdf.pro/">
+    <meta property="twitter:title" content="Editor PDF Online Gratis | Analizador PDF con IA | EditorPDF Pro">
+    <meta property="twitter:description" content="Editor PDF online gratuito con IA. Convierte PDF a Word, Excel, PowerPoint. OCR inteligente, procesamiento batch.">
+    <meta property="twitter:image" content="https://editorpdf.pro/twitter-image.jpg">
+    <meta name="twitter:creator" content="@editorpdfpro">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://editorpdf.pro/" />
+    
+    <!-- Preconnects and DNS Prefetch -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://supabase.co">
+    
+    <!-- Mobile and PWA -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="EditorPDF Pro">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "EditorPDF Pro",
+      "description": "Editor PDF online gratuito con IA. Convierte PDF a Word, Excel, PowerPoint. OCR inteligente y procesamiento batch.",
+      "url": "https://editorpdf.pro",
+      "applicationCategory": "BusinessApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1250"
+      },
+      "featureList": [
+        "Editor PDF online",
+        "Convertir PDF a Word",
+        "Convertir PDF a Excel",
+        "OCR inteligente",
+        "Procesamiento batch",
+        "Análisis con IA"
+      ],
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript. Requires HTML5."
+    }
+    </script>
+  
+<!-- PWA Meta Tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PDF Analyzer Pro">
+<meta name="application-name" content="PDF Analyzer Pro">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#00d4ff">
+<meta name="msapplication-navbutton-color" content="#00d4ff">
+<meta name="msapplication-TileColor" content="#00d4ff">
+<meta name="msapplication-config" content="/browserconfig.xml">
+
+<!-- Apple Touch Icons -->
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/icon-167.png">
+
+<!-- PWA Scripts -->
+<script>
+  // Registrar service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw-advanced.js')
+        .then((registration) => {
+          console.log('SW registrado:', registration);
+        })
+        .catch((error) => {
+          console.log('SW registro fallido:', error);
+        });
+    });
+  }
+
+  // Detectar cuando la app se instala
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    console.log('App instalable detectada');
+  });
+
+  // Detectar cuando la app se abre desde home screen
+  window.addEventListener('appinstalled', () => {
+    console.log('App instalada desde PWA');
+    window.deferredPrompt = null;
+  });
+</script>
+
+</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

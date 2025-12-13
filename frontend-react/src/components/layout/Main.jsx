@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStatistics } from '../../contexts/StatisticsContext';
+import { useAuth } from '../../hooks/useAuth';
+import SEOManager from '../seo/SEOManager';
 import Footer from './Footer';
 
 // Memoizar el componente Main para evitar re-renders innecesarios
-const Main = React.memo(({ children, sidebarOpen }) => {
+const Main = React.memo(({ children, sidebarOpen, onToggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isContentVisible, setIsContentVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const {
     documentsCount,
     successRate,
@@ -16,6 +20,18 @@ const Main = React.memo(({ children, sidebarOpen }) => {
     averageResponseTime,
     loading: loadingMetrics
   } = useStatistics();
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Page configuration
   const pageConfig = {
@@ -232,7 +248,9 @@ const Main = React.memo(({ children, sidebarOpen }) => {
   };
 
   const currentPage = pageConfig[location.pathname] || {
-    title: '¡Bienvenido a EditorPDF Pro! Camilo Alegria',
+    title: isAuthenticated && user?.name
+      ? `¡Bienvenido a EditorPDF Pro! ${user.name}`
+      : '¡Bienvenido a EditorPDF Pro!',
     subtitle: 'Plataforma de análisis de documentos inteligente',
     icon: '',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
@@ -279,9 +297,12 @@ const Main = React.memo(({ children, sidebarOpen }) => {
 
   return (
     <>
+      {/* SEO Manager - Actualiza meta tags dinámicamente */}
+      <SEOManager />
+      
       {/* Progress Bar */}
       <div className="progress-bar-premium">
-        <div 
+        <div
           className="progress-fill-premium"
           style={{ width: `${scrollProgress}%` }}
         ></div>
@@ -298,17 +319,31 @@ const Main = React.memo(({ children, sidebarOpen }) => {
             <div className="page-title-section-premium">
               <div className="page-title-content-premium">
                 <div className="page-title-with-buttons">
+                  {isMobile && (
+                    <button
+                      className="mobile-menu-toggle-fixed"
+                      onClick={onToggleSidebar}
+                      aria-label={sidebarOpen ? "Cerrar menú lateral" : "Abrir menú lateral"}
+                      aria-expanded={sidebarOpen}
+                      aria-controls="sidebar-menu"
+                      type="button"
+                    >
+                      <span className="hamburger-line"></span>
+                      <span className="hamburger-line"></span>
+                      <span className="hamburger-line"></span>
+                    </button>
+                  )}
                   <h1 className="page-title-premium">{currentPage.title}</h1>
                   <div className="title-auth-buttons">
                     <button
                       className="title-auth-button access-button"
-                      onClick={() => navigate('/login')}
+                      onClick={() => navigate('/acceso')}
                     >
                       Acceso
                     </button>
                     <button
                       className="title-auth-button register-button"
-                      onClick={() => navigate('/register')}
+                      onClick={() => navigate('/registro')}
                     >
                       Registro
                     </button>

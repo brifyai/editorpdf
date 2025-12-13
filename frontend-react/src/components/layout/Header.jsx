@@ -43,17 +43,7 @@ const Header = () => {
       <header className={`premium-header ${isScrolled ? 'scrolled' : ''}`}>
         <div className="header-content">
           <div className="header-left">
-            <button
-              className="menu-toggle-premium"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle sidebar"
-            >
-              <div className={`hamburger-premium ${isMobileMenuOpen ? 'open' : ''}`}>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </button>
+            {/* BOTÓN DE MENÚ MÓVIL ELIMINADO - Usar el botón flotante del Sidebar en su lugar */}
             
             <div className="logo-premium">
               <div className="logo-text-premium">
@@ -71,14 +61,14 @@ const Header = () => {
             <div className="auth-buttons-premium">
               <button
                 className="auth-button access-button"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/acceso')}
                 aria-label="Acceso"
               >
                 Acceso
               </button>
               <button
                 className="auth-button register-button"
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/registro')}
                 aria-label="Registro"
               >
                 Registro

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, FileText, Download, X, Scissors, Settings, Plus, Minus, Crown } from 'lucide-react';
 import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import { PDFDocument } from 'pdf-lib';
@@ -1897,47 +1897,19 @@ const SplitPDF = () => {
                     </div>
                   ) : (
                     Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
-                      <div
+                      <PageThumbnail
                         key={pageNumber}
-                        className={`page-item ${selectedPages.includes(pageNumber) ? 'selected' : ''}`}
-                        onClick={() => {
-                          togglePageSelection(pageNumber);
-                          // Generar vista previa bajo demanda para páginas sin preview
-                          if (!pagePreviews[pageNumber]) {
-                            generatePreviewOnDemand(pageNumber);
-                          }
+                        pageNumber={pageNumber}
+                        file={file.file}
+                        isSelected={selectedPages.includes(pageNumber)}
+                        onToggleSelection={togglePageSelection}
+                        onPreviewGenerated={(previewUrl) => {
+                          setPagePreviews(prev => ({
+                            ...prev,
+                            [pageNumber]: previewUrl
+                          }));
                         }}
-                      >
-                        <div className="page-preview-container">
-                          {pagePreviews[pageNumber] ? (
-                            <img
-                              src={pagePreviews[pageNumber]}
-                              alt={`Página ${pageNumber}`}
-                              className="page-preview-image"
-                            />
-                          ) : (
-                            <div
-                              className="page-preview-placeholder"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                generatePreviewOnDemand(pageNumber);
-                              }}
-                              title="Clic para vista previa instantánea"
-                            >
-                              <FileText size={24} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="page-selection-overlay">
-                          <input
-                            type="checkbox"
-                            checked={selectedPages.includes(pageNumber)}
-                            onChange={() => togglePageSelection(pageNumber)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span className="page-number-label">Página {pageNumber}</span>
-                        </div>
-                      </div>
+                      />
                     ))
                   )}
                 </div>
@@ -2111,6 +2083,92 @@ const SplitPDF = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Componente PageThumbnail con LAZY LOADING REAL usando Intersection Observer
+const PageThumbnail = ({
+  pageNumber,
+  file,
+  isSelected,
+  onToggleSelection,
+  onPreviewGenerated
+}) => {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const thumbnailRef = useRef(null);
+
+  // Intersection Observer para lazy loading REAL - solo carga cuando es visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        rootMargin: '300px', // Cargar miniaturas 300px antes de que sean visibles
+        threshold: 0.01
+      }
+    );
+
+    if (thumbnailRef.current) {
+      observer.observe(thumbnailRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleError = () => {
+    setHasError(true);
+    setIsLoading(false);
+  };
+
+  const handleSuccess = (previewUrl) => {
+    setIsLoading(false);
+    onPreviewGenerated(previewUrl);
+  };
+
+  return (
+    <div
+      ref={thumbnailRef}
+      className={`page-item ${isSelected ? 'selected' : ''}`}
+      onClick={() => onToggleSelection(pageNumber)}
+      style={{ minHeight: '200px' }}
+    >
+      <div className="page-preview-container">
+        {isVisible && !hasError ? (
+          <EnhancedPDFPreview
+            file={file}
+            pageNumber={pageNumber}
+            onPreviewGenerated={(pageNum, previewUrl) => handleSuccess(previewUrl)}
+            onError={handleError}
+            width={120}
+            height={160}
+            enableCapture={false}
+            enableZoom={false}
+            enableSelection={false}
+          />
+        ) : (
+          <div className="page-preview-placeholder">
+            {isLoading ? <div className="spinner-small"></div> : <FileText size={24} />}
+          </div>
+        )}
+      </div>
+      <div className="page-selection-overlay">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelection(pageNumber)}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="page-number-label">Página {pageNumber}</span>
+      </div>
     </div>
   );
 };
