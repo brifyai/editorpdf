@@ -334,20 +334,22 @@ const Main = React.memo(({ children, sidebarOpen, onToggleSidebar }) => {
                     </button>
                   )}
                   <h1 className="page-title-premium">{currentPage.title}</h1>
-                  <div className="title-auth-buttons">
-                    <button
-                      className="title-auth-button access-button"
-                      onClick={() => navigate('/acceso')}
-                    >
-                      Acceso
-                    </button>
-                    <button
-                      className="title-auth-button register-button"
-                      onClick={() => navigate('/registro')}
-                    >
-                      Registro
-                    </button>
-                  </div>
+                  {!isMobile && (
+                    <div className="title-auth-buttons">
+                      <button
+                        className="title-auth-button access-button"
+                        onClick={() => navigate('/acceso')}
+                      >
+                        Acceso
+                      </button>
+                      <button
+                        className="title-auth-button register-button"
+                        onClick={() => navigate('/registro')}
+                      >
+                        Registro
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {/* ✅ AGREGADO: No mostrar subtítulo en móvil para ahorrar espacio */}
                 {!isMobile && (
