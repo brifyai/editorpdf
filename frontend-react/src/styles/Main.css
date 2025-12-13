@@ -631,8 +631,48 @@
   }
   
   .stats-container-premium {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr); /* CAMBIADO: De 1fr a 2 columnas para mejor uso del espacio */
+    gap: 0.75rem; /* REDUCIDO: De 1rem a 0.75rem para más compacto */
+    margin-top: 1rem; /* AGREGADO: Mejor espaciado */
+  }
+  
+  /* ✅ AGREGADO: Optimización de tarjetas de estadísticas para móvil */
+  .stat-card-premium {
+    padding: 1rem; /* AUMENTADO: De 0.75rem a 1rem para mejor legibilidad */
+    min-height: 70px; /* AGREGADO: Altura mínima consistente */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .stat-icon-wrapper {
+    width: 40px; /* AUMENTADO: De 35px a 40px para mejor proporción */
+    height: 40px; /* AUMENTADO: De 35px a 40px para mejor proporción */
+  }
+  
+  .stat-value {
+    font-size: 1.1rem; /* AUMENTADO: De 1.2rem a 1.1rem para mejor balance */
+    font-weight: 700;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem; /* REDUCIDO: Para que quepa mejor en móvil */
+    line-height: 1.2;
+  }
+  
+  /* ✅ AJUSTES FINOS: Mejor espaciado y legibilidad */
+  .stat-content {
+    flex: 1;
+    min-width: 0; /* AGREGADO: Permitir que se comprima */
+  }
+  
+  .stat-card-premium {
+    text-align: left; /* AGREGADO: Alineación consistente */
+  }
+  
+  /* ✅ MEJORADO: Grid de estadísticas más compacto */
+  .stats-container-premium {
+    margin-bottom: 1rem; /* AGREGADO: Espacio inferior para separar del contenido */
   }
   
   .fab-premium {
