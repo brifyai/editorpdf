@@ -8,8 +8,8 @@ const MobileBottomNav = () => {
   
   const navItems = [
     { path: '/', icon: '🏠', label: 'Inicio', exact: true },
-    { path: '/analisis-imagenes', icon: '🖼️', label: 'Analizar' },
-    { path: '/historial-analisis', icon: '📋', label: 'Historial' },
+    { path: '/acceso', icon: '🔑', label: 'Acceso' },
+    { path: '/registro', icon: '📝', label: 'Registro' },
     { path: '/configuracion', icon: '⚙️', label: 'Ajustes' }
   ];
 
