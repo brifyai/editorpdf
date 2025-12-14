@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { aiConfigurationService } from '../../services/api';
-import { showErrorToUser, useErrorHandler } from '../../utils/errorHandler';
+import { aiConfigurationService } from '../../../services/api';
+import { showErrorToUser, useErrorHandler } from '../../../utils/errorHandler';
 import toast from 'react-hot-toast';
 import './AIConfiguration.css';
 
@@ -144,7 +144,7 @@ const AIConfiguration = () => {
         groq_model: configuration.groq.model,
         chutes_model: configuration.chutes.model,
         groq_temperature: configuration.groq.temperature,
-        chutes_max_tokens: configuration.groq.maxTokens,
+        groq_max_tokens: configuration.groq.maxTokens,
         chutes_temperature: configuration.chutes.temperature,
         chutes_max_tokens: configuration.chutes.maxTokens,
         groq_stream: configuration.groq.stream,

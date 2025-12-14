@@ -371,6 +371,22 @@ const useErrorHandler = () => {
   return { handleError, handleAsyncError };
 };
 
+// Exportaciones para ES modules
+export {
+  AppError,
+  ERROR_CODES,
+  ERROR_MESSAGES,
+  isRetryableError,
+  extractErrorFromResponse,
+  handleNetworkError,
+  normalizeError,
+  showErrorToUser,
+  withRetry,
+  withErrorHandling,
+  useErrorHandler
+};
+
+// Exportaciones para CommonJS (compatibilidad)
 module.exports = {
   AppError,
   ERROR_CODES,
