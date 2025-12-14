@@ -50,7 +50,7 @@ jest.mock('react-router-dom', () => ({
   Routes: ({ children }) => children,
   Route: ({ element }) => element,
   Link: ({ children, ...props }) => {
-    const React = require('react');
+    // Importar React dinámicamente para evitar problemas con el entorno de testing
     return React.createElement('a', props, children);
   },
   useNavigate: () => jest.fn(),

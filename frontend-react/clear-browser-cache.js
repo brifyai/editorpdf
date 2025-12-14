@@ -5,8 +5,8 @@
  * Esto fuerza la recarga completa de todos los archivos
  */
 
-const { exec } = require('child_process');
-const os = require('os');
+import { exec } from 'child_process';
+import os from 'os';
 
 const platform = os.platform();
 const url = 'http://localhost:3000';

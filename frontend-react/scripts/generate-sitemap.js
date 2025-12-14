@@ -114,4 +114,4 @@ function saveSitemap() {
 // Ejecutar
 saveSitemap();
 
-module.exports = { generateSitemap, allRoutes };
+export { generateSitemap, allRoutes };
