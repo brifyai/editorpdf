@@ -1,55 +1,92 @@
-import React, { useState, useCallback } from 'react';
-import { Upload, X, Settings, Download, FileText, Hash, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, FileText, Download, X, Settings, Hash } from 'lucide-react';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
+import { PDFDocument } from 'pdf-lib';
+import jsPDF from 'jspdf';
 import axios from 'axios';
 import './PageNumbers.css';
 
 const PageNumbers = () => {
   const [files, setFiles] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState('');
-  const [progress, setProgress] = useState(0);
-  
-  // Configuración de numeración
-  const [settings, setSettings] = useState({
-    position: 'bottom-right',
-    format: 'number',
-    startNumber: 1,
-    fontSize: 12,
-    fontColor: '#000000',
-    margin: 20,
-    prefix: '',
-    suffix: ''
-  });
+  const [numberPosition, setNumberPosition] = useState('bottom-right');
+  const [numberFormat, setNumberFormat] = useState('1,2,3...');
+  const [startNumber, setStartNumber] = useState(1);
+  const [numberStyle, setNumberStyle] = useState('simple');
+  const [customText, setCustomText] = useState('Página {n}');
+  const { showSuccess, showError } = useSweetAlert();
 
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
+  // Función para actualizar las estadísticas en tiempo real
+  const updateStatistics = async () => {
+    try {
+      console.log('📊 Actualizando estadísticas después de agregar numeración...');
+      
+      const response = await axios.get('/api/metrics');
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Estadísticas actualizadas:', response.data.data);
+      } else {
+        console.warn('⚠️ Respuesta inválida del servidor');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error actualizando estadísticas:', error.message);
+    }
+  };
 
-  const handleDrop = useCallback((e) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
     
     const droppedFiles = Array.from(e.dataTransfer.files);
     const pdfFiles = droppedFiles.filter(file => file.type === 'application/pdf');
     
-    if (pdfFiles.length > 0) {
-      setFiles(prev => [...prev, ...pdfFiles]);
+    if (pdfFiles.length !== droppedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
     }
-  }, []);
+    
+    addFiles(pdfFiles);
+  };
 
-  const handleFileSelect = useCallback((e) => {
+  const handleFileSelect = (e) => {
     const selectedFiles = Array.from(e.target.files);
     const pdfFiles = selectedFiles.filter(file => file.type === 'application/pdf');
     
-    if (pdfFiles.length > 0) {
-      setFiles(prev => [...prev, ...pdfFiles]);
+    if (pdfFiles.length !== selectedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
     }
-  }, []);
+    
+    addFiles(pdfFiles);
+  };
 
-  const removeFile = useCallback((index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  const addFiles = (newFiles) => {
+    const filesWithId = newFiles.map((file, index) => ({
+      id: Date.now() + index,
+      file,
+      name: file.name,
+      size: file.size,
+      pageCount: 0 // Se calculará después
+    }));
+    
+    setFiles(prev => [...prev, ...filesWithId]);
+    updateStatistics();
+  };
+
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(file => file.id !== id));
+  };
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -59,359 +96,343 @@ const PageNumbers = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const updateStatistics = async (action, details = {}) => {
-    try {
-      await axios.post('/api/statistics', {
-        action,
-        tool: 'page-numbers',
-        details
-      });
-    } catch (error) {
-      console.error('Error updating statistics:', error);
-    }
-  };
-
-  const processPDF = async () => {
+  const handleAddPageNumbers = async () => {
     if (files.length === 0) {
-      alert('Por favor selecciona al menos un archivo PDF');
+      showError('Error', 'Selecciona al menos un archivo PDF');
+      return;
+    }
+
+    if (numberFormat === 'custom' && !customText.trim()) {
+      showError('Error', 'Ingresa el formato personalizado');
       return;
     }
 
     setIsProcessing(true);
-    setProcessingStatus('Iniciando procesamiento...');
-    setProgress(0);
-
+    
     try {
+      console.log('🔄 Iniciando agregado de numeración...');
+      console.log(`📁 Archivos a procesar: ${files.length}`);
+      console.log(`📍 Posición: ${numberPosition}`);
+      console.log(`🔢 Formato: ${numberFormat}`);
+      console.log(`🎯 Estilo: ${numberStyle}`);
+      
+      // Procesar cada archivo
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        setProcessingStatus(`Procesando ${file.name}...`);
-        setProgress((i / files.length) * 100);
-
-        // Leer el archivo PDF
-        const arrayBuffer = await file.arrayBuffer();
-        const { PDFDocument } = await import('pdf-lib');
+        const fileItem = files[i];
+        console.log(`📄 Procesando archivo ${i + 1}/${files.length}: ${fileItem.name}`);
         
-        let pdfDoc;
         try {
-          pdfDoc = await PDFDocument.load(arrayBuffer);
+          await addPageNumbersToPDF(fileItem);
         } catch (error) {
-          console.error('Error loading PDF with pdf-lib:', error);
-          // Fallback: crear un nuevo PDF con el nombre del archivo
-          pdfDoc = await PDFDocument.create();
-          const page = pdfDoc.addPage([595, 842]); // A4 size
-          // Agregar texto indicando que no se pudo procesar el PDF original
-          page.drawText(`Error procesando: ${file.name}`, {
-            x: 50,
-            y: 400,
-            size: 12
-          });
+          console.error(`❌ Error agregando numeración a ${fileItem.name}:`, error);
+          // Continuar con el siguiente archivo
         }
-
-        const pages = pdfDoc.getPages();
-        
-        // Agregar números de página a cada página
-        for (let j = 0; j < pages.length; j++) {
-          const page = pages[j];
-          const { width, height } = page.getSize();
-          
-          // Calcular posición del número de página
-          let x, y;
-          const pageNumber = j + settings.startNumber;
-          const pageText = `${settings.prefix}${pageNumber}${settings.suffix}`;
-          
-          switch (settings.position) {
-            case 'top-left':
-              x = settings.margin;
-              y = height - settings.margin;
-              break;
-            case 'top-center':
-              x = width / 2;
-              y = height - settings.margin;
-              break;
-            case 'top-right':
-              x = width - settings.margin;
-              y = height - settings.margin;
-              break;
-            case 'bottom-left':
-              x = settings.margin;
-              y = settings.margin;
-              break;
-            case 'bottom-center':
-              x = width / 2;
-              y = settings.margin;
-              break;
-            case 'bottom-right':
-              x = width - settings.margin;
-              y = settings.margin;
-              break;
-            default:
-              x = width - settings.margin;
-              y = settings.margin;
-          }
-          
-          // Centrar texto si es posición central
-          if (settings.position.includes('center')) {
-            const textWidth = settings.fontSize * pageText.length * 0.6; // Aproximación
-            x -= textWidth / 2;
-          }
-          
-          // Alinear a la derecha si es posición derecha
-          if (settings.position.includes('right')) {
-            const textWidth = settings.fontSize * pageText.length * 0.6; // Aproximación
-            x -= textWidth;
-          }
-          
-          // Dibujar el número de página
-          page.drawText(pageText, {
-            x: x,
-            y: y,
-            size: settings.fontSize,
-            color: settings.fontColor
-          });
-        }
-
-        // Guardar el PDF modificado
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        // Crear enlace de descarga
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${file.name.replace('.pdf', '')}_numerado.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
       }
-
-      setProcessingStatus('Procesamiento completado');
-      setProgress(100);
       
-      // Actualizar estadísticas
-      await updateStatistics('page-numbers-added', {
-        filesProcessed: files.length,
-        settings: settings
-      });
-
+      console.log('✅ Numeración agregada');
+      showSuccess('¡Numeración Agregada!', `Se ha agregado numeración a ${files.length} documentos`);
+      setFiles([]);
+      
     } catch (error) {
-      console.error('Error processing PDF:', error);
-      setProcessingStatus('Error en el procesamiento');
-      
-      // Actualizar estadísticas de error
-      await updateStatistics('page-numbers-error', {
-        error: error.message,
-        filesAttempted: files.length
-      });
+      console.error('❌ Error en numeración:', error);
+      console.error('❌ Stack trace:', error.stack);
+      showError('Error', `No se pudo agregar la numeración: ${error.message}`);
     } finally {
       setIsProcessing(false);
-      setTimeout(() => {
-        setProcessingStatus('');
-        setProgress(0);
-      }, 3000);
     }
+  };
+
+  // Función para agregar numeración a PDF
+  const addPageNumbersToPDF = async (fileItem) => {
+    console.log(`🔢 Agregando numeración a ${fileItem.name}...`);
+    
+    // Cargar el PDF original
+    const existingPdfBytes = await fileItem.file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    console.log(`📄 PDF cargado: ${pdfDoc.getPageCount()} páginas`);
+    
+    // Crear un nuevo PDF para la versión con numeración
+    const numberedPdf = await PDFDocument.create();
+    console.log('📝 PDF vacío creado para numeración');
+    
+    // Copiar todas las páginas al nuevo PDF
+    const pages = await numberedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+    pages.forEach(page => numberedPdf.addPage(page));
+    
+    // Agregar numeración a cada página
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const pageNumber = startNumber + i;
+      
+      // Determinar el texto de la numeración
+      let numberText = '';
+      if (numberFormat === '1,2,3...') {
+        numberText = pageNumber.toString();
+      } else if (numberFormat === 'Page 1') {
+        numberText = `Page ${pageNumber}`;
+      } else if (numberFormat === 'Página 1') {
+        numberText = `Página ${pageNumber}`;
+      } else if (numberFormat === 'custom') {
+        numberText = customText.replace('{n}', pageNumber.toString());
+      }
+      
+      // Determinar la posición
+      let x = 0, y = 0;
+      const { width, height } = page.getSize();
+      const margin = 30;
+      
+      switch (numberPosition) {
+        case 'top-left':
+          x = margin;
+          y = height - margin;
+          break;
+        case 'top-right':
+          x = width - margin;
+          y = height - margin;
+          break;
+        case 'bottom-left':
+          x = margin;
+          y = margin;
+          break;
+        case 'bottom-right':
+          x = width - margin;
+          y = margin;
+          break;
+        case 'top-center':
+          x = width / 2;
+          y = height - margin;
+          break;
+        case 'bottom-center':
+          x = width / 2;
+          y = margin;
+          break;
+      }
+      
+      // Dibujar el número de página
+      page.drawText(numberText, {
+        x: x,
+        y: y,
+        size: numberStyle === 'simple' ? 10 : numberStyle === 'bold' ? 12 : 14,
+        font: await pdfDoc.embedFont('Helvetica'),
+        color: { r: 0, g: 0, b: 0 },
+        opacity: 1,
+      });
+    }
+    
+    // Guardar el PDF con numeración
+    console.log('💾 Guardando PDF con numeración...');
+    const numberedPdfBytes = await numberedPdf.save();
+    console.log('📦 PDF con numeración guardado, tamaño:', numberedPdfBytes.byteLength, 'bytes');
+    
+    // Crear blob y descargar
+    const blob = new Blob([numberedPdfBytes], { type: 'application/pdf' });
+    console.log('📦 Blob creado, tamaño:', blob.size, 'bytes');
+    
+    const url = URL.createObjectURL(blob);
+    console.log('🔗 URL creada:', url);
+    
+    const fileName = fileItem.name.replace('.pdf', '_numerado.pdf');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Esperar un momento y luego limpiar URL
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      console.log(`✅ PDF con numeración descargado: ${fileName}`);
+    }, 500);
   };
 
   return (
     <div className="page-numbers-container">
-      {/* Header */}
       <div className="page-numbers-header">
+        <div className="header-icon">🔢</div>
         <div className="header-content">
-          <div className="header-icon">
-            <Hash size={32} />
-          </div>
-          <div className="header-text">
-            <h1>Numeración de Páginas</h1>
-            <p>Agrega números de página a tus documentos PDF de forma automática</p>
-          </div>
+          <h1>Numeración de Páginas</h1>
+          <p>Agrega números de página personalizados a tus documentos PDF</p>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="page-numbers-content">
-        {/* Upload Area */}
-        <div className="upload-section">
-          <div 
-            className="upload-area"
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <div className="upload-content">
-              <Upload size={48} />
-              <h3>Arrastra y suelta archivos PDF aquí</h3>
-              <p>o selecciona archivos haciendo clic</p>
-              <input 
-                type="file" 
-                accept=".pdf"
-                multiple
-                onChange={handleFileSelect}
-                className="file-input"
-              />
-              <button className="select-button">
-                Seleccionar Archivos
-              </button>
-            </div>
-          </div>
+        {/* Zona de carga */}
+        <div 
+          className={`upload-zone ${isDragOver ? 'drag-over' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById('file-input').click()}
+        >
+          <Upload className="upload-icon" size={48} />
+          <h3>Arrastra archivos PDF aquí</h3>
+          <p>o haz clic para seleccionar archivos (.pdf)</p>
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          <button className="select-files-btn">
+            Seleccionar Archivos PDF
+          </button>
         </div>
 
-        {/* Files List */}
+        {/* Lista de archivos */}
         {files.length > 0 && (
-          <div className="files-section">
-            <h3>Archivos Seleccionados</h3>
-            <div className="files-list">
-              {files.map((file, index) => (
-                <div key={index} className="file-item">
-                  <FileText size={20} />
+          <div className="files-list">
+            <h3>Archivos a procesar ({files.length})</h3>
+            <div className="files-container">
+              {files.map((fileItem) => (
+                <div key={fileItem.id} className="file-item">
                   <div className="file-info">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-size">{formatFileSize(file.size)}</span>
+                    <FileText className="file-icon" size={20} />
+                    <div className="file-details">
+                      <span className="file-name">{fileItem.name}</span>
+                      <span className="file-size">{formatFileSize(fileItem.size)}</span>
+                    </div>
                   </div>
-                  <button 
-                    className="remove-button"
-                    onClick={() => removeFile(index)}
-                  >
-                    <X size={16} />
-                  </button>
+                  <div className="file-actions">
+                    <button 
+                      className="remove-btn"
+                      onClick={() => removeFile(fileItem.id)}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Configuration */}
+        {/* Configuración de numeración */}
         {files.length > 0 && (
-          <div className="configuration-section">
-            <h3>
-              <Settings size={20} />
-              Configuración de Numeración
-            </h3>
+          <div className="numbering-configuration">
+            <h3>Configuración de Numeración</h3>
             
-            <div className="config-grid">
-              {/* Posición */}
-              <div className="config-group">
-                <label>Posición</label>
-                <select 
-                  value={settings.position}
-                  onChange={(e) => setSettings(prev => ({ ...prev, position: e.target.value }))}
+            <div className="numbering-options">
+              <div className="option-group">
+                <label htmlFor="number-position">Posición:</label>
+                <select
+                  id="number-position"
+                  value={numberPosition}
+                  onChange={(e) => setNumberPosition(e.target.value)}
                 >
-                  <option value="bottom-right">Inferior Derecha</option>
-                  <option value="bottom-center">Inferior Centro</option>
-                  <option value="bottom-left">Inferior Izquierda</option>
-                  <option value="top-right">Superior Derecha</option>
-                  <option value="top-center">Superior Centro</option>
-                  <option value="top-left">Superior Izquierda</option>
+                  <option value="bottom-right">Inferior derecha</option>
+                  <option value="bottom-left">Inferior izquierda</option>
+                  <option value="top-right">Superior derecha</option>
+                  <option value="top-left">Superior izquierda</option>
+                  <option value="bottom-center">Inferior centro</option>
+                  <option value="top-center">Superior centro</option>
                 </select>
               </div>
 
-              {/* Formato */}
-              <div className="config-group">
-                <label>Formato</label>
-                <select 
-                  value={settings.format}
-                  onChange={(e) => setSettings(prev => ({ ...prev, format: e.target.value }))}
+              <div className="option-group">
+                <label htmlFor="number-format">Formato:</label>
+                <select
+                  id="number-format"
+                  value={numberFormat}
+                  onChange={(e) => setNumberFormat(e.target.value)}
                 >
-                  <option value="number">Número (1, 2, 3...)</option>
-                  <option value="page-x">Página X (Página 1, Página 2...)</option>
-                  <option value="x-of-y">X de Y (1 de 10, 2 de 10...)</option>
-                  <option value="roman">Números Romanos (I, II, III...)</option>
+                  <option value="1,2,3...">1, 2, 3...</option>
+                  <option value="Page 1">Page 1</option>
+                  <option value="Página 1">Página 1</option>
+                  <option value="custom">Personalizado</option>
                 </select>
               </div>
 
-              {/* Número inicial */}
-              <div className="config-group">
-                <label>Número Inicial</label>
-                <input 
+              <div className="option-group">
+                <label htmlFor="start-number">Número inicial:</label>
+                <input
                   type="number"
+                  id="start-number"
+                  value={startNumber}
+                  onChange={(e) => setStartNumber(parseInt(e.target.value) || 1)}
                   min="1"
-                  value={settings.startNumber}
-                  onChange={(e) => setSettings(prev => ({ ...prev, startNumber: parseInt(e.target.value) || 1 }))}
+                  className="start-number-input"
                 />
               </div>
 
-              {/* Tamaño de fuente */}
-              <div className="config-group">
-                <label>Tamaño de Fuente</label>
-                <input 
-                  type="number"
-                  min="6"
-                  max="72"
-                  value={settings.fontSize}
-                  onChange={(e) => setSettings(prev => ({ ...prev, fontSize: parseInt(e.target.value) || 12 }))}
-                />
+              <div className="option-group">
+                <label htmlFor="number-style">Estilo:</label>
+                <select
+                  id="number-style"
+                  value={numberStyle}
+                  onChange={(e) => setNumberStyle(e.target.value)}
+                >
+                  <option value="simple">Simple</option>
+                  <option value="bold">Negrita</option>
+                  <option value="large">Grande</option>
+                </select>
               </div>
 
-              {/* Color de fuente */}
-              <div className="config-group">
-                <label>Color de Fuente</label>
-                <input 
-                  type="color"
-                  value={settings.fontColor}
-                  onChange={(e) => setSettings(prev => ({ ...prev, fontColor: e.target.value }))}
-                />
-              </div>
+              {numberFormat === 'custom' && (
+                <div className="option-group">
+                  <label htmlFor="custom-text">Formato personalizado:</label>
+                  <input
+                    type="text"
+                    id="custom-text"
+                    value={customText}
+                    onChange={(e) => setCustomText(e.target.value)}
+                    placeholder="Ej: Página {n}"
+                    className="custom-text-input"
+                  />
+                  <small>Usa {n} para representar el número de página</small>
+                </div>
+              )}
+            </div>
 
-              {/* Margen */}
-              <div className="config-group">
-                <label>Margen (px)</label>
-                <input 
-                  type="number"
-                  min="5"
-                  max="100"
-                  value={settings.margin}
-                  onChange={(e) => setSettings(prev => ({ ...prev, margin: parseInt(e.target.value) || 20 }))}
-                />
+            <div className="numbering-info">
+              <div className="info-item">
+                <strong>Total de archivos:</strong> {files.length}
               </div>
-
-              {/* Prefijo */}
-              <div className="config-group">
-                <label>Prefijo</label>
-                <input 
-                  type="text"
-                  placeholder="Ej: Página "
-                  value={settings.prefix}
-                  onChange={(e) => setSettings(prev => ({ ...prev, prefix: e.target.value }))}
-                />
+              <div className="info-item">
+                <strong>Posición:</strong> {
+                  numberPosition === 'bottom-right' ? 'Inferior derecha' :
+                  numberPosition === 'bottom-left' ? 'Inferior izquierda' :
+                  numberPosition === 'top-right' ? 'Superior derecha' :
+                  numberPosition === 'top-left' ? 'Superior izquierda' :
+                  numberPosition === 'bottom-center' ? 'Inferior centro' : 'Superior centro'
+                }
               </div>
-
-              {/* Sufijo */}
-              <div className="config-group">
-                <label>Sufijo</label>
-                <input 
-                  type="text"
-                  placeholder="Ej: / 10"
-                  value={settings.suffix}
-                  onChange={(e) => setSettings(prev => ({ ...prev, suffix: e.target.value }))}
-                />
+              <div className="info-item">
+                <strong>Formato:</strong> {
+                  numberFormat === '1,2,3...' ? '1, 2, 3...' :
+                  numberFormat === 'Page 1' ? 'Page 1' :
+                  numberFormat === 'Página 1' ? 'Página 1' :
+                  customText || 'Personalizado'
+                }
+              </div>
+              <div className="info-item">
+                <strong>Número inicial:</strong> {startNumber}
               </div>
             </div>
           </div>
         )}
 
-        {/* Processing Status */}
-        {isProcessing && (
-          <div className="processing-section">
-            <div className="processing-content">
-              <div className="processing-spinner"></div>
-              <p>{processingStatus}</p>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        {files.length > 0 && !isProcessing && (
-          <div className="actions-section">
+        {/* Botón de acción */}
+        {files.length > 0 && (
+          <div className="numbering-actions">
             <button 
-              className="process-button"
-              onClick={processPDF}
+              className="numbering-btn"
+              onClick={handleAddPageNumbers}
+              disabled={isProcessing}
             >
-              <Download size={20} />
-              Agregar Numeración y Descargar
+              {isProcessing ? (
+                <>
+                  <div className="spinner"></div>
+                  Agregando numeración...
+                </>
+              ) : (
+                <>
+                  <Hash size={20} />
+                  Agregar Numeración
+                </>
+              )}
             </button>
           </div>
         )}

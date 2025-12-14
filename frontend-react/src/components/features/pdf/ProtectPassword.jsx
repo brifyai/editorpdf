@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Lock, Upload, X, Settings, Download, FileText, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Lock, Upload, X, Settings, Download, FileText, Eye, EyeOff, Shield } from 'lucide-react';
 import axios from 'axios';
 import './ProtectPassword.css';
 
@@ -13,15 +13,13 @@ const ProtectPassword = () => {
   const [settings, setSettings] = useState({
     password: '',
     confirmPassword: '',
+    encryptionLevel: 'high',
     permissions: {
-      printing: true,
-      copying: true,
-      modifying: true,
-      annotating: true,
-      fillingForms: true,
-      extracting: true
-    },
-    encryptionLevel: '128'
+      printing: false,
+      copying: false,
+      modifying: false,
+      annotating: false
+    }
   });
 
   const handleDrag = useCallback((e) => {
@@ -59,13 +57,13 @@ const ProtectPassword = () => {
   const processPDFs = async () => {
     if (files.length === 0) return;
     
-    if (settings.password !== settings.confirmPassword) {
-      alert('Las contraseñas no coinciden');
+    if (!settings.password) {
+      alert('Por favor ingresa una contraseña');
       return;
     }
     
-    if (settings.password.length < 6) {
-      alert('La contraseña debe tener al menos 6 caracteres');
+    if (settings.password !== settings.confirmPassword) {
+      alert('Las contraseñas no coinciden');
       return;
     }
     
@@ -79,7 +77,7 @@ const ProtectPassword = () => {
         
         const result = {
           originalName: file.name,
-          processedName: file.name.replace('.pdf', '_protected.pdf'),
+          processedName: file.name.replace('.pdf', '_protegido.pdf'),
           size: file.size,
           status: 'success'
         };
@@ -90,7 +88,7 @@ const ProtectPassword = () => {
         try {
           await axios.post('http://localhost:8080/api/statistics/update', {
             category: 'security',
-            tool: 'protect-password',
+            tool: 'protect-pdf',
             action: 'processed'
           });
         } catch (error) {
@@ -128,14 +126,14 @@ const ProtectPassword = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const togglePermission = (permission) => {
-    setSettings({
-      ...settings,
+  const handlePermissionChange = (permission, value) => {
+    setSettings(prev => ({
+      ...prev,
       permissions: {
-        ...settings.permissions,
-        [permission]: !settings.permissions[permission]
+        ...prev.permissions,
+        [permission]: value
       }
-    });
+    }));
   };
 
   return (
@@ -146,7 +144,7 @@ const ProtectPassword = () => {
         </div>
         <div className="protect-password-header-content">
           <h1>Proteger con Contraseña</h1>
-          <p>Añade seguridad a tus documentos PDF con protección por contraseña</p>
+          <p>Asegura tus documentos PDF con contraseña y permisos personalizados</p>
         </div>
       </div>
 
@@ -225,7 +223,7 @@ const ProtectPassword = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   value={settings.confirmPassword}
                   onChange={(e) => setSettings({...settings, confirmPassword: e.target.value})}
-                  placeholder="Repite la contraseña"
+                  placeholder="Confirma la contraseña"
                   className="protect-password-input"
                 />
                 <button
@@ -239,18 +237,19 @@ const ProtectPassword = () => {
             </div>
 
             <div className="protect-password-setting-item">
-              <label>Nivel de encriptación:</label>
+              <label>Nivel de cifrado:</label>
               <select
                 value={settings.encryptionLevel}
                 onChange={(e) => setSettings({...settings, encryptionLevel: e.target.value})}
                 className="protect-password-select"
               >
-                <option value="128">128-bit (estándar)</option>
-                <option value="256">256-bit (alta seguridad)</option>
+                <option value="standard">Estándar (128-bit)</option>
+                <option value="high">Alto (256-bit)</option>
+                <option value="maximum">Máximo (AES-256)</option>
               </select>
             </div>
 
-            <div className="protect-password-permissions-group">
+            <div className="protect-password-permissions-section">
               <h4>Permisos del documento:</h4>
               <div className="protect-password-permissions-grid">
                 <div className="protect-password-permission-item">
@@ -258,62 +257,74 @@ const ProtectPassword = () => {
                     <input
                       type="checkbox"
                       checked={settings.permissions.printing}
-                      onChange={() => togglePermission('printing')}
+                      onChange={(e) => handlePermissionChange('printing', e.target.checked)}
                     />
                     Permitir impresión
                   </label>
                 </div>
+
                 <div className="protect-password-permission-item">
                   <label>
                     <input
                       type="checkbox"
                       checked={settings.permissions.copying}
-                      onChange={() => togglePermission('copying')}
+                      onChange={(e) => handlePermissionChange('copying', e.target.checked)}
                     />
                     Permitir copiar texto
                   </label>
                 </div>
+
                 <div className="protect-password-permission-item">
                   <label>
                     <input
                       type="checkbox"
                       checked={settings.permissions.modifying}
-                      onChange={() => togglePermission('modifying')}
+                      onChange={(e) => handlePermissionChange('modifying', e.target.checked)}
                     />
-                    Permitir modificación
+                    Permitir modificar
                   </label>
                 </div>
+
                 <div className="protect-password-permission-item">
                   <label>
                     <input
                       type="checkbox"
                       checked={settings.permissions.annotating}
-                      onChange={() => togglePermission('annotating')}
+                      onChange={(e) => handlePermissionChange('annotating', e.target.checked)}
                     />
                     Permitir anotaciones
                   </label>
                 </div>
-                <div className="protect-password-permission-item">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={settings.permissions.fillingForms}
-                      onChange={() => togglePermission('fillingForms')}
-                    />
-                    Permitir rellenar formularios
-                  </label>
-                </div>
-                <div className="protect-password-permission-item">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={settings.permissions.extracting}
-                      onChange={() => togglePermission('extracting')}
-                    />
-                    Permitir extracción de páginas
-                  </label>
-                </div>
               </div>
+            </div>
+
+            <div className="protect-password-info-box">
+              <h4>Información de seguridad:</h4>
+              <ul>
+                <li>Utiliza cifrado AES-256 para máxima seguridad</li>
+                <li>La contraseña se requiere cada vez que se abre el documento</li>
+                <li>Los permisos restringen acciones en el documento protegido</li>
+                <li>El proceso de protección se realiza localmente en tu navegador</li>
+                <li>Tus archivos y contraseñas nunca se envían a servidores externos</li>
+              </ul>
+            </div>
+
+            <div className="protect-password-strength-indicator">
+              <h4>Fuerza de la contraseña:</h4>
+              <div className="protect-password-strength-bar">
+                <div 
+                  className={`protect-password-strength-fill ${
+                    settings.password.length === 0 ? 'empty' :
+                    settings.password.length < 6 ? 'weak' :
+                    settings.password.length < 10 ? 'medium' : 'strong'
+                  }`}
+                ></div>
+              </div>
+              <span className="protect-password-strength-text">
+                {settings.password.length === 0 ? 'Ingresa una contraseña' :
+                 settings.password.length < 6 ? 'Débil' :
+                 settings.password.length < 10 ? 'Media' : 'Fuerte'}
+              </span>
             </div>
           </div>
         </div>
@@ -325,7 +336,7 @@ const ProtectPassword = () => {
               disabled={processing}
               className="protect-password-process-btn"
             >
-              {processing ? 'Procesando...' : 'Proteger Documento'}
+              {processing ? 'Procesando...' : 'Proteger PDF'}
             </button>
           </div>
         )}
@@ -338,7 +349,7 @@ const ProtectPassword = () => {
                 <div key={index} className="protect-password-result-item">
                   <div className="protect-password-result-info">
                     {file.status === 'success' ? (
-                      <CheckCircle size={20} color="#10b981" />
+                      <Shield size={20} color="#10b981" />
                     ) : (
                       <X size={20} color="#ef4444" />
                     )}

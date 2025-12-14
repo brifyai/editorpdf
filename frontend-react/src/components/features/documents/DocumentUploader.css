@@ -1,5 +1,5 @@
-/* Rotate Pages Component Styles */
-.rotate-pages-container {
+/* Document Uploader Component Styles */
+.document-uploader-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -10,7 +10,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.rotate-pages-header {
+.document-uploader-header {
   display: flex;
   align-items: center;
   margin-bottom: 30px;
@@ -37,7 +37,7 @@
   opacity: 0.9;
 }
 
-.rotate-pages-content {
+.document-uploader-content {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -100,14 +100,16 @@
 }
 
 /* Files List */
-.files-list {
+.files-list,
+.uploaded-files {
   background: white;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.files-list h3 {
+.files-list h3,
+.uploaded-files h3 {
   margin: 0 0 15px 0;
   color: #333;
   font-size: 18px;
@@ -134,6 +136,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
 }
 
 .file-icon {
@@ -156,6 +159,31 @@
   font-size: 12px;
 }
 
+.file-category {
+  color: #667eea;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.file-progress {
+  width: 150px;
+  margin: 0 15px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
 .file-actions {
   display: flex;
   gap: 8px;
@@ -175,22 +203,36 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
-/* Rotation Configuration */
-.rotation-configuration {
+.download-btn {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+/* Upload Configuration */
+.upload-configuration {
   background: white;
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.rotation-configuration h3 {
+.upload-configuration h3 {
   margin: 0 0 15px 0;
   color: #333;
   font-size: 18px;
   font-weight: 600;
 }
 
-.rotation-options {
+.upload-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 15px;
@@ -217,41 +259,8 @@
   background: white;
 }
 
-.direction-selector {
-  display: flex;
-  gap: 10px;
-}
-
-.direction-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.direction-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
-}
-
-.direction-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-color: #667eea;
-}
-
-.custom-pages-input {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  background: white;
+.option-group input[type="checkbox"] {
+  margin-right: 8px;
 }
 
 .option-group small {
@@ -260,7 +269,7 @@
   margin-top: 4px;
 }
 
-.rotation-info {
+.upload-info {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
@@ -288,14 +297,16 @@
   font-weight: 600;
 }
 
-/* Rotate Actions */
-.rotate-actions {
+/* Upload Actions */
+.upload-actions {
   display: flex;
   justify-content: center;
+  gap: 15px;
   margin-top: 20px;
+  flex-wrap: wrap;
 }
 
-.rotate-btn {
+.upload-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -310,14 +321,34 @@
   gap: 10px;
 }
 
-.rotate-btn:hover:not(:disabled) {
+.upload-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.rotate-btn:disabled {
+.upload-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.clear-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clear-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 /* Spinner */
@@ -337,11 +368,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .rotate-pages-container {
+  .document-uploader-container {
     padding: 15px;
   }
   
-  .rotate-pages-header {
+  .document-uploader-header {
     flex-direction: column;
     text-align: center;
     padding: 15px;
@@ -352,19 +383,40 @@
     margin-bottom: 10px;
   }
   
-  .rotation-options {
+  .upload-options {
     grid-template-columns: 1fr;
-  }
-  
-  .direction-selector {
-    flex-direction: column;
   }
   
   .upload-zone {
     padding: 30px 20px;
   }
   
-  .rotation-info {
+  .upload-info {
     grid-template-columns: 1fr;
+  }
+  
+  .file-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .file-progress {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .file-actions {
+    align-self: flex-end;
+  }
+  
+  .upload-actions {
+    flex-direction: column;
+  }
+  
+  .upload-btn,
+  .clear-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

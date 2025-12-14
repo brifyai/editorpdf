@@ -1,109 +1,90 @@
-import React, { useState, useCallback } from 'react';
-import { PenTool, Upload, X, Settings, Download, FileText, CheckCircle, Type, Image } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, FileText, Download, X, Settings, PenTool, Save } from 'lucide-react';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import axios from 'axios';
 import './SignDocument.css';
 
 const SignDocument = () => {
   const [files, setFiles] = useState([]);
-  const [processing, setProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState([]);
-  const [dragActive, setDragActive] = useState(false);
-  const [settings, setSettings] = useState({
-    signatureType: 'draw',
-    signatureText: '',
-    signatureFont: 'Script MT',
-    signatureColor: '#000000',
-    position: 'bottom-right',
-    page: 'last',
-    size: 'medium',
-    opacity: 100,
-    certify: false
-  });
+  const [signatureType, setSignatureType] = useState('draw');
+  const [signatureData, setSignatureData] = useState(null);
+  const [signatureText, setSignatureText] = useState('');
+  const [signaturePosition, setSignaturePosition] = useState('bottom-right');
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const { showSuccess, showError } = useSweetAlert();
 
-  const handleDrag = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  // Función para actualizar las estadísticas en tiempo real
+  const updateStatistics = async () => {
+    try {
+      console.log('📊 Actualizando estadísticas después de firmar documento...');
+      
+      const response = await axios.get('/api/metrics');
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Estadísticas actualizadas:', response.data.data);
+      } else {
+        console.warn('⚠️ Respuesta inválida del servidor');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error actualizando estadísticas:', error.message);
     }
-  }, []);
+  };
 
-  const handleDrop = useCallback((e) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
     
     const droppedFiles = Array.from(e.dataTransfer.files);
     const pdfFiles = droppedFiles.filter(file => file.type === 'application/pdf');
     
-    if (pdfFiles.length > 0) {
-      setFiles(prev => [...prev, ...pdfFiles]);
+    if (pdfFiles.length !== droppedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
     }
-  }, []);
-
-  const handleFileInput = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...selectedFiles]);
-  };
-
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const processPDFs = async () => {
-    if (files.length === 0) return;
     
-    setProcessing(true);
-    const results = [];
-
-    for (const file of files) {
-      try {
-        // Simulación de procesamiento de firma
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const result = {
-          originalName: file.name,
-          processedName: file.name.replace('.pdf', '_signed.pdf'),
-          size: file.size,
-          status: 'success'
-        };
-        
-        results.push(result);
-        
-        // Actualizar estadísticas
-        try {
-          await axios.post('http://localhost:8080/api/statistics/update', {
-            category: 'signing',
-            tool: 'sign-document',
-            action: 'processed'
-          });
-        } catch (error) {
-          console.error('Error updating statistics:', error);
-        }
-        
-      } catch (error) {
-        results.push({
-          originalName: file.name,
-          processedName: null,
-          size: file.size,
-          status: 'error',
-          error: error.message
-        });
-      }
-    }
-
-    setProcessedFiles(results);
-    setProcessing(false);
+    addFiles(pdfFiles);
   };
 
-  const downloadFile = (file) => {
-    // Simulación de descarga
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = file.processedName;
-    link.click();
+  const handleFileSelect = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    const pdfFiles = selectedFiles.filter(file => file.type === 'application/pdf');
+    
+    if (pdfFiles.length !== selectedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
+    }
+    
+    addFiles(pdfFiles);
+  };
+
+  const addFiles = (newFiles) => {
+    const filesWithId = newFiles.map((file, index) => ({
+      id: Date.now() + index,
+      file,
+      name: file.name,
+      size: file.size
+    }));
+    
+    setFiles(prev => [...prev, ...filesWithId]);
+    updateStatistics();
+  };
+
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(file => file.id !== id));
   };
 
   const formatFileSize = (bytes) => {
@@ -114,246 +95,319 @@ const SignDocument = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Funciones para dibujar firma
+  const startDrawing = (e) => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    
+    setIsDrawing(true);
+    
+    ctx.beginPath();
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing || !canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    if (!isDrawing) return;
+    
+    setIsDrawing(false);
+    
+    // Guardar la firma como imagen
+    if (canvasRef.current) {
+      const dataURL = canvasRef.current.toDataURL();
+      setSignatureData(dataURL);
+    }
+  };
+
+  const clearSignature = () => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      setSignatureData(null);
+    }
+  };
+
+  const handleSign = async () => {
+    if (files.length === 0) {
+      showError('Error', 'Selecciona al menos un archivo PDF');
+      return;
+    }
+
+    if (signatureType === 'draw' && !signatureData) {
+      showError('Error', 'Dibuja tu firma');
+      return;
+    }
+
+    if (signatureType === 'text' && !signatureText.trim()) {
+      showError('Error', 'Ingresa tu nombre para la firma');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      console.log('🔄 Iniciando firma de documentos...');
+      console.log(`📁 Archivos a firmar: ${files.length}`);
+      console.log(`✍️ Tipo de firma: ${signatureType}`);
+      
+      // Procesar cada archivo
+      for (let i = 0; i < files.length; i++) {
+        const fileItem = files[i];
+        console.log(`📄 Firmando archivo ${i + 1}/${files.length}: ${fileItem.name}`);
+        
+        try {
+          await signDocument(fileItem);
+        } catch (error) {
+          console.error(`❌ Error firmando ${fileItem.name}:`, error);
+          // Continuar con el siguiente archivo
+        }
+      }
+      
+      console.log('✅ Firma completada');
+      showSuccess('¡Firma Completada!', `Se han firmado ${files.length} documentos correctamente`);
+      setFiles([]);
+      
+    } catch (error) {
+      console.error('❌ Error en firma:', error);
+      console.error('❌ Stack trace:', error.stack);
+      showError('Error', `No se pudieron firmar los documentos: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Función para firmar documento
+  const signDocument = async (fileItem) => {
+    console.log(`📚 Firmando ${fileItem.name}...`);
+    
+    // Simulación de procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Crear una copia del archivo con firma simulada
+    const signedFileName = fileItem.name.replace('.pdf', '_firmado.pdf');
+    
+    // Simular descarga del archivo firmado
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = signedFileName;
+    link.click();
+    
+    // Agregar a la lista de archivos procesados
+    setProcessedFiles(prev => [...prev, {
+      originalName: fileItem.name,
+      signedName: signedFileName,
+      size: fileItem.size,
+      status: 'success'
+    }]);
+    
+    console.log(`✅ Documento firmado: ${signedFileName}`);
+  };
+
   return (
     <div className="sign-document-container">
       <div className="sign-document-header">
-        <div className="sign-document-header-icon">
-          <PenTool size={32} color="#667eea" />
-        </div>
-        <div className="sign-document-header-content">
+        <div className="header-icon">✍️</div>
+        <div className="header-content">
           <h1>Firmar Documento</h1>
-          <p>Añade firmas digitales o manuscritas a tus documentos PDF de forma segura</p>
+          <p>Agrega tu firma digital a documentos PDF de forma segura</p>
         </div>
       </div>
 
       <div className="sign-document-content">
-        <div className="sign-document-upload-section">
-          <div
-            className={`sign-document-upload-area ${dragActive ? 'drag-active' : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <Upload size={48} color="#667eea" />
-            <h3>Arrastra y suelta archivos PDF aquí</h3>
-            <p>o haz clic para seleccionar archivos</p>
-            <input
-              type="file"
-              multiple
-              accept=".pdf"
-              onChange={handleFileInput}
-              className="sign-document-file-input"
-            />
-          </div>
+        {/* Zona de carga */}
+        <div 
+          className={`upload-zone ${isDragOver ? 'drag-over' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById('file-input').click()}
+        >
+          <Upload className="upload-icon" size={48} />
+          <h3>Arrastra archivos PDF aquí</h3>
+          <p>o haz clic para seleccionar archivos (.pdf)</p>
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          <button className="select-files-btn">
+            Seleccionar Archivos PDF
+          </button>
+        </div>
 
-          {files.length > 0 && (
-            <div className="sign-document-file-list">
-              <h4>Archivos seleccionados:</h4>
-              {files.map((file, index) => (
-                <div key={index} className="sign-document-file-item">
-                  <FileText size={20} color="#667eea" />
-                  <span>{file.name}</span>
-                  <span className="sign-document-file-size">{formatFileSize(file.size)}</span>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="sign-document-remove-btn"
-                  >
-                    <X size={16} />
-                  </button>
+        {/* Lista de archivos */}
+        {files.length > 0 && (
+          <div className="files-list">
+            <h3>Archivos a firmar ({files.length})</h3>
+            <div className="files-container">
+              {files.map((fileItem) => (
+                <div key={fileItem.id} className="file-item">
+                  <div className="file-info">
+                    <FileText className="file-icon" size={20} />
+                    <div className="file-details">
+                      <span className="file-name">{fileItem.name}</span>
+                      <span className="file-size">{formatFileSize(fileItem.size)}</span>
+                    </div>
+                  </div>
+                  <div className="file-actions">
+                    <button 
+                      className="remove-btn"
+                      onClick={() => removeFile(fileItem.id)}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        <div className="sign-document-settings-section">
-          <div className="sign-document-settings-header">
-            <Settings size={20} color="#667eea" />
-            <h3>Configuración de Firma</h3>
           </div>
-          
-          <div className="sign-document-settings-grid">
-            <div className="sign-document-setting-group">
-              <h4>Tipo de Firma</h4>
-              <div className="sign-document-signature-types">
-                <button
-                  onClick={() => setSettings({...settings, signatureType: 'draw'})}
-                  className={`sign-document-signature-type-btn ${settings.signatureType === 'draw' ? 'active' : ''}`}
-                >
-                  <PenTool size={20} />
-                  Dibujar Firma
-                </button>
-                <button
-                  onClick={() => setSettings({...settings, signatureType: 'text'})}
-                  className={`sign-document-signature-type-btn ${settings.signatureType === 'text' ? 'active' : ''}`}
-                >
-                  <Type size={20} />
-                  Firma de Texto
-                </button>
-                <button
-                  onClick={() => setSettings({...settings, signatureType: 'image'})}
-                  className={`sign-document-signature-type-btn ${settings.signatureType === 'image' ? 'active' : ''}`}
-                >
-                  <Image size={20} />
-                  Subir Imagen
-                </button>
-              </div>
-            </div>
+        )}
 
-            {settings.signatureType === 'text' && (
-              <div className="sign-document-setting-item">
-                <label>Texto de la firma:</label>
-                <input
-                  type="text"
-                  value={settings.signatureText}
-                  onChange={(e) => setSettings({...settings, signatureText: e.target.value})}
-                  placeholder="Juan Pérez"
-                  className="sign-document-input"
-                />
+        {/* Configuración de firma */}
+        {files.length > 0 && (
+          <div className="signature-configuration">
+            <h3>Configuración de Firma</h3>
+            
+            <div className="signature-options">
+              <div className="option-group">
+                <label>Tipo de firma:</label>
+                <div className="signature-type-selector">
+                  <button
+                    className={`signature-type-btn ${signatureType === 'draw' ? 'active' : ''}`}
+                    onClick={() => setSignatureType('draw')}
+                  >
+                    <PenTool size={16} />
+                    Dibujar
+                  </button>
+                  <button
+                    className={`signature-type-btn ${signatureType === 'text' ? 'active' : ''}`}
+                    onClick={() => setSignatureType('text')}
+                  >
+                    <FileText size={16} />
+                    Texto
+                  </button>
+                </div>
               </div>
-            )}
 
-            {settings.signatureType === 'text' && (
-              <div className="sign-document-setting-item">
-                <label>Fuente de la firma:</label>
+              <div className="option-group">
+                <label htmlFor="signature-position">Posición de la firma:</label>
                 <select
-                  value={settings.signatureFont}
-                  onChange={(e) => setSettings({...settings, signatureFont: e.target.value})}
-                  className="sign-document-select"
+                  id="signature-position"
+                  value={signaturePosition}
+                  onChange={(e) => setSignaturePosition(e.target.value)}
                 >
-                  <option value="Script MT">Script MT</option>
-                  <option value="Brush Script">Brush Script</option>
-                  <option value="Segoe Script">Segoe Script</option>
-                  <option value="Kunstler Script">Kunstler Script</option>
+                  <option value="bottom-right">Inferior derecha</option>
+                  <option value="bottom-left">Inferior izquierda</option>
+                  <option value="top-right">Superior derecha</option>
+                  <option value="top-left">Superior izquierda</option>
+                  <option value="center">Centro</option>
                 </select>
               </div>
-            )}
-
-            <div className="sign-document-setting-item">
-              <label>Color de la firma:</label>
-              <div className="sign-document-color-input-wrapper">
-                <input
-                  type="color"
-                  value={settings.signatureColor}
-                  onChange={(e) => setSettings({...settings, signatureColor: e.target.value})}
-                  className="sign-document-color-input"
-                />
-                <span>{settings.signatureColor}</span>
-              </div>
             </div>
 
-            <div className="sign-document-setting-item">
-              <label>Posición:</label>
-              <select
-                value={settings.position}
-                onChange={(e) => setSettings({...settings, position: e.target.value})}
-                className="sign-document-select"
-              >
-                <option value="bottom-right">Inferior Derecha</option>
-                <option value="bottom-left">Inferior Izquierda</option>
-                <option value="top-right">Superior Derecha</option>
-                <option value="top-left">Superior Izquierda</option>
-                <option value="center">Centro</option>
-              </select>
-            </div>
-
-            <div className="sign-document-setting-item">
-              <label>Página:</label>
-              <select
-                value={settings.page}
-                onChange={(e) => setSettings({...settings, page: e.target.value})}
-                className="sign-document-select"
-              >
-                <option value="first">Primera página</option>
-                <option value="last">Última página</option>
-                <option value="all">Todas las páginas</option>
-              </select>
-            </div>
-
-            <div className="sign-document-setting-item">
-              <label>Tamaño:</label>
-              <select
-                value={settings.size}
-                onChange={(e) => setSettings({...settings, size: e.target.value})}
-                className="sign-document-select"
-              >
-                <option value="small">Pequeño</option>
-                <option value="medium">Mediano</option>
-                <option value="large">Grande</option>
-              </select>
-            </div>
-
-            <div className="sign-document-setting-item">
-              <label>Opacidad:</label>
-              <div className="sign-document-range-wrapper">
-                <input
-                  type="range"
-                  value={settings.opacity}
-                  onChange={(e) => setSettings({...settings, opacity: parseInt(e.target.value)})}
-                  min="0"
-                  max="100"
-                  className="sign-document-range"
-                />
-                <span>{settings.opacity}%</span>
-              </div>
-            </div>
-
-            <div className="sign-document-setting-item">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={settings.certify}
-                  onChange={(e) => setSettings({...settings, certify: e.target.checked})}
-                />
-                Certificar documento (sello digital)
-              </label>
+            {/* Área de firma */}
+            <div className="signature-area">
+              {signatureType === 'draw' ? (
+                <div className="draw-signature">
+                  <h4>Dibuja tu firma:</h4>
+                  <div className="canvas-container">
+                    <canvas
+                      ref={canvasRef}
+                      width={400}
+                      height={200}
+                      className="signature-canvas"
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                    />
+                  </div>
+                  <div className="signature-actions">
+                    <button className="clear-btn" onClick={clearSignature}>
+                      <X size={16} />
+                      Limpiar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-signature">
+                  <h4>Ingresa tu nombre:</h4>
+                  <input
+                    type="text"
+                    value={signatureText}
+                    onChange={(e) => setSignatureText(e.target.value)}
+                    placeholder="Ingresa tu nombre completo"
+                    className="signature-input"
+                  />
+                  <div className="signature-preview">
+                    <p>Vista previa:</p>
+                    <div className="preview-text">
+                      {signatureText || 'Tu nombre aparecerá aquí'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Botón de acción */}
         {files.length > 0 && (
-          <div className="sign-document-action-section">
-            <button
-              onClick={processPDFs}
-              disabled={processing}
-              className="sign-document-process-btn"
+          <div className="sign-actions">
+            <button 
+              className="sign-btn"
+              onClick={handleSign}
+              disabled={isProcessing}
             >
-              {processing ? 'Procesando...' : 'Firmar Documento'}
+              {isProcessing ? (
+                <>
+                  <div className="spinner"></div>
+                  Firmando documentos...
+                </>
+              ) : (
+                <>
+                  <PenTool size={20} />
+                  Firmar Documentos
+                </>
+              )}
             </button>
           </div>
         )}
 
+        {/* Resultados */}
         {processedFiles.length > 0 && (
-          <div className="sign-document-results-section">
-            <h3>Resultados:</h3>
-            <div className="sign-document-results-list">
+          <div className="results-section">
+            <h3>Documentos Firmados</h3>
+            <div className="results-container">
               {processedFiles.map((file, index) => (
-                <div key={index} className="sign-document-result-item">
-                  <div className="sign-document-result-info">
-                    {file.status === 'success' ? (
-                      <CheckCircle size={20} color="#10b981" />
-                    ) : (
-                      <X size={20} color="#ef4444" />
-                    )}
+                <div key={index} className="result-item">
+                  <div className="result-info">
+                    <FileText className="result-icon" size={20} />
                     <div>
-                      <div className="sign-document-result-name">{file.originalName}</div>
-                      {file.status === 'success' ? (
-                        <div className="sign-document-result-converted">→ {file.processedName}</div>
-                      ) : (
-                        <div className="sign-document-result-error">Error: {file.error}</div>
-                      )}
+                      <div className="result-name">{file.originalName}</div>
+                      <div className="result-converted">→ {file.signedName}</div>
                     </div>
                   </div>
-                  {file.status === 'success' && (
-                    <button
-                      onClick={() => downloadFile(file)}
-                      className="sign-document-download-btn"
-                    >
-                      <Download size={16} />
-                      Descargar
-                    </button>
-                  )}
+                  <button className="download-btn">
+                    <Download size={16} />
+                    Descargar
+                  </button>
                 </div>
               ))}
             </div>

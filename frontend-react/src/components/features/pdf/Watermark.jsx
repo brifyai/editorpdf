@@ -1,110 +1,98 @@
-import React, { useState, useCallback } from 'react';
-import { Droplets, Upload, X, Settings, Download, FileText, CheckCircle, Type, Image } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, FileText, Download, X, Settings, Droplet } from 'lucide-react';
+import { useSweetAlert } from '../../../hooks/useSweetAlert';
 import axios from 'axios';
 import './Watermark.css';
 
 const Watermark = () => {
   const [files, setFiles] = useState([]);
-  const [processing, setProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState([]);
-  const [dragActive, setDragActive] = useState(false);
-  const [settings, setSettings] = useState({
-    watermarkType: 'text',
-    watermarkText: 'CONFIDENCIAL',
-    watermarkFont: 'Arial',
-    watermarkColor: '#000000',
-    watermarkSize: 48,
-    opacity: 30,
-    rotation: 45,
-    position: 'center',
-    repeat: true,
-    pageRange: 'all'
-  });
+  const [watermarkType, setWatermarkType] = useState('text');
+  const [watermarkText, setWatermarkText] = useState('CONFIDENCIAL');
+  const [watermarkImage, setWatermarkImage] = useState(null);
+  const [watermarkPosition, setWatermarkPosition] = useState('center');
+  const [watermarkOpacity, setWatermarkOpacity] = useState(50);
+  const [watermarkSize, setWatermarkSize] = useState('medium');
+  const [watermarkRotation, setWatermarkRotation] = useState(45);
+  const { showSuccess, showError } = useSweetAlert();
 
-  const handleDrag = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  // Función para actualizar las estadísticas en tiempo real
+  const updateStatistics = async () => {
+    try {
+      console.log('📊 Actualizando estadísticas después de agregar marca de agua...');
+      
+      const response = await axios.get('/api/metrics');
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Estadísticas actualizadas:', response.data.data);
+      } else {
+        console.warn('⚠️ Respuesta inválida del servidor');
+      }
+    } catch (error) {
+      console.warn('⚠️ Error actualizando estadísticas:', error.message);
     }
-  }, []);
+  };
 
-  const handleDrop = useCallback((e) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
     
     const droppedFiles = Array.from(e.dataTransfer.files);
     const pdfFiles = droppedFiles.filter(file => file.type === 'application/pdf');
     
-    if (pdfFiles.length > 0) {
-      setFiles(prev => [...prev, ...pdfFiles]);
+    if (pdfFiles.length !== droppedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
     }
-  }, []);
-
-  const handleFileInput = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setFiles(prev => [...prev, ...selectedFiles]);
-  };
-
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const processPDFs = async () => {
-    if (files.length === 0) return;
     
-    setProcessing(true);
-    const results = [];
-
-    for (const file of files) {
-      try {
-        // Simulación de procesamiento de marca de agua
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const result = {
-          originalName: file.name,
-          processedName: file.name.replace('.pdf', '_watermarked.pdf'),
-          size: file.size,
-          status: 'success'
-        };
-        
-        results.push(result);
-        
-        // Actualizar estadísticas
-        try {
-          await axios.post('http://localhost:8080/api/statistics/update', {
-            category: 'protection',
-            tool: 'watermark',
-            action: 'processed'
-          });
-        } catch (error) {
-          console.error('Error updating statistics:', error);
-        }
-        
-      } catch (error) {
-        results.push({
-          originalName: file.name,
-          processedName: null,
-          size: file.size,
-          status: 'error',
-          error: error.message
-        });
-      }
-    }
-
-    setProcessedFiles(results);
-    setProcessing(false);
+    addFiles(pdfFiles);
   };
 
-  const downloadFile = (file) => {
-    // Simulación de descarga
-    const link = document.createElement('a');
-    link.href = '#';
-    link.download = file.processedName;
-    link.click();
+  const handleFileSelect = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    const pdfFiles = selectedFiles.filter(file => file.type === 'application/pdf');
+    
+    if (pdfFiles.length !== selectedFiles.length) {
+      showError('Error', 'Solo se permiten archivos PDF');
+      return;
+    }
+    
+    addFiles(pdfFiles);
+  };
+
+  const handleImageSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setWatermarkImage(selectedFile);
+    }
+  };
+
+  const addFiles = (newFiles) => {
+    const filesWithId = newFiles.map((file, index) => ({
+      id: Date.now() + index,
+      file,
+      name: file.name,
+      size: file.size
+    }));
+    
+    setFiles(prev => [...prev, ...filesWithId]);
+    updateStatistics();
+  };
+
+  const removeFile = (id) => {
+    setFiles(prev => prev.filter(file => file.id !== id));
   };
 
   const formatFileSize = (bytes) => {
@@ -115,261 +103,356 @@ const Watermark = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const handleWatermark = async () => {
+    if (files.length === 0) {
+      showError('Error', 'Selecciona al menos un archivo PDF');
+      return;
+    }
+
+    if (watermarkType === 'text' && !watermarkText.trim()) {
+      showError('Error', 'Ingresa el texto para la marca de agua');
+      return;
+    }
+
+    if (watermarkType === 'image' && !watermarkImage) {
+      showError('Error', 'Selecciona una imagen para la marca de agua');
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      console.log('🔄 Iniciando agregado de marca de agua...');
+      console.log(`📁 Archivos a procesar: ${files.length}`);
+      console.log(`💧 Tipo de marca de agua: ${watermarkType}`);
+      
+      // Procesar cada archivo
+      for (let i = 0; i < files.length; i++) {
+        const fileItem = files[i];
+        console.log(`📄 Procesando archivo ${i + 1}/${files.length}: ${fileItem.name}`);
+        
+        try {
+          await addWatermark(fileItem);
+        } catch (error) {
+          console.error(`❌ Error procesando ${fileItem.name}:`, error);
+          // Continuar con el siguiente archivo
+        }
+      }
+      
+      console.log('✅ Marca de agua agregada');
+      showSuccess('¡Marca de Agua Agregada!', `Se ha agregado la marca de agua a ${files.length} documentos`);
+      setFiles([]);
+      
+    } catch (error) {
+      console.error('❌ Error en proceso:', error);
+      console.error('❌ Stack trace:', error.stack);
+      showError('Error', `No se pudo agregar la marca de agua: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Función para agregar marca de agua
+  const addWatermark = async (fileItem) => {
+    console.log(`💧 Agregando marca de agua a ${fileItem.name}...`);
+    
+    // Simulación de procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Crear nombre para el archivo con marca de agua
+    const watermarkedFileName = fileItem.name.replace('.pdf', '_con_marca_de_agua.pdf');
+    
+    // Simular descarga del archivo con marca de agua
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = watermarkedFileName;
+    link.click();
+    
+    // Agregar a la lista de archivos procesados
+    setProcessedFiles(prev => [...prev, {
+      originalName: fileItem.name,
+      watermarkedName: watermarkedFileName,
+      size: fileItem.size,
+      status: 'success'
+    }]);
+    
+    console.log(`✅ Marca de agua agregada: ${watermarkedFileName}`);
+  };
+
   return (
     <div className="watermark-container">
       <div className="watermark-header">
-        <div className="watermark-header-icon">
-          <Droplets size={32} color="#667eea" />
-        </div>
-        <div className="watermark-header-content">
+        <div className="header-icon">💧</div>
+        <div className="header-content">
           <h1>Marca de Agua</h1>
-          <p>Añade marcas de agua personalizadas para proteger tus documentos PDF</p>
+          <p>Agrega marcas de agua personalizadas a tus documentos PDF</p>
         </div>
       </div>
 
       <div className="watermark-content">
-        <div className="watermark-upload-section">
-          <div
-            className={`watermark-upload-area ${dragActive ? 'drag-active' : ''}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <Upload size={48} color="#667eea" />
-            <h3>Arrastra y suelta archivos PDF aquí</h3>
-            <p>o haz clic para seleccionar archivos</p>
-            <input
-              type="file"
-              multiple
-              accept=".pdf"
-              onChange={handleFileInput}
-              className="watermark-file-input"
-            />
-          </div>
+        {/* Zona de carga */}
+        <div 
+          className={`upload-zone ${isDragOver ? 'drag-over' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById('file-input').click()}
+        >
+          <Upload className="upload-icon" size={48} />
+          <h3>Arrastra archivos PDF aquí</h3>
+          <p>o haz clic para seleccionar archivos (.pdf)</p>
+          <input
+            id="file-input"
+            type="file"
+            multiple
+            accept=".pdf"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          <button className="select-files-btn">
+            Seleccionar Archivos PDF
+          </button>
+        </div>
 
-          {files.length > 0 && (
-            <div className="watermark-file-list">
-              <h4>Archivos seleccionados:</h4>
-              {files.map((file, index) => (
-                <div key={index} className="watermark-file-item">
-                  <FileText size={20} color="#667eea" />
-                  <span>{file.name}</span>
-                  <span className="watermark-file-size">{formatFileSize(file.size)}</span>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="watermark-remove-btn"
-                  >
-                    <X size={16} />
-                  </button>
+        {/* Lista de archivos */}
+        {files.length > 0 && (
+          <div className="files-list">
+            <h3>Archivos a procesar ({files.length})</h3>
+            <div className="files-container">
+              {files.map((fileItem) => (
+                <div key={fileItem.id} className="file-item">
+                  <div className="file-info">
+                    <FileText className="file-icon" size={20} />
+                    <div className="file-details">
+                      <span className="file-name">{fileItem.name}</span>
+                      <span className="file-size">{formatFileSize(fileItem.size)}</span>
+                    </div>
+                  </div>
+                  <div className="file-actions">
+                    <button 
+                      className="remove-btn"
+                      onClick={() => removeFile(fileItem.id)}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-
-        <div className="watermark-settings-section">
-          <div className="watermark-settings-header">
-            <Settings size={20} color="#667eea" />
-            <h3>Configuración de Marca de Agua</h3>
           </div>
-          
-          <div className="watermark-settings-grid">
-            <div className="watermark-setting-group">
-              <h4>Tipo de Marca de Agua</h4>
-              <div className="watermark-watermark-types">
-                <button
-                  onClick={() => setSettings({...settings, watermarkType: 'text'})}
-                  className={`watermark-watermark-type-btn ${settings.watermarkType === 'text' ? 'active' : ''}`}
-                >
-                  <Type size={20} />
-                  Texto
-                </button>
-                <button
-                  onClick={() => setSettings({...settings, watermarkType: 'image'})}
-                  className={`watermark-watermark-type-btn ${settings.watermarkType === 'image' ? 'active' : ''}`}
-                >
-                  <Image size={20} />
-                  Imagen
-                </button>
-              </div>
-            </div>
+        )}
 
-            {settings.watermarkType === 'text' && (
-              <div className="watermark-setting-item">
-                <label>Texto de la marca de agua:</label>
-                <input
-                  type="text"
-                  value={settings.watermarkText}
-                  onChange={(e) => setSettings({...settings, watermarkText: e.target.value})}
-                  placeholder="CONFIDENCIAL"
-                  className="watermark-input"
-                />
+        {/* Configuración de marca de agua */}
+        {files.length > 0 && (
+          <div className="watermark-configuration">
+            <h3>Configuración de Marca de Agua</h3>
+            
+            <div className="watermark-options">
+              <div className="option-group">
+                <label>Tipo de marca de agua:</label>
+                <div className="watermark-type-selector">
+                  <button
+                    className={`watermark-type-btn ${watermarkType === 'text' ? 'active' : ''}`}
+                    onClick={() => setWatermarkType('text')}
+                  >
+                    <FileText size={16} />
+                    Texto
+                  </button>
+                  <button
+                    className={`watermark-type-btn ${watermarkType === 'image' ? 'active' : ''}`}
+                    onClick={() => setWatermarkType('image')}
+                  >
+                    <Droplet size={16} />
+                    Imagen
+                  </button>
+                </div>
               </div>
-            )}
 
-            {settings.watermarkType === 'text' && (
-              <div className="watermark-setting-item">
-                <label>Fuente:</label>
+              <div className="option-group">
+                <label htmlFor="watermark-position">Posición:</label>
                 <select
-                  value={settings.watermarkFont}
-                  onChange={(e) => setSettings({...settings, watermarkFont: e.target.value})}
-                  className="watermark-select"
+                  id="watermark-position"
+                  value={watermarkPosition}
+                  onChange={(e) => setWatermarkPosition(e.target.value)}
                 >
-                  <option value="Arial">Arial</option>
-                  <option value="Times New Roman">Times New Roman</option>
-                  <option value="Helvetica">Helvetica</option>
-                  <option value="Courier New">Courier New</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Verdana">Verdana</option>
+                  <option value="center">Centro</option>
+                  <option value="top-left">Superior izquierda</option>
+                  <option value="top-right">Superior derecha</option>
+                  <option value="bottom-left">Inferior izquierda</option>
+                  <option value="bottom-right">Inferior derecha</option>
+                  <option value="tile">Mosaico (todo el documento)</option>
                 </select>
               </div>
-            )}
 
-            <div className="watermark-setting-item">
-              <label>Color:</label>
-              <div className="watermark-color-input-wrapper">
-                <input
-                  type="color"
-                  value={settings.watermarkColor}
-                  onChange={(e) => setSettings({...settings, watermarkColor: e.target.value})}
-                  className="watermark-color-input"
-                />
-                <span>{settings.watermarkColor}</span>
-              </div>
-            </div>
-
-            <div className="watermark-setting-item">
-              <label>Tamaño:</label>
-              <div className="watermark-range-wrapper">
+              <div className="option-group">
+                <label htmlFor="watermark-opacity">Opacidad: {watermarkOpacity}%</label>
                 <input
                   type="range"
-                  value={settings.watermarkSize}
-                  onChange={(e) => setSettings({...settings, watermarkSize: parseInt(e.target.value)})}
-                  min="12"
-                  max="120"
-                  className="watermark-range"
-                />
-                <span>{settings.watermarkSize}px</span>
-              </div>
-            </div>
-
-            <div className="watermark-setting-item">
-              <label>Opacidad:</label>
-              <div className="watermark-range-wrapper">
-                <input
-                  type="range"
-                  value={settings.opacity}
-                  onChange={(e) => setSettings({...settings, opacity: parseInt(e.target.value)})}
+                  id="watermark-opacity"
                   min="10"
                   max="100"
-                  className="watermark-range"
+                  value={watermarkOpacity}
+                  onChange={(e) => setWatermarkOpacity(parseInt(e.target.value))}
+                  className="opacity-slider"
                 />
-                <span>{settings.opacity}%</span>
               </div>
-            </div>
 
-            <div className="watermark-setting-item">
-              <label>Rotación:</label>
-              <div className="watermark-range-wrapper">
+              <div className="option-group">
+                <label htmlFor="watermark-size">Tamaño:</label>
+                <select
+                  id="watermark-size"
+                  value={watermarkSize}
+                  onChange={(e) => setWatermarkSize(e.target.value)}
+                >
+                  <option value="small">Pequeño</option>
+                  <option value="medium">Mediano</option>
+                  <option value="large">Grande</option>
+                  <option value="extra-large">Extra grande</option>
+                </select>
+              </div>
+
+              <div className="option-group">
+                <label htmlFor="watermark-rotation">Rotación: {watermarkRotation}°</label>
                 <input
                   type="range"
-                  value={settings.rotation}
-                  onChange={(e) => setSettings({...settings, rotation: parseInt(e.target.value)})}
+                  id="watermark-rotation"
                   min="0"
                   max="360"
-                  className="watermark-range"
+                  value={watermarkRotation}
+                  onChange={(e) => setWatermarkRotation(parseInt(e.target.value))}
+                  className="rotation-slider"
                 />
-                <span>{settings.rotation}°</span>
               </div>
             </div>
 
-            <div className="watermark-setting-item">
-              <label>Posición:</label>
-              <select
-                value={settings.position}
-                onChange={(e) => setSettings({...settings, position: e.target.value})}
-                className="watermark-select"
-              >
-                <option value="center">Centro</option>
-                <option value="top-left">Superior Izquierda</option>
-                <option value="top-right">Superior Derecha</option>
-                <option value="bottom-left">Inferior Izquierda</option>
-                <option value="bottom-right">Inferior Derecha</option>
-                <option value="custom">Personalizada</option>
-              </select>
-            </div>
-
-            <div className="watermark-setting-item">
-              <label>Rango de páginas:</label>
-              <select
-                value={settings.pageRange}
-                onChange={(e) => setSettings({...settings, pageRange: e.target.value})}
-                className="watermark-select"
-              >
-                <option value="all">Todas las páginas</option>
-                <option value="first">Primera página</option>
-                <option value="last">Última página</option>
-                <option value="odd">Páginas impares</option>
-                <option value="even">Páginas pares</option>
-              </select>
-            </div>
-
-            <div className="watermark-setting-item">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={settings.repeat}
-                  onChange={(e) => setSettings({...settings, repeat: e.target.checked})}
-                />
-                Repetir marca de agua
-              </label>
+            {/* Área de configuración específica */}
+            <div className="watermark-specific-config">
+              {watermarkType === 'text' ? (
+                <div className="text-watermark-config">
+                  <h4>Configuración de texto:</h4>
+                  <input
+                    type="text"
+                    value={watermarkText}
+                    onChange={(e) => setWatermarkText(e.target.value)}
+                    placeholder="Ingresa el texto para la marca de agua"
+                    className="watermark-text-input"
+                  />
+                  <div className="watermark-preview">
+                    <p>Vista previa:</p>
+                    <div 
+                      className="preview-text"
+                      style={{
+                        opacity: watermarkOpacity / 100,
+                        transform: `rotate(${watermarkRotation}deg)`,
+                        fontSize: watermarkSize === 'small' ? '14px' : 
+                                watermarkSize === 'medium' ? '18px' :
+                                watermarkSize === 'large' ? '24px' : '32px'
+                      }}
+                    >
+                      {watermarkText || 'Texto de la marca de agua'}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="image-watermark-config">
+                  <h4>Configuración de imagen:</h4>
+                  <div className="image-upload-area">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      style={{ display: 'none' }}
+                      id="watermark-image-input"
+                    />
+                    <button
+                      className="select-image-btn"
+                      onClick={() => document.getElementById('watermark-image-input').click()}
+                    >
+                      <Droplet size={16} />
+                      Seleccionar Imagen
+                    </button>
+                    {watermarkImage && (
+                      <div className="selected-image">
+                        <span>{watermarkImage.name}</span>
+                        <button 
+                          className="remove-image-btn"
+                          onClick={() => setWatermarkImage(null)}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="image-preview">
+                    <p>Vista previa:</p>
+                    <div className="preview-container">
+                      {watermarkImage ? (
+                        <img 
+                          src={URL.createObjectURL(watermarkImage)} 
+                          alt="Vista previa de la marca de agua"
+                          style={{
+                            opacity: watermarkOpacity / 100,
+                            transform: `rotate(${watermarkRotation}deg)`,
+                            maxWidth: watermarkSize === 'small' ? '50px' : 
+                                     watermarkSize === 'medium' ? '100px' :
+                                     watermarkSize === 'large' ? '150px' : '200px'
+                          }}
+                        />
+                      ) : (
+                        <div className="no-image-preview">
+                          <Droplet size={48} />
+                          <p>Selecciona una imagen</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Botón de acción */}
         {files.length > 0 && (
-          <div className="watermark-action-section">
-            <button
-              onClick={processPDFs}
-              disabled={processing}
-              className="watermark-process-btn"
+          <div className="watermark-actions">
+            <button 
+              className="watermark-btn"
+              onClick={handleWatermark}
+              disabled={isProcessing}
             >
-              {processing ? 'Procesando...' : 'Aplicar Marca de Agua'}
+              {isProcessing ? (
+                <>
+                  <div className="spinner"></div>
+                  Agregando marca de agua...
+                </>
+              ) : (
+                <>
+                  <Droplet size={20} />
+                  Agregar Marca de Agua
+                </>
+              )}
             </button>
           </div>
         )}
 
+        {/* Resultados */}
         {processedFiles.length > 0 && (
-          <div className="watermark-results-section">
-            <h3>Resultados:</h3>
-            <div className="watermark-results-list">
+          <div className="results-section">
+            <h3>Documentos Procesados</h3>
+            <div className="results-container">
               {processedFiles.map((file, index) => (
-                <div key={index} className="watermark-result-item">
-                  <div className="watermark-result-info">
-                    {file.status === 'success' ? (
-                      <CheckCircle size={20} color="#10b981" />
-                    ) : (
-                      <X size={20} color="#ef4444" />
-                    )}
+                <div key={index} className="result-item">
+                  <div className="result-info">
+                    <FileText className="result-icon" size={20} />
                     <div>
-                      <div className="watermark-result-name">{file.originalName}</div>
-                      {file.status === 'success' ? (
-                        <div className="watermark-result-converted">→ {file.processedName}</div>
-                      ) : (
-                        <div className="watermark-result-error">Error: {file.error}</div>
-                      )}
+                      <div className="result-name">{file.originalName}</div>
+                      <div className="result-converted">→ {file.watermarkedName}</div>
                     </div>
                   </div>
-                  {file.status === 'success' && (
-                    <button
-                      onClick={() => downloadFile(file)}
-                      className="watermark-download-btn"
-                    >
-                      <Download size={16} />
-                      Descargar
-                    </button>
-                  )}
+                  <button className="download-btn">
+                    <Download size={16} />
+                    Descargar
+                  </button>
                 </div>
               ))}
             </div>
