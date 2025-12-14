@@ -14,5 +14,23 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    // Desactivar Service Worker durante desarrollo
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  },
+  define: {
+    // Desactivar Service Worker en desarrollo
+    __VUE_OPTIONS_API__: false,
+    __VUE_PROD_DEVTOOLS__: false,
+    'process.env.NODE_ENV': JSON.stringify('development')
+  },
+  optimizeDeps: {
+    // Forzar la reconstrucción de dependencias
+    force: true
   }
 });

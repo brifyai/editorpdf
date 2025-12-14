@@ -99,20 +99,20 @@
 <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
 <link rel="apple-touch-icon" sizes="167x167" href="/icon-167.png">
 
-<!-- PWA Scripts -->
+<!-- PWA Scripts - TEMPORALMENTE DESACTIVADO PARA DEBUGGING -->
 <script>
-  // Registrar service worker
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw-advanced.js')
-        .then((registration) => {
-          console.log('SW registrado:', registration);
-        })
-        .catch((error) => {
-          console.log('SW registro fallido:', error);
-        });
-    });
-  }
+  // Service Worker desactivado temporalmente para resolver problemas de caché
+  // if ('serviceWorker' in navigator) {
+  //   window.addEventListener('load', () => {
+  //     navigator.serviceWorker.register('/sw-advanced.js')
+  //       .then((registration) => {
+  //         console.log('SW registrado:', registration);
+  //       })
+  //       .catch((error) => {
+  //         console.log('SW registro fallido:', error);
+  //       });
+  //   });
+  // }
 
   // Detectar cuando la app se instala
   window.addEventListener('beforeinstallprompt', (e) => {

@@ -79,7 +79,7 @@ const ExportTools = () => {
           <path d="M10 9H8"/>
         </svg>
       ),
-      color: '#8b5cf6',
+      color: '#6b7280',
       estimatedSize: '650 KB',
       estimatedTime: '12s'
     },

@@ -58,6 +58,8 @@ function verifyJWT(token) {
  * Registro de usuario
  */
 router.post('/register', async (req, res) => {
+  // Invalidar caché de métricas (nuevo usuario)
+  invalidateCache(CACHE_TYPES.METRICS);
   try {
     const { email, username, password, firstName, lastName } = req.body;
 

@@ -223,7 +223,7 @@ const ModelComparison = () => {
       'Groq': '#f59e0b',
       'Chutes.ai': '#3b82f6',
       'OpenAI': '#10b981',
-      'Anthropic': '#8b5cf6'
+      'Anthropic': '#6b7280'
     };
     return colors[provider] || '#6b7280';
   };

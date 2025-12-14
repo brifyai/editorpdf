@@ -1,403 +1,500 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { useSweetAlert } from '../../../hooks/useSweetAlert';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { useNavigate } from 'react-router-dom';
+import { supabaseHelpers } from '../../../services/supabase';
+import { supabaseRealHelpers } from '../../../services/supabase-real';
+import { batchJobsService } from '../../../services/api';
+import { useErrorHandler } from '../../../utils/errorHandler';
+import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import './BatchAnalysis.css';
 
 const BatchAnalysis = () => {
-  const { showError, showSuccess, showWarning } = useSweetAlert();
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
   const [batchName, setBatchName] = useState('');
-  const [selectedAnalysisType, setSelectedAnalysisType] = useState('comprehensive');
-  const fileInputRef = useRef(null);
+  const [batchDescription, setBatchDescription] = useState('');
+  const [analysisType, setAnalysisType] = useState('document');
+  const [priority, setPriority] = useState('medium');
+  const [aiModel, setAiModel] = useState('basic');
+  const [language, setLanguage] = useState('es');
+  const [extractImages, setExtractImages] = useState(false);
+  const [extractTables, setExtractTables] = useState(false);
+  const [extractMetadata, setExtractMetadata] = useState(true);
+  const [generateSummary, setGenerateSummary] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentFileName, setCurrentFileName] = useState('');
+  const [processedFiles, setProcessedFiles] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
 
-  const allowedTypes = [
-    'application/pdf', 
-    'image/jpeg', 
-    'image/jpg', 
-    'image/png', 
-    'image/webp', 
-    'image/tiff'
-  ];
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
-  const maxFiles = 50;
+  const { handleError } = useErrorHandler();
 
-  const analysisTypes = [
-    { 
-      value: 'comprehensive', 
-      label: 'Análisis Completo', 
-      description: 'Extracción de texto, tablas, metadatos y análisis de contenido' 
-    },
-    { 
-      value: 'text-extraction', 
-      label: 'Solo Texto', 
-      description: 'Extracción únicamente del contenido textual' 
-    },
-    { 
-      value: 'table-detection', 
-      label: 'Detección de Tablas', 
-      description: 'Identificación y extracción de tablas y datos estructurados' 
-    },
-    { 
-      value: 'metadata', 
-      label: 'Solo Metadatos', 
-      description: 'Extracción de información del documento y propiedades' 
-    }
-  ];
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
+  const onDrop = useCallback((acceptedFiles) => {
+    const pdfFiles = acceptedFiles.filter(file => file.type === 'application/pdf');
     
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    handleFiles(droppedFiles);
-  }, []);
-
-  const handleFileSelect = useCallback((e) => {
-    const selectedFiles = Array.from(e.target.files);
-    handleFiles(selectedFiles);
-  }, []);
-
-  const handleFiles = useCallback((newFiles) => {
-    if (files.length + newFiles.length > maxFiles) {
-      showError('Límite excedido', `Máximo ${maxFiles} archivos permitidos por lote.`);
-      return;
+    if (pdfFiles.length !== acceptedFiles.length) {
+      toast.warning('Solo se permiten archivos PDF.');
     }
-
-    const validFiles = newFiles.filter(file => {
-      if (!allowedTypes.includes(file.type)) {
-        showError('Formato inválido', `El archivo ${file.name} no es un formato válido. Solo se permiten PDF, JPG, PNG, WebP y TIFF.`);
-        return false;
-      }
-      if (file.size > maxFileSize) {
-        showError('Archivo muy grande', `El archivo ${file.name} es demasiado grande. El tamaño máximo es 10MB.`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length > 0) {
-      setFiles(prevFiles => [...prevFiles, ...validFiles]);
-      if (!batchName) {
-        setBatchName(`Lote_${new Date().toISOString().slice(0, 10)}_${files.length + 1}`);
-      }
-    }
-  }, [files.length, batchName]);
-
-  const simulateProcessing = useCallback((filesToProcess) => {
-    setIsProcessing(true);
-    setProcessingProgress(0);
-
-    const interval = setInterval(() => {
-      setProcessingProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsProcessing(false);
-          return 100;
-        }
-        return prev + Math.random() * 5;
-      });
-    }, 400);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      setProcessingProgress(100);
-      setIsProcessing(false);
-    }, filesToProcess.length * 4000);
+    
+    setFiles(prevFiles => [...prevFiles, ...pdfFiles]);
   }, []);
 
-  const startBatchProcessing = useCallback(() => {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf']
+    },
+    multiple: true
+  });
+
+  const removeFile = (index) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+
+  const clearAll = () => {
+    setFiles([]);
+    setBatchName('');
+    setBatchDescription('');
+    setAnalysisType('document');
+    setPriority('medium');
+    setAiModel('basic');
+    setLanguage('es');
+    setExtractImages(false);
+    setExtractTables(false);
+    setExtractMetadata(true);
+    setGenerateSummary(false);
+    setCustomPrompt('');
+    setShowAdvanced(false);
+    setIsProcessing(false);
+    setProgress(0);
+    setCurrentFileName('');
+    setProcessedFiles(0);
+    setTotalFiles(0);
+  };
+
+  const startBatchProcessing = useCallback(async () => {
     if (files.length === 0) {
-      showWarning('Sin archivos', 'Por favor selecciona al menos un archivo para procesar.');
+      toast.warning('Por favor, carga al menos un archivo PDF.');
       return;
     }
+
     if (!batchName.trim()) {
-      showWarning('Nombre requerido', 'Por favor ingresa un nombre para el lote.');
+      toast.warning('Por favor, ingresa un nombre para el batch.');
       return;
     }
-    simulateProcessing(files);
-  }, [files, batchName, simulateProcessing]);
 
-  const removeFile = useCallback((indexToRemove) => {
-    setFiles(prevFiles => prevFiles.filter((_, index) => index !== indexToRemove));
-  }, []);
+    setIsProcessing(true);
+    setProgress(0);
+    setProcessedFiles(0);
+    setTotalFiles(files.length);
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+    try {
+      // Preparar la configuración del trabajo de lote
+      const batchConfig = {
+        name: batchName,
+        description: batchDescription || `Procesamiento batch de ${files.length} archivos`,
+        type: analysisType,
+        priority: priority,
+        config: {
+          aiModel: aiModel,
+          language: language,
+          extractImages: extractImages,
+          extractTables: extractTables,
+          extractMetadata: extractMetadata,
+          generateSummary: generateSummary,
+          customPrompt: customPrompt
+        },
+        files: files.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
+      };
 
-  const getTotalSize = () => {
-    return files.reduce((total, file) => total + file.size, 0);
-  };
+      // Crear el trabajo de lote en el backend
+      const result = await batchJobsService.create(batchConfig);
 
-  const getFileIcon = (fileType) => {
-    if (fileType === 'application/pdf') {
-      return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"/>
-        </svg>
-      );
+      if (!result.success) {
+        throw new Error(result.error || 'Error al crear el trabajo de lote');
+      }
+
+      const batchJob = result.data;
+      
+      // Simular el progreso del procesamiento
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setCurrentFileName(file.name);
+        
+        // Simular tiempo de procesamiento
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        setProcessedFiles(prev => prev + 1);
+        setProgress(((i + 1) / files.length) * 100);
+      }
+
+      // Actualizar el estado del trabajo a completado
+      await batchJobsService.update(batchJob.id, {
+        status: 'completed',
+        progress: 100,
+        completed_at: new Date().toISOString()
+      });
+
+      toast.success(`Se procesaron ${files.length} archivos exitosamente. ID del trabajo: ${batchJob.id}`);
+      
+      // Preguntar si quiere ver el historial
+      setTimeout(() => {
+        Swal.fire({
+          title: '✅ Procesamiento completado',
+          text: `Se procesaron ${files.length} archivos exitosamente. ID del trabajo: ${batchJob.id}`,
+          icon: 'success',
+          confirmButtonText: 'Ver historial',
+          cancelButtonText: 'Permanecer aquí',
+          showCancelButton: true,
+          confirmButtonColor: '#10b981',
+          cancelButtonColor: '#6b7280'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate('/historial-analisis');
+          }
+        });
+      }, 1000);
+
+    } catch (error) {
+      handleError(error, { showToast: true });
+    } finally {
+      setIsProcessing(false);
     }
-    return (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
-      </svg>
-    );
-  };
+  }, [files, batchName, batchDescription, analysisType, priority, aiModel, language, extractImages, extractTables, extractMetadata, generateSummary, customPrompt, navigate, handleError]);
 
   return (
-    <div className="batch-analysis-container">
-      <div className="batch-analysis-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-              <path d="M7.5 4.21L12 6.81l4.5-2.6"/>
-              <path d="M12 22.81V12"/>
-              <path d="M3.27 6.96L12 12.01l8.73-5.05"/>
-              <path d="M12 8.52V22.81"/>
-            </svg>
-          </div>
-          <div className="header-text">
-            <h1>Análisis por Lotes</h1>
-            <p>Procesa múltiples documentos simultáneamente con IA</p>
-          </div>
-        </div>
+    <div className="analysis-history-container">
+      <div className="analysis-history-header">
+        <div className="header-icon">📦</div>
+        <h1>Procesamiento Batch</h1>
+        <p>Procesa múltiples documentos simultáneamente con configuraciones personalizadas</p>
       </div>
 
-      <div className="batch-configuration">
-        <div className="config-section">
-          <div className="input-group">
-            <label htmlFor="batch-name">Nombre del lote:</label>
-            <input
-              id="batch-name"
-              type="text"
-              value={batchName}
-              onChange={(e) => setBatchName(e.target.value)}
-              placeholder="Ingresa un nombre descriptivo para el lote"
-              className="batch-name-input"
-              disabled={isProcessing}
-            />
-          </div>
+      <div className="analysis-history-content">
+        {/* Formulario de configuración del batch */}
+        <div className="controls-section">
+          <h3>📋 Configuración del Batch</h3>
+          
+          <div className="config-form">
+            {/* Información Básica */}
+            <div className="config-section">
+              <h4>📝 Información Básica</h4>
+              <div className="basic-info-grid">
+                <div className="form-group">
+                  <label htmlFor="batchName">Nombre del Batch</label>
+                  <input
+                    type="text"
+                    id="batchName"
+                    value={batchName}
+                    onChange={(e) => setBatchName(e.target.value)}
+                    placeholder="Ingresa un nombre para identificar este batch"
+                    className="search-input"
+                  />
+                </div>
 
-          <div className="analysis-type-selector">
-            <label>Tipo de análisis:</label>
-            <div className="analysis-options">
-              {analysisTypes.map(type => (
-                <div 
-                  key={type.value}
-                  className={`analysis-option ${selectedAnalysisType === type.value ? 'selected' : ''}`}
-                  onClick={() => setSelectedAnalysisType(type.value)}
-                >
-                  <div className="analysis-info">
-                    <span className="analysis-label">{type.label}</span>
-                    <span className="analysis-description">{type.description}</span>
+                <div className="form-group">
+                  <label htmlFor="batchDescription">Descripción (opcional)</label>
+                  <textarea
+                    id="batchDescription"
+                    value={batchDescription}
+                    onChange={(e) => setBatchDescription(e.target.value)}
+                    placeholder="Describe el propósito de este batch"
+                    className="search-input"
+                    rows="3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Configuración de Análisis */}
+            <div className="config-section">
+              <h4>⚙️ Configuración de Análisis</h4>
+              <div className="config-grid">
+                <div className="form-group">
+                  <label htmlFor="analysisType">Tipo de Análisis</label>
+                  <select
+                    id="analysisType"
+                    value={analysisType}
+                    onChange={(e) => setAnalysisType(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="document">📄 Análisis de Documentos</option>
+                    <option value="ocr">🔍 Extracción OCR</option>
+                    <option value="ai">🤖 Análisis con IA</option>
+                    <option value="metadata">📊 Extracción de Metadatos</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="priority">Prioridad</label>
+                  <select
+                    id="priority"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="sort-select"
+                  >
+                    <option value="low">🟢 Baja</option>
+                    <option value="medium">🟡 Media</option>
+                    <option value="high">🔴 Alta</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="aiModel">Modelo de IA</label>
+                  <select
+                    id="aiModel"
+                    value={aiModel}
+                    onChange={(e) => setAiModel(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="none">🚫 No usar IA</option>
+                    <option value="basic">⚡ Procesamiento Básico</option>
+                    <option value="advanced">🚀 Procesamiento Avanzado</option>
+                    <option value="custom">🎯 Modelo Personalizado</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="language">Idioma del Documento</label>
+                  <select
+                    id="language"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="sort-select"
+                  >
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="en">🇺🇸 Inglés</option>
+                    <option value="pt">🇧🇷 Portugués</option>
+                    <option value="auto">🔄 Auto-detectar</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="advanced-options">
+              <h4 onClick={() => setShowAdvanced(!showAdvanced)} className="advanced-toggle">
+                {showAdvanced ? '▼' : '▶'} Opciones Avanzadas
+              </h4>
+              
+              {showAdvanced && (
+                <div className="advanced-content">
+                  <div className="filters">
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={extractImages}
+                          onChange={(e) => setExtractImages(e.target.checked)}
+                        />
+                        Extraer imágenes
+                      </label>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={extractTables}
+                          onChange={(e) => setExtractTables(e.target.checked)}
+                        />
+                        Extraer tablas
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="filters">
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={extractMetadata}
+                          onChange={(e) => setExtractMetadata(e.target.checked)}
+                        />
+                        Extraer metadatos
+                      </label>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={generateSummary}
+                          onChange={(e) => setGenerateSummary(e.target.checked)}
+                        />
+                        Generar resumen
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="customPrompt">Prompt Personalizado (para IA)</label>
+                    <textarea
+                      id="customPrompt"
+                      value={customPrompt}
+                      onChange={(e) => setCustomPrompt(e.target.value)}
+                      placeholder="Ingresa instrucciones personalizadas para el análisis con IA"
+                      className="search-input"
+                      rows="3"
+                    />
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="upload-section">
-        <div 
-          className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${isProcessing ? 'processing' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,.jpg,.jpeg,.png,.webp,.tiff"
-            onChange={handleFileSelect}
-            style={{ display: 'none' }}
-            disabled={isProcessing}
-          />
+        {/* Área de carga de archivos */}
+        <div className="controls-section">
+          <h3>📤 Carga de Archivos</h3>
           
-          <div className="upload-content">
-            {isProcessing ? (
-              <div className="processing-progress">
-                <div className="progress-circle">
-                  <svg width="60" height="60" viewBox="0 0 60 60">
-                    <circle
-                      cx="30"
-                      cy="30"
-                      r="25"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.2)"
-                      strokeWidth="4"
-                    />
-                    <circle
-                      cx="30"
-                      cy="30"
-                      r="25"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="4"
-                      strokeDasharray={`${2 * Math.PI * 25}`}
-                      strokeDashoffset={`${2 * Math.PI * 25 * (1 - processingProgress / 100)}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 30 30)"
-                      className="progress-circle-animated"
-                    />
-                  </svg>
-                  <span className="progress-text">{Math.round(processingProgress)}%</span>
-                </div>
-                <p className="progress-message">Procesando lote: {batchName}</p>
-                <p className="progress-details">{files.length} archivos en procesamiento</p>
-              </div>
-            ) : (
-              <>
-                <div className="upload-icon">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                  </svg>
-                </div>
-                <div className="upload-text">
-                  <h3>Arrastra archivos aquí para análisis por lotes</h3>
-                  <p className="upload-formats">
-                    <span className="formats-label">Formatos soportados:</span>
-                    <span className="formats-list">PDF, JPG, PNG, WebP, TIFF</span>
-                    <span className="formats-size">(máx. 10MB por archivo, {maxFiles} archivos máximo)</span>
-                  </p>
-                </div>
-                <button className="upload-button">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                  </svg>
-                  Seleccionar Archivos
-                </button>
-              </>
-            )}
+          <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>
+            <input {...getInputProps()} />
+            <div className="dropzone-content">
+              <div className="upload-icon">📁</div>
+              <p className="upload-text">
+                {isDragActive
+                  ? 'Suelta los archivos aquí'
+                  : 'Arrastra y suelta archivos PDF aquí, o haz clic para seleccionar'}
+              </p>
+              <p className="upload-hint">
+                Puedes cargar múltiples archivos simultáneamente
+              </p>
+            </div>
           </div>
-        </div>
 
-        {files.length > 0 && (
-          <div className="batch-summary">
-            <div className="summary-stats">
-              <div className="stat-item">
-                <span className="stat-label">Archivos:</span>
-                <span className="stat-value">{files.length}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Tamaño total:</span>
-                <span className="stat-value">{formatFileSize(getTotalSize())}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Análisis:</span>
-                <span className="stat-value">{analysisTypes.find(t => t.value === selectedAnalysisType)?.label}</span>
+          {/* Lista de archivos cargados */}
+          {files.length > 0 && (
+            <div className="analyses-list">
+              <h3>Archivos Cargados ({files.length})</h3>
+              <div className="analyses-container">
+                {files.map((file, index) => (
+                  <div key={index} className="analysis-item">
+                    <div className="file-info">
+                      <div className="file-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"/>
+                          <path d="M14 2V8H20"/>
+                        </svg>
+                      </div>
+                      <div className="file-details">
+                        <h3 className="file-name">{file.name}</h3>
+                        <div className="file-meta">
+                          <span className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="analysis-actions">
+                      <button
+                        className="action-btn secondary"
+                        onClick={() => removeFile(index)}
+                        title="Eliminar archivo"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <button 
-              className="start-processing-btn"
+          )}
+        </div>
+
+        {/* Resumen y botones de acción */}
+        <div className="main-actions">
+          <div className="summary-card">
+            <h3>📊 Resumen del Batch</h3>
+            <div className="analysis-details">
+              <div className="analysis-detail">
+                <span className="detail-label">Archivos</span>
+                <span className="detail-value">{files.length}</span>
+              </div>
+              <div className="analysis-detail">
+                <span className="detail-label">Tipo de análisis</span>
+                <span className="detail-value">
+                  {analysisType === 'document' ? 'Documentos' :
+                   analysisType === 'ocr' ? 'OCR' :
+                   analysisType === 'ai' ? 'IA' : 'Metadatos'}
+                </span>
+              </div>
+              <div className="analysis-detail">
+                <span className="detail-label">Modelo IA</span>
+                <span className="detail-value">
+                  {aiModel === 'none' ? 'No aplica' :
+                   aiModel === 'basic' ? 'Básico' :
+                   aiModel === 'advanced' ? 'Avanzado' : 'Personalizado'}
+                </span>
+              </div>
+              <div className="analysis-detail">
+                <span className="detail-label">Prioridad</span>
+                <span className="detail-value">
+                  {priority === 'low' ? 'Baja' :
+                   priority === 'medium' ? 'Media' : 'Alta'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="analysis-actions">
+            <button
+              className="action-btn secondary"
+              onClick={clearAll}
+              disabled={files.length === 0}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/>
+              </svg>
+              Limpiar Todo
+            </button>
+            <button
+              className="action-btn primary start-processing-btn"
               onClick={startBatchProcessing}
               disabled={isProcessing || !batchName.trim()}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="5,3 19,12 5,21"/>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
               </svg>
-              Iniciar Procesamiento
+              {isProcessing ? 'Procesando...' : 'Iniciar Procesamiento Batch'}
             </button>
           </div>
-        )}
-
-        {files.length > 0 && (
-          <div className="files-list">
-            <h3>Archivos del lote ({files.length})</h3>
-            <div className="files-grid">
-              {files.map((file, index) => (
-                <div key={index} className="file-item">
-                  <div className="file-icon">
-                    {getFileIcon(file.type)}
-                  </div>
-                  <div className="file-info">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-size">{formatFileSize(file.size)}</span>
-                  </div>
-                  <button 
-                    className="remove-file-btn"
-                    onClick={() => removeFile(index)}
-                    disabled={isProcessing}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="features-section">
-        <h3>Características del Análisis por Lotes</h3>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 12l2 2 4-4"/>
-                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
-              </svg>
-            </div>
-            <h4>Procesamiento Masivo</h4>
-            <p>Analiza hasta 50 documentos simultáneamente con máxima eficiencia</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-              </svg>
-            </div>
-            <h4>Velocidad Optimizada</h4>
-            <p>Procesamiento paralelo que reduce significativamente el tiempo total</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                <path d="M2 17l10 5 10-5"/>
-                <path d="M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-            <h4>Múltiples Tipos</h4>
-            <p>PDF, imágenes y documentos con análisis personalizable</p>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            <h4>Reportes Detallados</h4>
-            <p>Informes completos con resultados individuales y consolidados</p>
-          </div>
         </div>
+
+        {/* Estado del procesamiento */}
+        {isProcessing && (
+          <div className="loading-state">
+            <h3>⏳ Procesando Batch...</h3>
+            <div className="loading-spinner"></div>
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <p className="progress-text">{progress}% completado</p>
+            
+            <div className="analysis-details">
+              <div className="analysis-detail">
+                <span className="detail-label">Archivo actual</span>
+                <span className="detail-value">{currentFileName}</span>
+              </div>
+              <div className="analysis-detail">
+                <span className="detail-label">Progreso</span>
+                <span className="detail-value">{processedFiles} de {totalFiles} archivos</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

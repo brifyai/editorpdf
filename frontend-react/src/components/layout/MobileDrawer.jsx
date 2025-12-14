@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import '../../styles/mobile-optimizations.css';
 import {
   HomeIcon,
   DocumentIcon,
@@ -39,26 +40,36 @@ const MobileDrawer = ({ isOpen, onClose }) => {
     {
       title: 'Herramientas PDF',
       items: [
-        { icon: DocumentArrowUpIcon, label: 'Convertir a PDF', path: '/pdf/convert' },
+        { icon: DocumentDuplicateIcon, label: 'Unir PDF', path: '/pdf/merge' },
+        { icon: ScissorsIcon, label: 'Separar PDF', path: '/pdf/split' },
+        { icon: DocumentTextIcon, label: 'Organizar PDF', path: '/pdf/organize' },
+        { icon: ArrowDownTrayIcon, label: 'Optimizar PDF', path: '/pdf/compress' },
+        { icon: WrenchScrewdriverIcon, label: 'Restaurar PDF', path: '/pdf/repair' },
+        { icon: DocumentArrowUpIcon, label: 'Word a PDF', path: '/pdf/word-to-pdf' },
+        { icon: PresentationChartBarIcon, label: 'PowerPoint a PDF', path: '/pdf/powerpoint-to-pdf' },
+        { icon: TableCellsIcon, label: 'Excel a PDF', path: '/pdf/excel-to-pdf' },
+        { icon: CloudArrowUpIcon, label: 'Web a PDF', path: '/pdf/web-to-pdf' },
         { icon: DocumentArrowDownIcon, label: 'PDF a Word', path: '/pdf/to-word' },
-        { icon: TableCellsIcon, label: 'PDF a Excel', path: '/pdf/to-excel' },
         { icon: PresentationChartBarIcon, label: 'PDF a PowerPoint', path: '/pdf/to-powerpoint' },
-        { icon: ScissorsIcon, label: 'Dividir PDF', path: '/pdf/split' },
-        { icon: DocumentDuplicateIcon, label: 'Unir PDFs', path: '/pdf/merge' },
-        { icon: ArrowDownTrayIcon, label: 'Comprimir PDF', path: '/pdf/compress' },
-        { icon: LockClosedIcon, label: 'Proteger PDF', path: '/pdf/protect' },
+        { icon: TableCellsIcon, label: 'PDF a Excel', path: '/pdf/to-excel' },
+        { icon: SparklesIcon, label: 'Editor Avanzado', path: '/pdf/advanced-editor' },
+        { icon: PencilIcon, label: 'Firmar Documento', path: '/pdf/sign' },
+        { icon: DocumentTextIcon, label: 'Marca de Agua', path: '/pdf/watermark' },
+        { icon: ArrowDownTrayIcon, label: 'Rotar Páginas', path: '/pdf/rotate' },
+        { icon: LockClosedIcon, label: 'Proteger con Contraseña', path: '/pdf/protect' },
         { icon: EyeSlashIcon, label: 'Desbloquear PDF', path: '/pdf/unlock' },
-        { icon: PencilIcon, label: 'Firmar PDF', path: '/pdf/sign' },
-        { icon: DocumentTextIcon, label: 'Agregar Marca de Agua', path: '/pdf/watermark' },
-        { icon: WrenchScrewdriverIcon, label: 'Reparar PDF', path: '/pdf/repair' }
+        { icon: DocumentTextIcon, label: 'Numeración de Páginas', path: '/pdf/page-numbers' },
+        { icon: ScissorsIcon, label: 'Recortar Documento', path: '/pdf/crop' },
+        { icon: PhotoIcon, label: 'Reconocimiento de Texto', path: '/ocr/text' },
+        { icon: CloudArrowUpIcon, label: 'Escáner Móvil', path: '/ocr/mobile-scanner' },
+        { icon: ChartBarIcon, label: 'Comparar PDF', path: '/pdf/compare' },
+        { icon: EyeSlashIcon, label: 'Censurar PDF', path: '/pdf/censor' },
+        { icon: SparklesIcon, label: 'Extracción Inteligente', path: '/ai/extraction' }
       ]
     },
     {
       title: 'OCR e Imágenes',
       items: [
-        { icon: PhotoIcon, label: 'OCR Texto', path: '/ocr/text' },
-        { icon: DocumentIcon, label: 'Imagen a PDF', path: '/ocr/image-to-pdf' },
-        { icon: DocumentTextIcon, label: 'Imagen a Word', path: '/ocr/image-to-docx' },
         { icon: CloudArrowUpIcon, label: 'Escáner Móvil', path: '/ocr/mobile-scanner' }
       ]
     },
@@ -108,7 +119,7 @@ const MobileDrawer = ({ isOpen, onClose }) => {
       />
       
       {/* Drawer */}
-      <div className="fixed inset-y-0 left-0 w-80 bg-white shadow-xl z-50 lg:hidden overflow-y-auto">
+      <div className="mobile-drawer fixed inset-y-0 left-0 w-80 bg-white shadow-xl z-50 lg:hidden overflow-y-auto">
         
         {/* Header - Sin botón de cerrar para evitar elementos visuales */}
         <div className="p-4 border-b border-gray-200 bg-white">
@@ -122,19 +133,19 @@ const MobileDrawer = ({ isOpen, onClose }) => {
               <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 {category.title}
               </h3>
-              <div className="space-y-1">
+              <div className="grid grid-cols-2 gap-2 px-3 md:grid-cols-2">
                 {category.items.map((item, itemIndex) => (
                   <button
                     key={itemIndex}
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
+                    className={`flex flex-col items-center justify-center px-2 py-3 text-center transition-all duration-200 rounded-lg border min-h-[85px] ${
                       isActive(item.path)
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-50 border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <item.icon className="w-5 h-5 mr-3 text-gray-500" />
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <item.icon className="w-4 h-4 mb-2 text-gray-500 flex-shrink-0" />
+                    <span className="text-xs font-medium leading-tight break-words px-1">{item.label}</span>
                   </button>
                 ))}
               </div>

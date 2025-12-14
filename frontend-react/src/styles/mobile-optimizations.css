@@ -1,5 +1,41 @@
 /* Mobile Optimizations - Solo para dispositivos móviles */
 
+/* FORZAR GRILLA DE 2 COLUMNAS EN MOBILE */
+@media (max-width: 1023px) {
+  .mobile-drawer .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    padding: 0 0.75rem !important;
+  }
+  
+  .mobile-drawer .grid > * {
+    min-height: 85px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  
+  /* Asegurar que los botones del drawer tengan el tamaño correcto */
+  .mobile-drawer button {
+    width: 100% !important;
+    min-height: 85px !important;
+    padding: 0.75rem 0.5rem !important;
+  }
+  
+  /* Mejorar el espaciado y tamaño del texto */
+  .mobile-drawer .text-xs {
+    font-size: 0.7rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .mobile-drawer .w-4 {
+    width: 1rem !important;
+    height: 1rem !important;
+  }
+}
+
 /* Solo aplicar estilos en pantallas menores a 1024px */
 @media (max-width: 1023px) {
   

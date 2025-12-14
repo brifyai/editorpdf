@@ -42,7 +42,6 @@ const Sidebar = ({ isOpen, onToggle }) => {
       id: 'document-processing',
       title: '📄 Documentos',
       items: [
-        { id: 'images', label: 'Análisis Imágenes', icon: '🖼️', path: '/analisis-imagenes' },
         { id: 'history', label: 'Historial', icon: '📋', path: '/historial-analisis' },
         { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch' }
       ]
@@ -72,10 +71,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
       title: '📄 Procesamiento de Documentos',
       icon: null,
       items: [
-        { id: 'images', label: 'Análisis de Imágenes', icon: '🖼️', path: '/analisis-imagenes' },
         { id: 'history', label: 'Historial de Análisis', icon: '📋', path: '/historial-analisis' },
-        { id: 'pdf-conversion', label: 'Conversión a PDF', icon: '📄', path: '/conversion-pdf' },
-        { id: 'word-conversion', label: 'Conversión a Word', icon: '📝', path: '/conversion-word' },
         { id: 'batch-analysis', label: 'Análisis Múltiple', icon: '📦', path: '/procesamiento-batch' },
         { id: 'batch-tools', label: 'Herramientas Batch', icon: '🛠️', path: '/herramientas-batch' }
       ]

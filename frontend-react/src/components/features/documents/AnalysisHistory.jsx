@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabaseHelpers } from '../../../services/supabase';
 import { supabaseRealHelpers } from '../../../services/supabase-real';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 import './AnalysisHistory.css';
 
 const AnalysisHistory = () => {
@@ -14,7 +16,31 @@ const AnalysisHistory = () => {
   // Función para ver detalles del análisis
   const handleViewDetails = (analysis) => {
     console.log('Ver detalles del análisis:', analysis);
-    alert(`📄 Detalles del Análisis\n\n📄 Archivo: ${analysis.filename}\n📋 Tipo: ${analysis.type}\n📊 Estado: ${analysis.status === 'completed' ? 'Completado' : analysis.status === 'processing' ? 'Procesando' : 'Fallido'}\n🎯 Confianza: ${analysis.confidence || 0}%\n🤖 Modelo IA: ${analysis.aiModel || 'No especificado'}`);
+    
+    const statusText = analysis.status === 'completed' ? 'Completado' :
+                      analysis.status === 'processing' ? 'Procesando' : 'Fallido';
+    
+    Swal.fire({
+      title: '📄 Detalles del Análisis',
+      html: `
+        <div style="text-align: left; font-size: 16px;">
+          <p><strong>📄 Archivo:</strong> ${analysis.filename}</p>
+          <p><strong>📋 Tipo:</strong> ${analysis.type}</p>
+          <p><strong>📊 Estado:</strong> ${statusText}</p>
+          <p><strong>🎯 Confianza:</strong> ${analysis.confidence || 0}%</p>
+          <p><strong>🤖 Modelo IA:</strong> ${analysis.aiModel || 'No especificado'}</p>
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#3b82f6',
+      background: '#ffffff',
+      customClass: {
+        popup: 'swal2-custom-popup',
+        title: 'swal2-custom-title',
+        htmlContainer: 'swal2-custom-html'
+      }
+    });
   };
 
   // Función para descargar análisis
@@ -50,9 +76,29 @@ const AnalysisHistory = () => {
       link.click();
       document.body.removeChild(link);
       
-      alert(`✅ Descarga iniciada\n\nDescargando: ${analysis.filename}`);
+      Swal.fire({
+        title: '✅ Descarga iniciada',
+        text: `Descargando: ${analysis.filename}`,
+        icon: 'success',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#10b981',
+        background: '#ffffff',
+        customClass: {
+          popup: 'swal2-custom-popup'
+        }
+      });
     } else {
-      alert(`❌ Descarga no disponible\n\nNo se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`);
+      Swal.fire({
+        title: '❌ Descarga no disponible',
+        text: `No se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`,
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#ef4444',
+        background: '#ffffff',
+        customClass: {
+          popup: 'swal2-custom-popup'
+        }
+      });
     }
   };
 
@@ -316,170 +362,53 @@ const AnalysisHistory = () => {
   return (
     <div className="analysis-history-container">
       <div className="analysis-history-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"/>
-              <path d="M14 2V8H20"/>
-              <path d="M16 13H8"/>
-              <path d="M16 17H8"/>
-              <path d="M10 9H9H8"/>
-            </svg>
-          </div>
-          <div className="header-text">
-            <h1>Historial de Análisis</h1>
-            <p>Revisa todos tus análisis anteriores y su estado</p>
-            <div className="header-actions">
-              <button
-                className="action-btn primary"
-                onClick={() => window.location.href = '/'}
-                title="Ir a análisis de documentos"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Nuevo Análisis
-              </button>
-              <button
-                className="action-btn secondary"
-                onClick={() => window.location.href = '/ai-config'}
-                title="Configurar IA"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-                Configurar IA
-              </button>
-            </div>
-          </div>
-        </div>
+        <div className="header-icon">📋</div>
+        <h1>Historial de Análisis</h1>
+        <p>Revisa todos tus análisis anteriores y su estado</p>
       </div>
 
-      <div className="controls-section">
-        <div className="search-bar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="m21 21-4.35-4.35"></path>
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar por nombre de archivo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+      <div className="analysis-history-content">
+        {/* Controles de búsqueda y filtros */}
+        <div className="controls-section">
+          <div className="search-bar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar por nombre de archivo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          <div className="filters">
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="completed">Completados</option>
+              <option value="processing">Procesando</option>
+              <option value="failed">Fallidos</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="sort-select"
+            >
+              <option value="date">Ordenar por fecha</option>
+              <option value="name">Ordenar por nombre</option>
+              <option value="size">Ordenar por tamaño</option>
+            </select>
+          </div>
         </div>
 
-        <div className="filters">
-          <select 
-            value={filter} 
-            onChange={(e) => setFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="completed">Completados</option>
-            <option value="processing">Procesando</option>
-            <option value="failed">Fallidos</option>
-          </select>
-
-          <select 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value)}
-            className="sort-select"
-          >
-            <option value="date">Ordenar por fecha</option>
-            <option value="name">Ordenar por nombre</option>
-            <option value="size">Ordenar por tamaño</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Sección de ayuda y orientación */}
-      <div className="help-section" style={{
-        maxWidth: '1200px',
-        margin: '0 auto 2rem auto',
-        background: 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '12px',
-        padding: '1.5rem',
-        animation: 'fadeInUp 0.6s ease-out 0.3s both'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981' }}>
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
-            <path d="M12 17h.01"/>
-          </svg>
-          <h3 style={{ margin: 0, color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
-            ¿Qué puedes hacer aquí?
-          </h3>
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '1rem',
-          color: 'rgba(255, 255, 255, 0.8)',
-          fontSize: '0.9rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
-              <path d="M9 12l2 2 4-4"/>
-              <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
-            </svg>
-            <div>
-              <strong style={{ color: 'white' }}>Ver Detalles:</strong> Haz clic en "Ver detalles" para obtener información completa del análisis, incluyendo métricas de confianza y modelo utilizado.
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <path d="M7 10l5 5 5-5"/>
-              <path d="M12 15V3"/>
-            </svg>
-            <div>
-              <strong style={{ color: 'white' }}>Descargar:</strong> Usa el botón "Descargar" para obtener el archivo original desde Supabase Storage.
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            <div>
-              <strong style={{ color: 'white' }}>Nuevo Análisis:</strong> Haz clic en "Nuevo Análisis" para subir y analizar más documentos con IA.
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981', marginTop: '2px', flexShrink: 0 }}>
-              <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <div>
-              <strong style={{ color: 'white' }}>Configurar IA:</strong> Ve a "Configurar IA" para ajustar modelos, API keys y parámetros de análisis.
-            </div>
-          </div>
-        </div>
-        <div style={{
-          marginTop: '1rem',
-          padding: '1rem',
-          background: 'rgba(16, 185, 129, 0.1)',
-          borderRadius: '8px',
-          border: '1px solid rgba(16, 185, 129, 0.2)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#10b981' }}>
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
-            <strong style={{ color: 'white', fontSize: '0.9rem' }}>Tipos de Análisis:</strong>
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-            <span style={{ color: '#10b981' }}>• Análisis Básico:</span> Extracción de texto y estadísticas simples<br/>
-            <span style={{ color: '#10b981' }}>• IA Avanzada:</span> Análisis con modelos de IA (Llama, Mixtral) para insights profundos<br/>
-            <span style={{ color: '#10b981' }}>• OCR:</span> Reconocimiento óptico de caracteres para imágenes
-          </div>
-        </div>
-      </div>
-
-      <div className="history-content">
+        {/* Lista de análisis */}
         {filteredAnalyses.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">
@@ -490,18 +419,30 @@ const AnalysisHistory = () => {
             </div>
             <h3>No hay análisis que mostrar</h3>
             <p>Cuando realices análisis de documentos aparecerán aquí</p>
+            <button
+              className="action-btn primary"
+              onClick={() => window.location.href = '/'}
+              title="Ir a análisis de documentos"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Nuevo Análisis
+            </button>
           </div>
         ) : (
-          <div className="analyses-grid">
-            {filteredAnalyses.map((analysis) => (
-              <div key={analysis.id} className="analysis-card">
-                <div className="card-header">
+          <div className="analyses-list">
+            <h3>Análisis Realizados ({filteredAnalyses.length})</h3>
+            <div className="analyses-container">
+              {filteredAnalyses.map((analysis) => (
+                <div key={analysis.id} className="analysis-item">
+                  {/* File Information */}
                   <div className="file-info">
                     <div className="file-icon">
                       {getFileIcon(analysis.type)}
                     </div>
                     <div className="file-details">
-                      <h4 className="file-name">{analysis.filename}</h4>
+                      <h3 className="file-name">{analysis.filename}</h3>
                       <div className="file-meta">
                         <span className="file-type">{analysis.type}</span>
                         <span className="file-size">{analysis.size}</span>
@@ -509,31 +450,25 @@ const AnalysisHistory = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="status-badge" style={{ color: getStatusColor(analysis.status) }}>
-                    {getStatusIcon(analysis.status)}
-                    <span className="status-text">
-                      {analysis.status === 'completed' ? 'Completado' :
-                       analysis.status === 'processing' ? 'Procesando' : 'Fallido'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="card-content">
-                  <div className="analysis-info">
-                    <div className="info-item">
-                      <span className="info-label">Fecha:</span>
-                      <span className="info-value">{formatDate(analysis.date)}</span>
+                  
+                  {/* Analysis Details */}
+                  <div className="analysis-details">
+                    <div className="analysis-detail">
+                      <span className="detail-label">Fecha</span>
+                      <span className="detail-value">{formatDate(analysis.date)}</span>
                     </div>
+                    
                     {analysis.confidence && (
-                      <div className="info-item">
-                        <span className="info-label">Confianza:</span>
-                        <span className="info-value confidence">{analysis.confidence}%</span>
+                      <div className="analysis-detail">
+                        <span className="detail-label">Confianza</span>
+                        <span className="detail-value confidence">{analysis.confidence}%</span>
                       </div>
                     )}
+                    
                     {analysis.aiModel && (
-                      <div className="info-item">
-                        <span className="info-label">Modelo IA:</span>
-                        <span className="info-value">
+                      <div className="analysis-detail">
+                        <span className="detail-label">Modelo IA</span>
+                        <span className="detail-value">
                           {analysis.aiModel === 'Desconocido' ?
                             (analysis.hasAI ? 'IA Básica' : 'Análisis Básico') :
                             analysis.aiModel
@@ -541,47 +476,81 @@ const AnalysisHistory = () => {
                         </span>
                       </div>
                     )}
-                    {analysis.processingType && (
-                      <div className="info-item">
-                        <span className="info-label">Tipo:</span>
-                        <span className="info-value">
-                          {analysis.processingType === 'ai_enhanced' ? 'IA Avanzada' :
-                           analysis.processingType === 'advanced' ? 'Análisis Avanzado' :
-                           analysis.processingType === 'ocr' ? 'OCR' :
-                           'Análisis Básico'}
-                        </span>
-                      </div>
-                    )}
+                    
+                    <div className="analysis-detail">
+                      <span className="detail-label">Estado</span>
+                      <span className={`detail-value status-${analysis.status}`}>
+                        {analysis.status === 'completed' ? 'Completado' :
+                         analysis.status === 'processing' ? 'Procesando' : 'Fallido'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status and Actions */}
+                  <div className="status-actions">
+                    <div className="status-badge" style={{ color: getStatusColor(analysis.status) }}>
+                      {getStatusIcon(analysis.status)}
+                      <span className="status-text">
+                        {analysis.status === 'completed' ? 'Completado' :
+                         analysis.status === 'processing' ? 'Procesando' : 'Fallido'}
+                      </span>
+                    </div>
+                    
+                    <div className="analysis-actions">
+                      <button
+                        className="action-btn primary"
+                        onClick={() => handleViewDetails(analysis)}
+                        title="Ver detalles del análisis"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Ver detalles
+                      </button>
+                      <button
+                        className="action-btn secondary"
+                        onClick={() => handleDownload(analysis)}
+                        title="Descargar análisis"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <path d="M7 10l5 5 5-5"/>
+                          <path d="M12 15V3"/>
+                        </svg>
+                        Descargar
+                      </button>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                <div className="card-actions">
-                  <button
-                    className="action-btn primary"
-                    onClick={() => handleViewDetails(analysis)}
-                    title="Ver detalles del análisis"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    Ver detalles
-                  </button>
-                  <button
-                    className="action-btn secondary"
-                    onClick={() => handleDownload(analysis)}
-                    title="Descargar análisis"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <path d="M7 10l5 5 5-5"/>
-                      <path d="M12 15V3"/>
-                    </svg>
-                    Descargar
-                  </button>
-                </div>
-              </div>
-            ))}
+        {/* Botones de acción principales */}
+        {filteredAnalyses.length > 0 && (
+          <div className="main-actions">
+            <button
+              className="action-btn primary"
+              onClick={() => window.location.href = '/'}
+              title="Ir a análisis de documentos"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Nuevo Análisis
+            </button>
+            <button
+              className="action-btn secondary"
+              onClick={() => window.location.href = '/ai-config'}
+              title="Configurar IA"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Configurar IA
+            </button>
           </div>
         )}
       </div>

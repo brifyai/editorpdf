@@ -64,6 +64,9 @@ const upload = multer({
  * Analizar documento individual
  */
 router.post('/analyze', optionalAuth, upload.single('document'), async (req, res) => {
+  // Invalidar caché de documentos y métricas
+  invalidateCache(CACHE_TYPES.DOCUMENTS);
+  invalidateCache(CACHE_TYPES.METRICS);
   const startTime = Date.now();
   
   try {
@@ -309,6 +312,10 @@ router.post('/analyze', optionalAuth, upload.single('document'), async (req, res
  * Análisis por lotes optimizado
  */
 router.post('/batch-analyze', optionalAuth, upload.array('documents', 10), async (req, res) => {
+  // Invalidar caché de documentos, trabajos batch y métricas
+  invalidateCache(CACHE_TYPES.DOCUMENTS);
+  invalidateCache(CACHE_TYPES.BATCH_JOBS);
+  invalidateCache(CACHE_TYPES.METRICS);
   let batchJobId = null;
   let databaseSaved = false;
   let databaseError = null;

@@ -320,18 +320,33 @@ const Main = React.memo(({ children, sidebarOpen, onToggleSidebar }) => {
               <div className="page-title-content-premium">
                 <div className="page-title-with-buttons">
                   {isMobile && (
-                    <button
-                      className="mobile-menu-toggle-fixed"
-                      onClick={onToggleSidebar}
-                      aria-label={sidebarOpen ? "Cerrar menú lateral" : "Abrir menú lateral"}
-                      aria-expanded={sidebarOpen}
-                      aria-controls="sidebar-menu"
-                      type="button"
-                    >
-                      <span className="hamburger-line"></span>
-                      <span className="hamburger-line"></span>
-                      <span className="hamburger-line"></span>
-                    </button>
+                    <div className="mobile-buttons-container">
+                      <button
+                        className="mobile-menu-toggle-fixed"
+                        onClick={onToggleSidebar}
+                        aria-label={sidebarOpen ? "Cerrar menú lateral" : "Abrir menú lateral"}
+                        aria-expanded={sidebarOpen}
+                        aria-controls="sidebar-menu"
+                        type="button"
+                      >
+                        <span className="hamburger-line"></span>
+                        <span className="hamburger-line"></span>
+                        <span className="hamburger-line"></span>
+                      </button>
+                      <button
+                        className="mobile-drawer-toggle-fixed"
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-mobile-drawer'))}
+                        aria-label="Abrir herramientas PDF"
+                        type="button"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="3" width="7" height="7"></rect>
+                          <rect x="14" y="14" width="7" height="7"></rect>
+                          <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                      </button>
+                    </div>
                   )}
                   <h1 className="page-title-premium">{currentPage.title}</h1>
                   {!isMobile && (

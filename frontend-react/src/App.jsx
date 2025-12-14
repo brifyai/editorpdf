@@ -8,6 +8,7 @@ import { StatisticsProvider } from './contexts/StatisticsContext';
 import Sidebar from './components/layout/Sidebar';
 import Main from './components/layout/Main';
 import MobileBottomNav from './components/layout/MobileBottomNav';
+import MobileDrawer from './components/layout/MobileDrawer';
 
 // Auth Components
 import LoginPage from './components/auth/LoginPage';
@@ -90,20 +91,38 @@ const PublicRoute = ({ children }) => {
 // App Layout Component
 const AppLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 769);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const isMobile = window.innerWidth < 769;
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const toggleMobileDrawer = () => {
+    setIsMobileDrawerOpen(!isMobileDrawerOpen);
+  };
+
   return (
     <div className="app-container">
       <div className="app-main">
         <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
-        <Main sidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar}>
+        <Main
+          sidebarOpen={isSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+          onToggleMobileDrawer={toggleMobileDrawer}
+        >
           {children}
         </Main>
       </div>
+      
+      {/* Mobile Drawer - Solo en móvil */}
+      {isMobile && (
+        <MobileDrawer
+          isOpen={isMobileDrawerOpen}
+          onClose={() => setIsMobileDrawerOpen(false)}
+        />
+      )}
+      
       {/* Mostrar bottom navigation solo en móvil */}
       {isMobile && <MobileBottomNav />}
     </div>
@@ -132,6 +151,25 @@ const AppRoutes = () => {
       {/* Rutas de autenticación - SIN layout */}
       <Route path="/acceso" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
+      
+      {/* Ruta de prueba para MobileDrawer */}
+      <Route path="/test-drawer" element={
+        <div className="min-h-screen bg-gray-100 p-4">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-2xl font-bold mb-4">Test MobileDrawer</h1>
+            <p className="text-gray-600 mb-4">
+              Esta es una página de prueba para verificar que el MobileDrawer funciona correctamente.
+            </p>
+            <p className="text-sm text-gray-500">
+              Los cambios están en: /src/components/layout/MobileDrawer.jsx
+            </p>
+          </div>
+          <MobileDrawer
+            isOpen={true}
+            onClose={() => {}}
+          />
+        </div>
+      } />
       
       {/* Ruta principal - Dashboard público */}
       <Route path="/" element={

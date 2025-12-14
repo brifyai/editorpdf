@@ -1,39 +1,16 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import Swal from 'sweetalert2';
+import { batchJobsService } from '../../../services/api';
+import { useErrorHandler } from '../../../utils/errorHandler';
+import toast from 'react-hot-toast';
 import './BatchTools.css';
 
 const BatchTools = () => {
   const [selectedTool, setSelectedTool] = useState('consolidate');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
-  const [batchJobs, setBatchJobs] = useState([
-    {
-      id: 1,
-      name: 'Análisis Documentos Q4',
-      type: 'Análisis Completo',
-      status: 'completado',
-      files: 25,
-      created: '2024-12-10',
-      duration: '2m 34s'
-    },
-    {
-      id: 2,
-      name: 'OCR Imágenes Enero',
-      type: 'Solo Texto',
-      status: 'procesando',
-      files: 18,
-      created: '2024-12-10',
-      duration: 'En progreso'
-    },
-    {
-      id: 3,
-      name: 'Extracción Tablas',
-      type: 'Detección de Tablas',
-      status: 'pendiente',
-      files: 12,
-      created: '2024-12-09',
-      duration: 'Pendiente'
-    }
-  ]);
+  const [batchJobs, setBatchJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const tools = [
     {
@@ -122,27 +99,116 @@ const BatchTools = () => {
     }
   ];
 
-  const simulateProcessing = useCallback(() => {
+  const { handleError } = useErrorHandler();
+
+  // Cargar trabajos de lote desde el backend
+  const loadBatchJobs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await batchJobsService.getAll();
+      if (response.success) {
+        setBatchJobs(response.data);
+      } else {
+        throw new Error(response.error || 'Error al cargar trabajos de lote');
+      }
+    } catch (error) {
+      handleError(error, { showToast: true });
+    } finally {
+      setLoading(false);
+    }
+  }, [handleError]);
+
+  // Cargar trabajos de lote al montar el componente
+  useEffect(() => {
+    loadBatchJobs();
+  }, [loadBatchJobs]);
+
+  const executeTool = useCallback(async () => {
     setIsProcessing(true);
     setProcessingProgress(0);
 
-    const interval = setInterval(() => {
-      setProcessingProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsProcessing(false);
-          return 100;
-        }
-        return prev + Math.random() * 8;
-      });
-    }, 300);
+    try {
+      // Simular progreso mientras procesamos
+      const interval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 200);
 
-    setTimeout(() => {
+      let result;
+      const toolName = tools.find(t => t.id === selectedTool)?.name;
+
+      switch (selectedTool) {
+        case 'consolidate':
+          // Crear un trabajo de lote para consolidación
+          result = await batchJobsService.create({
+            name: `Consolidación - ${new Date().toLocaleDateString()}`,
+            type: 'consolidation',
+            config: {
+              format: 'pdf',
+              includeSummary: true,
+              includeDetails: true,
+              includeStats: false,
+              includeMetadata: true
+            }
+          });
+          break;
+        
+        case 'export':
+          // Crear un trabajo de lote para exportación
+          result = await batchJobsService.create({
+            name: `Exportación Masiva - ${new Date().toLocaleDateString()}`,
+            type: 'export',
+            config: {
+              formats: ['pdf', 'excel'],
+              dateRange: {
+                start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                end: new Date().toISOString().split('T')[0]
+              },
+              analysisTypes: ['text', 'tables']
+            }
+          });
+          break;
+        
+        case 'schedule':
+          // Crear un trabajo de lote programado
+          result = await batchJobsService.create({
+            name: `Procesamiento Programado - ${new Date().toLocaleDateString()}`,
+            type: 'scheduled',
+            config: {
+              frequency: 'daily',
+              time: '09:00',
+              analysisType: 'full'
+            }
+          });
+          break;
+        
+        default:
+          throw new Error('Herramienta no implementada');
+      }
+
       clearInterval(interval);
       setProcessingProgress(100);
+
+      if (result.success) {
+        // Recargar la lista de trabajos
+        await loadBatchJobs();
+        
+        toast.success(`La herramienta ${toolName} se ha ejecutado exitosamente. ID del trabajo: ${result.data.id}`);
+      } else {
+        throw new Error(result.error || 'Error al ejecutar la herramienta');
+      }
+    } catch (error) {
+      handleError(error, { showToast: true });
+    } finally {
       setIsProcessing(false);
-    }, 4000);
-  }, []);
+      setProcessingProgress(0);
+    }
+  }, [selectedTool, loadBatchJobs, handleError]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -182,8 +248,8 @@ const BatchTools = () => {
   };
 
   return (
-    <div className="batch-tools-container">
-      <div className="batch-tools-header">
+    <div className="analysis-history-container">
+      <div className="analysis-history-header">
         <div className="header-content">
           <div className="header-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -196,13 +262,14 @@ const BatchTools = () => {
             </svg>
           </div>
           <div className="header-text">
-            <h1>Herramientas de Lotes</h1>
-            <p>Gestiona y optimiza tus procesos de análisis masivo</p>
+            <h1>Procesamiento Batch</h1>
+            <p>Herramientas especializadas para procesamiento eficiente de documentos en lote</p>
           </div>
         </div>
       </div>
 
-      <div className="tools-grid">
+      <div className="analysis-history-content">
+        <div className="tools-grid">
         {tools.map(tool => (
           <div 
             key={tool.id}
@@ -271,7 +338,7 @@ const BatchTools = () => {
                 </div>
               </div>
 
-              <button className="action-button" onClick={simulateProcessing} disabled={isProcessing}>
+              <button className="action-button" onClick={executeTool} disabled={isProcessing}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"/>
                 </svg>
@@ -316,7 +383,7 @@ const BatchTools = () => {
                 </div>
               </div>
 
-              <button className="action-button" onClick={simulateProcessing} disabled={isProcessing}>
+              <button className="action-button" onClick={executeTool} disabled={isProcessing}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="7,10 12,15 17,10"/>
@@ -360,7 +427,7 @@ const BatchTools = () => {
                 </div>
               </div>
 
-              <button className="action-button" onClick={simulateProcessing} disabled={isProcessing}>
+              <button className="action-button" onClick={executeTool} disabled={isProcessing}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                   <line x1="16" y1="2" x2="16" y2="6"/>
@@ -435,7 +502,34 @@ const BatchTools = () => {
         </div>
 
         <div className="jobs-list">
-          {batchJobs.map(job => (
+          {loading ? (
+            <div className="loading-jobs">
+              <div className="loading-spinner">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                </svg>
+              </div>
+              <p>Cargando trabajos de lote...</p>
+            </div>
+          ) : batchJobs.length === 0 ? (
+            <div className="no-jobs">
+              <div className="no-jobs-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <p>No hay trabajos de lote recientes</p>
+              <button className="refresh-button" onClick={loadBatchJobs}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 4v6h-6"/>
+                  <path d="M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+                Actualizar
+              </button>
+            </div>
+          ) : (
+            batchJobs.map(job => (
             <div key={job.id} className="job-item">
               <div className="job-status" style={{ color: getStatusColor(job.status) }}>
                 {getStatusIcon(job.status)}
@@ -452,21 +546,75 @@ const BatchTools = () => {
                 <span>{job.duration}</span>
               </div>
               <div className="job-actions">
-                <button className="job-action-btn">
+                <button
+                  className="job-action-btn"
+                  onClick={() => {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'Detalles del Trabajo',
+                      html: `
+                        <div style="text-align: left; font-size: 14px;">
+                          <p><strong>Nombre:</strong> ${job.name}</p>
+                          <p><strong>Tipo:</strong> ${job.type}</p>
+                          <p><strong>Estado:</strong> ${job.status}</p>
+                          <p><strong>Archivos:</strong> ${job.files}</p>
+                          <p><strong>Creado:</strong> ${job.created}</p>
+                          <p><strong>Duración:</strong> ${job.duration}</p>
+                        </div>
+                      `,
+                      background: '#ffffff',
+                      color: '#374151',
+                      confirmButtonColor: '#3b82f6',
+                      confirmButtonText: 'Cerrar'
+                    });
+                  }}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
-                <button className="job-action-btn">
+                <button
+                  className="job-action-btn"
+                  onClick={() => {
+                    Swal.fire({
+                      icon: 'question',
+                      title: 'Descargar Resultados',
+                      text: '¿Deseas descargar los resultados de este trabajo?',
+                      background: '#ffffff',
+                      color: '#374151',
+                      confirmButtonColor: '#3b82f6',
+                      cancelButtonColor: '#6b7280',
+                      confirmButtonText: 'Descargar',
+                      cancelButtonText: 'Cancelar',
+                      showCancelButton: true
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        Swal.fire({
+                          icon: 'success',
+                          title: 'Descarga Iniciada',
+                          text: 'La descarga de resultados ha comenzado.',
+                          background: '#ffffff',
+                          color: '#374151',
+                          confirmButtonColor: '#3b82f6',
+                          confirmButtonText: 'Perfecto',
+                          timer: 2000,
+                          timerProgressBar: true
+                        });
+                      }
+                    });
+                  }}
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
                 </button>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
+      </div>
       </div>
     </div>
   );

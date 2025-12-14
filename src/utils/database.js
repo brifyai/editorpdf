@@ -3,7 +3,7 @@
  * Patrones reutilizables para eliminar código duplicado
  */
 
-const { supabaseClient } = require('../database/supabaseClient');
+const { SupabaseClient, supabaseClient } = require('../database/supabaseClient');
 
 /**
  * Respuesta estándar para endpoints

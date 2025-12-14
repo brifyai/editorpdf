@@ -62,7 +62,31 @@ export const supabase = {
   
   from: (table) => ({
     select: (columns = '*') => ({
+      or: (condition) => ({
+        order: (column, options = {}) => ({
+          limit: async (count) => {
+            // Mock response para compatibilidad con .select().or().order().limit()
+            return { data: [], error: null, count: 0 };
+          }
+        }),
+        limit: async (count) => {
+          // Mock response para compatibilidad con .select().or().limit()
+          return { data: [], error: null, count: 0 };
+        }
+      }),
       eq: (column, value) => ({
+        gte: (column2, value2) => ({
+          order: (column3, options = {}) => ({
+            limit: async (count) => {
+              // Mock response para compatibilidad con .eq().gte().order().limit()
+              return { data: [], error: null, count: 0 };
+            }
+          }),
+          limit: async (count) => {
+            // Mock response para compatibilidad con .eq().gte().limit()
+            return { data: [], error: null, count: 0 };
+          }
+        }),
         eq: (column2, value2) => ({
           single: async () => {
             // Mock response para compatibilidad con múltiples .eq()
@@ -135,6 +159,17 @@ export const supabase = {
         },
         single: async () => {
           return { data: null, error: null };
+        }
+      }),
+      or: (condition) => ({
+        // Mock response para compatibilidad con .or()
+        order: (column, options = {}) => ({
+          limit: async (count) => {
+            return { data: [], error: null, count: 0 };
+          }
+        }),
+        limit: async (count) => {
+          return { data: [], error: null, count: 0 };
         }
       })
     }),

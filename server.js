@@ -1,7 +1,7 @@
 /**
  * Servidor optimizado y modular
  * Reemplaza server.js de 4,727 líneas con una versión de ~300 líneas
- * 
+ *
  * Mejoras implementadas:
  * - Middleware unificado de autenticación
  * - Patrones reutilizables para base de datos
@@ -10,6 +10,7 @@
  * - Código DRY (Don't Repeat Yourself)
  * - Mejor manejo de errores
  * - Mayor mantenibilidad
+ * - Sistema de caché para respuestas frecuentes
  */
 
 // Cargar variables de entorno
@@ -23,7 +24,7 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 // Importar módulos optimizados
-const { optionalAuth } = require('./src/middleware/auth');
+const { optionalAuth, authenticate, setUserContext } = require('./src/middleware/auth');
 const {
   createResponse,
   createErrorResponse,
@@ -35,9 +36,41 @@ const {
   getProviderStats
 } = require('./src/utils/database');
 
+// Importar utilidades de optimización de consultas
+const {
+  optimizePagination,
+  optimizeFiltering,
+  optimizeTextSearch,
+  optimizeBatchQueries,
+  createRecommendedIndexes,
+  createMaterializedViews,
+  getOptimizedQueryOptions
+} = require('./src/utils/queryOptimizer');
+
+// Importar utilidades de caché
+const cacheUtils = require('./src/utils/cache');
+const getFromCache = cacheUtils.getFromCache;
+const setInCache = cacheUtils.setInCache;
+const invalidateCacheByPattern = cacheUtils.invalidateCacheByPattern;
+const cacheMiddleware = cacheUtils.cacheMiddleware;
+const generateCacheKey = cacheUtils.generateCacheKey;
+const CACHE_TYPES = cacheUtils.CACHE_TYPES;
+
+// Importar middleware de manejo de errores
+const {
+  asyncHandler,
+  AppError,
+  errorHandler,
+  notFoundHandler
+} = require('./src/middleware/errorHandler');
+
 // Importar rutas modulares
 const analysisRoutes = require('./src/routes/analysis');
 const authRoutes = require('./src/routes/auth');
+const userSettingsRoutes = require('./src/routes/user-settings');
+const exportRoutes = require('./src/routes/export');
+const helpRoutes = require('./src/routes/help');
+const batchJobsRoutes = require('./src/routes/batch-jobs');
 
 // Importar parsers y procesadores
 const pdfAnalyzer = require('./src/parsers/pdfAnalyzer');
@@ -303,6 +336,10 @@ app.get('/auth', (req, res) => {
 
 // Rutas modulares con rate limiting específico
 app.use('/api/auth', authRoutes);
+app.use('/api/user/settings', userSettingsRoutes);
+app.use('/api/export', exportRoutes);
+app.use('/api/help', helpRoutes);
+app.use('/api/batch-jobs', batchJobsRoutes);
 
 // Endpoint temporal para crear usuario de prueba
 app.post('/api/create-test-user', async (req, res) => {
@@ -476,13 +513,20 @@ app.use('/api/batch-convert', ocrLimiter);
 
 // Ruta para guardar configuración de IA - CORREGIDA Y MOVIDA ANTES DE LAS RUTAS GENERALES
 app.post('/api/save-ai-config', async (req, res) => {
+  // Invalidar caché de métricas y configuración de IA
+  invalidateCacheByPattern(CACHE_TYPES.METRICS, '');
+  invalidateCacheByPattern(CACHE_TYPES.USER_CONFIG, '');
   try {
     console.log('📥 Recibiendo configuración de IA...');
     console.log('Body recibido:', req.body);
 
-    const { groq_api_key, chutes_api_key, user_id, ...otherConfig } = req.body;
+    // Aceptar tanto user_id como userId para compatibilidad
+    const { groq_api_key, chutes_api_key, user_id, userId, configuration, ...otherConfig } = req.body;
     
-    if (!user_id) {
+    // Usar userId o user_id, lo que esté disponible
+    const finalUserId = user_id || userId;
+    
+    if (!finalUserId) {
       console.error('❌ ID de usuario no proporcionado');
       return res.status(400).json(createErrorResponse(
         'ID de usuario requerido',
@@ -491,9 +535,13 @@ app.post('/api/save-ai-config', async (req, res) => {
       ));
     }
 
-    console.log(`📝 Guardando configuración para usuario: ${user_id}`);
+    console.log(`📝 Guardando configuración para usuario: ${finalUserId}`);
     console.log(`🔑 Groq API Key presente: ${!!groq_api_key}`);
     console.log(`🔑 Chutes API Key presente: ${!!chutes_api_key}`);
+
+    // Extraer claves del objeto configuration si existe
+    const finalGroqKey = groq_api_key || (configuration ? configuration.groq_api_key : null);
+    const finalChutesKey = chutes_api_key || (configuration ? configuration.chutes_api_key : null);
 
     // Guardar en base de datos usando las funciones del módulo database
     if (isDatabaseAvailable()) {
@@ -502,14 +550,15 @@ app.post('/api/save-ai-config', async (req, res) => {
       const { saveUserConfiguration } = require('./src/utils/database');
       
       const configData = {
-        groq_api_key: groq_api_key || null,
-        chutes_api_key: chutes_api_key || null,
-        ...otherConfig
+        groq_api_key: finalGroqKey || null,
+        chutes_api_key: finalChutesKey || null,
+        ...otherConfig,
+        ...(configuration || {})
       };
 
       console.log('📊 Datos a guardar:', configData);
 
-      const data = await saveUserConfiguration(user_id, configData);
+      const data = await saveUserConfiguration(finalUserId, configData);
       
       if (data) {
         console.log('✅ Configuración de IA guardada en base de datos');
@@ -521,13 +570,13 @@ app.post('/api/save-ai-config', async (req, res) => {
     }
 
     // Actualizar variables de entorno en memoria
-    if (groq_api_key) {
-      process.env.GROQ_API_KEY = groq_api_key;
+    if (finalGroqKey) {
+      process.env.GROQ_API_KEY = finalGroqKey;
       console.log('✅ API key de Groq actualizada en memoria');
     }
     
-    if (chutes_api_key) {
-      process.env.CHUTES_API_KEY = chutes_api_key;
+    if (finalChutesKey) {
+      process.env.CHUTES_API_KEY = finalChutesKey;
       console.log('✅ API key de Chutes.ai actualizada en memoria');
     }
 
@@ -631,6 +680,155 @@ app.get('/api/get-ai-config/:userId', async (req, res) => {
   }
 });
 
+// Endpoint para obtener documentos del usuario - OPTIMIZADO CON CACHÉ
+app.get('/api/documents', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      limit = 50,
+      offset = 0,
+      sortBy = 'uploaded_at',
+      sortOrder = 'desc',
+      fileType,
+      search,
+      dateFrom,
+      dateTo
+    } = req.query;
+
+    console.log(`📄 Obteniendo documentos para usuario: ${userId}`);
+
+    // Generar clave de caché específica para los parámetros
+    const cacheKey = generateCacheKey('documents', {
+      userId,
+      limit,
+      offset,
+      sortBy,
+      sortOrder,
+      fileType,
+      search,
+      dateFrom,
+      dateTo
+    });
+
+    // Verificar si ya tenemos los datos en caché
+    const cachedDocuments = getFromCache(CACHE_TYPES.DOCUMENTS, cacheKey);
+    if (cachedDocuments) {
+      console.log(`📄 Documentos obtenidos desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedDocuments));
+    }
+
+    // Optimizar parámetros de paginación
+    const paginationOptions = optimizePagination({
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      maxLimit: 100
+    });
+
+    // Construir consulta base optimizada
+    let query = getSupabaseClient()
+      .from('documents')
+      .select('*', { count: 'exact' });
+
+    // Aplicar filtro de usuario
+    query = query.eq('user_int_id', userId);
+
+    // Aplicar filtros adicionales optimizados
+    if (fileType) {
+      query = query.eq('file_type', fileType);
+    }
+
+    // Aplicar búsqueda de texto optimizada
+    if (search) {
+      query = optimizeTextSearch(query, 'original_filename', search);
+    }
+
+    // Aplicar filtros de fecha
+    if (dateFrom) {
+      query = query.gte('uploaded_at', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('uploaded_at', dateTo);
+    }
+
+    // Aplicar ordenamiento optimizado
+    const validSortColumns = ['uploaded_at', 'original_filename', 'file_type', 'file_size_bytes'];
+    const finalSortBy = validSortColumns.includes(sortBy) ? sortBy : 'uploaded_at';
+    const finalSortOrder = sortOrder.toLowerCase() === 'asc' ? { ascending: true } : { ascending: false };
+    
+    query = query.order(finalSortBy, finalSortOrder);
+
+    // Aplicar paginación optimizada
+    query = query.range(paginationOptions.offset, paginationOptions.offset + paginationOptions.limit - 1);
+
+    // Ejecutar consulta con medición de tiempo
+    const startTime = Date.now();
+    const { data: documents, error, count } = await query;
+    const queryTime = Date.now() - startTime;
+
+    if (error) {
+      console.error('❌ Error fetching documents:', error);
+      return res.status(500).json(createErrorResponse(
+        'Error al obtener documentos',
+        'DOCUMENTS_FETCH_ERROR',
+        500,
+        { details: error.message }
+      ));
+    }
+
+    console.log(`✅ Documentos obtenidos: ${documents?.length || 0} de ${count || 0} en ${queryTime}ms`);
+
+    // Transformar datos para el frontend
+    const transformedDocuments = documents.map(doc => ({
+      id: doc.id,
+      filename: doc.original_filename,
+      fileType: doc.file_type,
+      uploadedAt: doc.uploaded_at,
+      processingStatus: doc.processing_status,
+      fileSize: doc.file_size_bytes,
+      storageUrl: doc.file_path,
+      metadata: doc.metadata || {},
+      analysis: {
+        statistics: doc.metadata?.analysis_results || {},
+        advanced: doc.metadata?.advanced_results || {},
+        aiAnalysis: doc.metadata?.ai_results || {}
+      },
+      processingTime: doc.metadata?.processing_time_ms || 0,
+      confidenceScore: doc.metadata?.confidence_score || 0
+    }));
+
+    // Preparar respuesta para caché
+    const responseData = {
+      documents: transformedDocuments,
+      pagination: {
+        total: count || 0,
+        limit: paginationOptions.limit,
+        offset: paginationOptions.offset,
+        hasMore: (paginationOptions.offset + paginationOptions.limit) < (count || 0)
+      },
+      performance: {
+        queryTimeMs: queryTime,
+        optimized: true,
+        cached: false
+      }
+    };
+
+    // Guardar en caché
+    setInCache(CACHE_TYPES.DOCUMENTS, cacheKey, responseData);
+    console.log(`📄 Documentos guardados en caché: ${cacheKey}`);
+
+    res.json(createResponse(true, responseData));
+
+  } catch (error) {
+    console.error('❌ Error in GET /api/documents:', error);
+    res.status(500).json(createErrorResponse(
+      'Error interno del servidor',
+      'INTERNAL_ERROR',
+      500,
+      { details: error.message }
+    ));
+  }
+});
+
 /**
  * Health check endpoint
  */
@@ -680,6 +878,16 @@ app.use('/api', analysisRoutes);
  */
 app.get('/api/ai-status', async (req, res) => {
   try {
+    // Generar clave de caché
+    const cacheKey = generateCacheKey('ai-status');
+
+    // Verificar si ya tenemos los datos en caché
+    const cachedStatus = getFromCache(CACHE_TYPES.AI_STATUS, cacheKey);
+    if (cachedStatus) {
+      console.log(`🤖 Estado de IA obtenido desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedStatus));
+    }
+
     const aiAnalyzer = require('./src/ai/aiAnalyzer');
     const status = await aiAnalyzer.checkAPIsAvailability();
     
@@ -738,9 +946,16 @@ app.get('/api/ai-status', async (req, res) => {
       });
     }
     
-    res.json(createResponse(true, {
+    // Preparar respuesta para caché
+    const responseData = {
       apis: detailedStatus
-    }));
+    };
+
+    // Guardar en caché
+    setInCache(CACHE_TYPES.AI_STATUS, cacheKey, responseData);
+    console.log(`🤖 Estado de IA guardado en caché: ${cacheKey}`);
+
+    res.json(createResponse(true, responseData));
     
   } catch (error) {
     res.status(500).json(createErrorResponse(
@@ -907,8 +1122,22 @@ app.get('/api/metrics', async (req, res) => {
   try {
     const { timeRange = '7d', userId } = req.query;
     
+    // Generar clave de caché específica para los parámetros
+    const cacheKey = generateCacheKey('metrics', { timeRange, userId });
+    
+    // Verificar si ya tenemos los datos en caché
+    const cachedMetrics = getFromCache(CACHE_TYPES.METRICS, cacheKey);
+    if (cachedMetrics) {
+      console.log(`📊 Métricas obtenidas desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedMetrics));
+    }
+    
     // Obtener métricas reales de la base de datos
     const metrics = await getRealMetrics(timeRange, userId);
+    
+    // Guardar en caché
+    setInCache(CACHE_TYPES.METRICS, cacheKey, metrics);
+    console.log(`📊 Métricas guardadas en caché: ${cacheKey}`);
     
     // Hacer broadcasting de las estadísticas actualizadas
     broadcastStatisticsUpdate({
@@ -997,6 +1226,9 @@ app.get('/api/provider-stats', async (req, res) => {
  * Ejecutar prueba de comparación real entre modelos
  */
 app.post('/api/run-model-test', async (req, res) => {
+  // Invalidar caché de métricas y modelos
+  invalidateCacheByPattern(CACHE_TYPES.METRICS, '');
+  invalidateCacheByPattern(CACHE_TYPES.GENERAL, 'models');
   try {
     const { models, prompt, userId } = req.body;
     
@@ -1200,6 +1432,16 @@ app.post('/api/run-model-test', async (req, res) => {
  */
 app.get('/api/available-models', (req, res) => {
   try {
+    // Generar clave de caché
+    const cacheKey = generateCacheKey('available-models');
+
+    // Verificar si ya tenemos los datos en caché
+    const cachedModels = getFromCache(CACHE_TYPES.GENERAL, cacheKey);
+    if (cachedModels) {
+      console.log(`🤖 Modelos disponibles obtenidos desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedModels));
+    }
+
     // Modelos reales disponibles en el sistema
     const availableModels = [
       {
@@ -1236,6 +1478,10 @@ app.get('/api/available-models', (req, res) => {
       }
     ];
 
+    // Guardar en caché
+    setInCache(CACHE_TYPES.GENERAL, cacheKey, availableModels);
+    console.log(`🤖 Modelos disponibles guardados en caché: ${cacheKey}`);
+
     res.json(createResponse(true, availableModels));
   } catch (error) {
     console.error('Error obteniendo modelos disponibles:', error);
@@ -1253,6 +1499,16 @@ app.get('/api/available-models', (req, res) => {
  */
 app.get('/api/models', (req, res) => {
   try {
+    // Generar clave de caché
+    const cacheKey = generateCacheKey('models');
+
+    // Verificar si ya tenemos los datos en caché
+    const cachedModels = getFromCache(CACHE_TYPES.GENERAL, cacheKey);
+    if (cachedModels) {
+      console.log(`🤖 Modelos obtenidos desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedModels));
+    }
+
     let models = [];
     
     try {
@@ -1334,10 +1590,17 @@ app.get('/api/models', (req, res) => {
       ];
     }
     
-    res.json(createResponse(true, {
+    // Preparar respuesta para caché
+    const responseData = {
       models: models,
       count: models.length
-    }));
+    };
+
+    // Guardar en caché
+    setInCache(CACHE_TYPES.GENERAL, cacheKey, responseData);
+    console.log(`🤖 Modelos guardados en caché: ${cacheKey}`);
+
+    res.json(createResponse(true, responseData));
     
   } catch (error) {
     console.error('Error en /api/models:', error);
@@ -1352,112 +1615,6 @@ app.get('/api/models', (req, res) => {
 /**
  * Optimización de modelos
  */
-app.post('/api/save-ai-config', async (req, res) => {
-  try {
-    console.log('📥 Recibiendo configuración de IA...');
-    console.log('Body recibido:', req.body);
-
-    const { groq_api_key, chutes_api_key, user_id, ...otherConfig } = req.body;
-    
-    if (!user_id) {
-      console.error('❌ ID de usuario no proporcionado');
-      return res.status(400).json(createErrorResponse(
-        'ID de usuario requerido',
-        'USER_ID_REQUIRED',
-        400
-      ));
-    }
-
-    console.log(`📝 Guardando configuración para usuario: ${user_id}`);
-    console.log(`🔑 Groq API Key presente: ${!!groq_api_key}`);
-    console.log(`🔑 Chutes API Key presente: ${!!chutes_api_key}`);
-
-    // Guardar en base de datos si está disponible
-    if (isDatabaseAvailable()) {
-      console.log('💾 Base de datos disponible, guardando configuración...');
-      
-      const { getSupabaseClient } = require('./src/utils/database');
-      const supabase = getSupabaseClient();
-      
-      const configData = {
-        user_id: user_id,
-        groq_api_key: groq_api_key || null,
-        chutes_api_key: chutes_api_key || null,
-        ...otherConfig,
-        updated_at: new Date().toISOString()
-      };
-
-      console.log('📊 Datos a guardar:', configData);
-
-      const { data, error } = await supabase
-        .from('user_configurations')
-        .upsert(configData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error guardando configuración:', error);
-        return res.status(500).json(createErrorResponse(
-          'Error al guardar configuración',
-          'SAVE_CONFIG_ERROR',
-          500,
-          { details: error.message }
-        ));
-      }
-
-      console.log('✅ Configuración de IA guardada en base de datos');
-    } else {
-      console.log('⚠️ Base de datos no disponible, actualizando solo variables de entorno');
-    }
-
-    // Actualizar variables de entorno en memoria
-    if (groq_api_key) {
-      process.env.GROQ_API_KEY = groq_api_key;
-      console.log('✅ API key de Groq actualizada en memoria');
-    }
-    
-    if (chutes_api_key) {
-      process.env.CHUTES_API_KEY = chutes_api_key;
-      console.log('✅ API key de Chutes.ai actualizada en memoria');
-    }
-
-    // Reinicializar el analizador de IA con las nuevas claves
-    try {
-      const aiAnalyzer = require('./src/ai/aiAnalyzer');
-      const updated = aiAnalyzer.updateAPIConfig(
-        process.env.GROQ_API_KEY,
-        process.env.CHUTES_API_KEY
-      );
-      console.log(`✅ Analizador de IA reinicializado (${updated ? 'con' : 'sin'} cambios)`);
-    } catch (error) {
-      console.error('❌ Error reinicializando analizador:', error);
-    }
-
-    const response = createResponse(true, {
-      message: 'Configuración guardada exitosamente',
-      groq_configured: !!process.env.GROQ_API_KEY,
-      chutes_configured: !!process.env.CHUTES_API_KEY
-    });
-
-    console.log('✅ Respuesta exitosa:', response);
-    res.json(response);
-
-  } catch (error) {
-    console.error('❌ Error en /api/save-ai-config:', error);
-    console.error('Stack trace:', error.stack);
-    
-    // Enviar respuesta de error con más detalles
-    res.status(500).json(createErrorResponse(
-      'Error interno al guardar configuración',
-      'SAVE_CONFIG_ERROR',
-      500,
-      {
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      }
-    ));
-  }
-});
 
 app.get('/api/best-ocr-model', async (req, res) => {
   try {
@@ -1529,32 +1686,26 @@ app.get('/api/ocr-info', (req, res) => {
 app.use((error, req, res, next) => {
   if (error instanceof require('multer').MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json(createErrorResponse(
+      return next(new AppError(
         'El archivo es demasiado grande. Máximo 50MB.',
-        'FILE_TOO_LARGE',
-        400
+        400,
+        'FILE_TOO_LARGE'
       ));
     }
   }
   
-  res.status(500).json(createErrorResponse(
-    error.message || 'Error interno del servidor',
-    'INTERNAL_ERROR',
-    500
-  ));
+  next(error);
 });
 
 /**
- * Ruta 404
+ * Middleware para manejar rutas no encontradas
  */
-app.use('*', (req, res) => {
-  res.status(404).json(createErrorResponse(
-    'Endpoint no encontrado',
-    'NOT_FOUND',
-    404,
-    { path: req.originalUrl }
-  ));
-});
+app.use(notFoundHandler);
+
+/**
+ * Middleware de manejo de errores centralizado
+ */
+app.use(errorHandler);
 
 // =====================================================
 // INICIALIZACIÓN DEL SERVIDOR
