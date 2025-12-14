@@ -78,7 +78,7 @@ const ExtractText = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 60000,
+        timeout: 300000, // 5 minutes timeout for text extraction (increased for Netlify)
       });
 
       if (response.data.success) {

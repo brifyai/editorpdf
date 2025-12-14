@@ -88,7 +88,7 @@ const OCRProcessor = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 180000, // 3 minutes timeout for OCR processing
+        timeout: 600000, // 10 minutes timeout for OCR processing (increased for Netlify)
       });
 
       if (response.data.success) {

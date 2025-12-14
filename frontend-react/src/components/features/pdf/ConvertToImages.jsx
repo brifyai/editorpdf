@@ -78,7 +78,7 @@ const ConvertToImages = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes timeout for image conversion
+        timeout: 300000, // 5 minutes timeout for image conversion (increased for Netlify)
       });
 
       if (response.data.success) {

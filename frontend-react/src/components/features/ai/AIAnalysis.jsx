@@ -107,7 +107,7 @@ const AIAnalysis = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minutes timeout for AI analysis
+        timeout: 600000, // 10 minutes timeout for AI analysis (increased for Netlify)
       });
 
       if (response.data.success) {

@@ -96,7 +96,7 @@ const DocumentViewer = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes timeout for processing
+        timeout: 300000, // 5 minutes timeout for processing (increased for Netlify)
       });
 
       if (response.data.success) {

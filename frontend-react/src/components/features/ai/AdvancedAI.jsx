@@ -95,7 +95,7 @@ const AdvancedAI = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 300000, // 5 minutes timeout for AI processing
+        timeout: 600000, // 10 minutes timeout for AI processing (increased for Netlify)
       });
 
       if (response.data.success) {

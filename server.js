@@ -226,7 +226,221 @@ app.use(express.static('public'));
           });
         }
       });
-    
+
+      // ENDPOINT TEMPORAL PARA DOCUMENTOS SIN AUTENTICACIÓN
+      app.post('/api/temp/document', async (req, res) => {
+        try {
+          console.log('📄 Creando documento temporal...');
+          
+          const {
+            user_int_id,
+            original_filename,
+            file_path,
+            file_size_bytes,
+            file_type,
+            mime_type,
+            file_hash,
+            storage_url,
+            is_processed,
+            processing_status,
+            uploaded_at,
+            metadata
+          } = req.body;
+
+          // Validar campos requeridos
+          if (!user_int_id || !original_filename || !file_type) {
+            return res.status(400).json({
+              success: false,
+              error: 'Campos requeridos: user_int_id, original_filename, file_type',
+              document: null
+            });
+          }
+
+          // Usar getSupabaseClient() en lugar de supabase directo
+          const { getSupabaseClient } = require('./src/utils/database');
+          const supabase = getSupabaseClient();
+          
+          const { data: document, error } = await supabase
+            .from('documents')
+            .insert([{
+              user_int_id,
+              original_filename,
+              file_path: file_path || `/uploads/${original_filename}`,
+              file_size_bytes: file_size_bytes || 0,
+              file_type,
+              mime_type: mime_type || `application/${file_type}`,
+              file_hash: file_hash || `hash_${Date.now()}`,
+              storage_url: storage_url || file_path || `/uploads/${original_filename}`,
+              is_processed: is_processed || false,
+              processing_status: processing_status || 'pending',
+              uploaded_at: uploaded_at || new Date().toISOString(),
+              metadata: metadata || {}
+            }])
+            .select()
+            .single();
+          
+          if (error) {
+            console.error('❌ Error:', error.message);
+            return res.status(500).json({
+              success: false,
+              error: error.message,
+              document: null
+            });
+          }
+          
+          console.log(`✅ Documento creado: ${document.id}`);
+          
+          res.json({
+            success: true,
+            document: document,
+            message: 'Documento temporal creado (sin autenticación)'
+          });
+          
+        } catch (err) {
+          console.error('❌ Error general:', err.message);
+          res.status(500).json({
+            success: false,
+            error: err.message,
+            document: null
+          });
+        }
+      });
+
+      // ENDPOINT TEMPORAL PARA ANÁLISIS SIN AUTENTICACIÓN
+      app.post('/api/temp/analysis', async (req, res) => {
+        try {
+          console.log('🔍 Creando análisis temporal...');
+          
+          const {
+            user_int_id,
+            document_id,
+            analysis_type,
+            ai_model_used,
+            ai_strategy,
+            analysis_config,
+            processing_time_ms,
+            confidence_score,
+            status,
+            created_at,
+            completed_at
+          } = req.body;
+
+          // Validar campos requeridos
+          if (!user_int_id || !document_id || !analysis_type) {
+            return res.status(400).json({
+              success: false,
+              error: 'Campos requeridos: user_int_id, document_id, analysis_type',
+              analysis: null
+            });
+          }
+
+          // Usar getSupabaseClient() en lugar de supabase directo
+          const { getSupabaseClient } = require('./src/utils/database');
+          const supabase = getSupabaseClient();
+          
+          const { data: analysis, error } = await supabase
+            .from('analyses')
+            .insert([{
+              user_int_id,
+              document_id,
+              analysis_type,
+              ai_model_used: ai_model_used || 'Desconocido',
+              ai_strategy: ai_strategy || 'balanced',
+              analysis_config: analysis_config || {},
+              processing_time_ms: processing_time_ms || 0,
+              confidence_score: confidence_score || 85,
+              status: status || 'completed',
+              created_at: created_at || new Date().toISOString(),
+              completed_at: completed_at || (status === 'completed' ? new Date().toISOString() : null)
+            }])
+            .select()
+            .single();
+          
+          if (error) {
+            console.error('❌ Error:', error.message);
+            return res.status(500).json({
+              success: false,
+              error: error.message,
+              analysis: null
+            });
+          }
+          
+          console.log(`✅ Análisis creado: ${analysis.id}`);
+          
+          res.json({
+            success: true,
+            analysis: analysis,
+            message: 'Análisis temporal creado (sin autenticación)'
+          });
+          
+        } catch (err) {
+          console.error('❌ Error general:', err.message);
+          res.status(500).json({
+            success: false,
+            error: err.message,
+            analysis: null
+          });
+        }
+      });
+
+      // ENDPOINT TEMPORAL PARA OBTENER DOCUMENTOS SIN AUTENTICACIÓN
+      app.get('/api/temp/documents', async (req, res) => {
+        try {
+          console.log('📄 Obteniendo documentos temporales...');
+          
+          // Usar getSupabaseClient() en lugar de supabase directo
+          const { getSupabaseClient } = require('./src/utils/database');
+          const supabase = getSupabaseClient();
+          
+          const { data: documents, error } = await supabase
+            .from('documents')
+            .select('*')
+            .order('uploaded_at', { ascending: false })
+            .limit(50);
+          
+          if (error) {
+            console.error('❌ Error:', error.message);
+            return res.status(500).json({
+              success: false,
+              error: error.message,
+              documents: []
+            });
+          }
+          
+          console.log(`✅ Encontrados ${documents?.length || 0} documentos`);
+          
+          // Formatear respuesta para el frontend
+          const formattedDocuments = (documents || []).map(doc => ({
+            id: doc.id,
+            filename: doc.original_filename,
+            fileType: doc.file_type,
+            uploadedAt: doc.uploaded_at,
+            processingStatus: doc.processing_status,
+            fileSize: doc.file_size_bytes,
+            storageUrl: doc.file_path,
+            metadata: doc.metadata || {},
+            filePath: doc.file_path,
+            isProcessed: doc.is_processed,
+            mimeType: doc.mime_type
+          }));
+          
+          res.json({
+            success: true,
+            documents: formattedDocuments,
+            total: formattedDocuments.length,
+            message: 'Documentos temporales (sin autenticación)'
+          });
+          
+        } catch (err) {
+          console.error('❌ Error general:', err.message);
+          res.status(500).json({
+            success: false,
+            error: err.message,
+            documents: []
+          });
+        }
+      });
+
 
 // =====================================================
 // CONFIGURACIÓN DE SEGURIDAD

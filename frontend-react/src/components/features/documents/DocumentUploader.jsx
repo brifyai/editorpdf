@@ -102,7 +102,7 @@ const DocumentUploader = () => {
               [index]: progress
             }));
           },
-          timeout: 120000, // 2 minutes timeout per file
+          timeout: 300000, // 5 minutes timeout per file (increased for Netlify)
         });
       });
 

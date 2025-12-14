@@ -199,20 +199,26 @@ const extractErrorFromResponse = (response) => {
  * Maneja errores de red
  */
 const handleNetworkError = (error) => {
-  if (error.code === 'ECONNABORTED') {
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
     return new AppError(
       ERROR_MESSAGES[ERROR_CODES.TIMEOUT_ERROR],
       ERROR_CODES.TIMEOUT_ERROR,
-      { originalError: error.message },
+      {
+        originalError: error.message,
+        suggestion: 'La operación puede tardar más en entornos en la nube. Intenta nuevamente o reduce el tamaño del archivo.'
+      },
       true
     );
   }
   
-  if (error.message === 'Network Error') {
+  if (error.message === 'Network Error' || error.message?.includes('Network Error')) {
     return new AppError(
       ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
       ERROR_CODES.NETWORK_ERROR,
-      { originalError: error.message },
+      {
+        originalError: error.message,
+        suggestion: 'Verifica tu conexión a internet. Si el problema persiste, el servidor puede estar experimentando alta demanda.'
+      },
       true
     );
   }
@@ -220,7 +226,10 @@ const handleNetworkError = (error) => {
   return new AppError(
     error.message || ERROR_MESSAGES[ERROR_CODES.CONNECTION_ERROR],
     ERROR_CODES.CONNECTION_ERROR,
-    { originalError: error.message },
+    {
+      originalError: error.message,
+      suggestion: 'Intenta nuevamente en unos momentos.'
+    },
     true
   );
 };

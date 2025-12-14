@@ -82,7 +82,29 @@ export const StatisticsProvider = ({ children }) => {
 
   // Establecer conexión WebSocket
   useEffect(() => {
+    // Verificar si estamos en un entorno que no soporta WebSockets (como Netlify)
+    const isNetlify = window.location.hostname.includes('netlify.app') ||
+                     window.location.hostname.includes('editorpdf.brifyai.com');
+    
+    // Si estamos en Netlify, no intentar conexión WebSocket y usar solo polling
+    if (isNetlify) {
+      console.log('🌐 Entorno Netlify detectado, usando solo polling para estadísticas');
+      fetchStatistics();
+      
+      // Configurar polling para Netlify
+      const pollingInterval = setInterval(() => {
+        fetchStatistics();
+      }, 30000); // Cada 30 segundos en Netlify
+      
+      return () => {
+        clearInterval(pollingInterval);
+      };
+    }
+    
+    // Para entornos locales, intentar conexión WebSocket
     const wsUrl = `${import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8080'}/ws`;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 3;
     
     const connectWebSocket = () => {
       try {
@@ -91,6 +113,7 @@ export const StatisticsProvider = ({ children }) => {
         ws.onopen = () => {
           console.log('🔌 Conectado a WebSocket para estadísticas en tiempo real');
           setWsConnection(ws);
+          reconnectAttempts = 0; // Resetear contador de reconexiones
         };
         
         ws.onmessage = (event) => {
@@ -105,14 +128,25 @@ export const StatisticsProvider = ({ children }) => {
         };
         
         ws.onclose = () => {
-          console.log('🔌 WebSocket desconectado, intentando reconectar...');
+          console.log('🔌 WebSocket desconectado');
           setWsConnection(null);
-          // Intentar reconectar después de 5 segundos
-          setTimeout(connectWebSocket, 5000);
+          
+          // Intentar reconectar solo si no hemos excedido el máximo de intentos
+          if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            console.log(`🔄 Intentando reconectar (${reconnectAttempts}/${maxReconnectAttempts})...`);
+            setTimeout(connectWebSocket, 10000); // Esperar 10 segundos antes de reconectar
+          } else {
+            console.log('⚠️ Máximo de intentos de reconexión alcanzado, usando solo polling');
+          }
         };
         
         ws.onerror = (error) => {
           console.error('❌ Error en WebSocket:', error);
+          // No mostrar errores detallados en Netlify para evitar ruido en la consola
+          if (!isNetlify) {
+            console.error('Detalles del error:', error);
+          }
         };
         
         return ws;

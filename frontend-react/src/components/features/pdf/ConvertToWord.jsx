@@ -78,7 +78,7 @@ const ConvertToWord = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes timeout for conversion
+        timeout: 300000, // 5 minutes timeout for conversion (increased for Netlify)
       });
 
       if (response.data.success) {
