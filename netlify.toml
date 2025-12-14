@@ -100,6 +100,37 @@
   force = true
 
 [[redirects]]
+  from = "/metrics"
+  to = "/.netlify/functions/api-handler/metrics"
+  status = 200
+  force = true
+
+# Redirigir endpoints temporales
+[[redirects]]
+  from = "/api/temp/history"
+  to = "/.netlify/functions/api-handler/api/temp/history"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/temp/document"
+  to = "/.netlify/functions/api-handler/api/temp/document"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/temp/analysis"
+  to = "/.netlify/functions/api-handler/api/temp/analysis"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/temp/documents"
+  to = "/.netlify/functions/api-handler/api/temp/documents"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/models"
   to = "/.netlify/functions/api-handler/api/models"
   status = 200
