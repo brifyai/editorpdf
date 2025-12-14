@@ -151,8 +151,13 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Middleware base
-app.use(cors());
+// Middleware base con CORS configurado para permitir acceso desde Netlify
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://editorpdf.brifyai.com'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static('public'));
@@ -1116,7 +1121,51 @@ app.get('/api/test-connections', async (req, res) => {
 });
 
 /**
- * Métricas reales de uso de IA
+ * Métricas reales de uso de IA (endpoint sin prefijo /api para compatibilidad)
+ */
+app.get('/metrics', async (req, res) => {
+  try {
+    const { timeRange = '7d', userId } = req.query;
+    
+    // Generar clave de caché específica para los parámetros
+    const cacheKey = generateCacheKey('metrics', { timeRange, userId });
+    
+    // Verificar si ya tenemos los datos en caché
+    const cachedMetrics = getFromCache(CACHE_TYPES.METRICS, cacheKey);
+    if (cachedMetrics) {
+      console.log(`📊 Métricas obtenidas desde caché: ${cacheKey}`);
+      return res.json(createResponse(true, cachedMetrics));
+    }
+    
+    // Obtener métricas reales de la base de datos
+    const metrics = await getRealMetrics(timeRange, userId);
+    
+    // Guardar en caché
+    setInCache(CACHE_TYPES.METRICS, cacheKey, metrics);
+    console.log(`📊 Métricas guardadas en caché: ${cacheKey}`);
+    
+    // Hacer broadcasting de las estadísticas actualizadas
+    broadcastStatisticsUpdate({
+      documentsCount: metrics.totalRequests || 0,
+      successRate: metrics.successRate || 0,
+      activeModels: metrics.activeModels || 0,
+      averageResponseTime: metrics.averageResponseTime || 0
+    });
+    
+    res.json(createResponse(true, metrics));
+  } catch (error) {
+    console.error('Error obteniendo métricas:', error);
+    res.status(500).json(createErrorResponse(
+      'Error al obtener métricas',
+      'METRICS_ERROR',
+      500,
+      { details: error.message }
+    ));
+  }
+});
+
+/**
+ * Métricas reales de uso de IA (endpoint con prefijo /api)
  */
 app.get('/api/metrics', async (req, res) => {
   try {
