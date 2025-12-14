@@ -178,7 +178,7 @@ const AnalysisHistory = () => {
       }
 
       // Transformar datos reales de la base de datos al formato esperado por el componente
-      const transformedAnalyses = data.map(analysis => {
+      const transformedAnalyses = (data || []).map(analysis => {
         console.log('Procesando análisis REAL:', analysis);
         
         return {
