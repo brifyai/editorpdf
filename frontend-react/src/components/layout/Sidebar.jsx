@@ -147,7 +147,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
                   <path d="M14 2V8H20"/>
                   <path d="M16 13H8"/>
                   <path d="M16 17H8"/>
-                  <path dName="10 9H9H8"/>
+                  <path d="M10 9H9H8"/>
                 </svg>
               </div>
               <div className="logo-text-premium">

@@ -105,7 +105,7 @@ const BatchTools = () => {
   const loadBatchJobs = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await batchJobsService.getAll();
+      const response = await batchJobsService.getBatchJobs();
       if (response.success) {
         setBatchJobs(response.data);
       } else {
@@ -145,7 +145,7 @@ const BatchTools = () => {
       switch (selectedTool) {
         case 'consolidate':
           // Crear un trabajo de lote para consolidación
-          result = await batchJobsService.create({
+          result = await batchJobsService.createBatchJob({
             name: `Consolidación - ${new Date().toLocaleDateString()}`,
             type: 'consolidation',
             config: {
@@ -160,7 +160,7 @@ const BatchTools = () => {
         
         case 'export':
           // Crear un trabajo de lote para exportación
-          result = await batchJobsService.create({
+          result = await batchJobsService.createBatchJob({
             name: `Exportación Masiva - ${new Date().toLocaleDateString()}`,
             type: 'export',
             config: {
@@ -176,7 +176,7 @@ const BatchTools = () => {
         
         case 'schedule':
           // Crear un trabajo de lote programado
-          result = await batchJobsService.create({
+          result = await batchJobsService.createBatchJob({
             name: `Procesamiento Programado - ${new Date().toLocaleDateString()}`,
             type: 'scheduled',
             config: {
