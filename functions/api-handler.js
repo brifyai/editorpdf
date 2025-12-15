@@ -1349,14 +1349,58 @@ app.post('/api/debug-auth', async (req, res) => {
   }
 });
 
-// ENDPOINTS TEMPORALES PARA HISTORIAL SIN AUTENTICACIÓN
+// ENDPOINT TEMPORAL PARA HISTORIAL CON AUTENTICACIÓN
 app.get('/api/temp/history', async (req, res) => {
   try {
-    console.log('📋 Obteniendo historial temporal...');
+    // Verificar si hay un token de autorización
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token de autorización requerido',
+        analyses: []
+      });
+    }
     
+    // Extraer el token
+    const token = authHeader.substring(7);
+    
+    // Verificar el token con Supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token inválido o expirado',
+        analyses: []
+      });
+    }
+    
+    const userId = user.id;
+    console.log(`📋 Obteniendo historial para usuario autenticado: ${userId}`);
+    
+    // Buscar el user_int_id del usuario autenticado
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('user_int_id')
+      .eq('id', userId)
+      .single();
+    
+    if (userError || !userData) {
+      return res.status(401).json({
+        success: false,
+        error: 'Usuario no encontrado en la base de datos',
+        analyses: []
+      });
+    }
+    
+    const userIntId = userData.user_int_id;
+    
+    // Filtrar documentos por usuario autenticado
     const { data: documents, error } = await supabase
       .from('documents')
       .select('*')
+      .eq('user_int_id', userIntId)
       .order('uploaded_at', { ascending: false })
       .limit(50);
     
@@ -1369,7 +1413,7 @@ app.get('/api/temp/history', async (req, res) => {
       });
     }
     
-    console.log(`✅ Encontrados ${documents?.length || 0} documentos`);
+    console.log(`✅ Encontrados ${documents?.length || 0} documentos para el usuario ${userIntId}`);
     
     // Formatear respuesta para el frontend
     const analyses = (documents || []).map(doc => ({
@@ -1395,8 +1439,8 @@ app.get('/api/temp/history', async (req, res) => {
       success: true,
       analyses: analyses,
       total: analyses.length,
-      user_id: 'temp',
-      message: 'Historial temporal (sin autenticación)'
+      user_id: userId,
+      message: 'Historial de análisis del usuario autenticado'
     });
     
   } catch (err) {

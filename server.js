@@ -163,18 +163,30 @@ app.use(cookieParser());
 app.use(express.static('public'));
 
 
-      // ENDPOINT TEMPORAL PARA HISTORIAL SIN AUTENTICACIÓN
-      app.get('/api/temp/history', async (req, res) => {
+      // ENDPOINT TEMPORAL PARA HISTORIAL CON AUTENTICACIÓN
+      app.get('/api/temp/history', authenticate, async (req, res) => {
         try {
-          console.log('📋 Obteniendo historial temporal...');
+          // Verificar que el usuario esté autenticado
+          if (!req.user || !req.user.id) {
+            return res.status(401).json({
+              success: false,
+              error: 'Usuario no autenticado',
+              analyses: []
+            });
+          }
+
+          const userId = req.user.id;
+          console.log(`📋 Obteniendo historial para usuario autenticado: ${userId}`);
           
           // Usar getSupabaseClient() en lugar de supabase directo
           const { getSupabaseClient } = require('./src/utils/database');
           const supabase = getSupabaseClient();
           
+          // Filtrar documentos por usuario autenticado
           const { data: documents, error } = await supabase
             .from('documents')
             .select('*')
+            .eq('user_int_id', userId)
             .order('uploaded_at', { ascending: false })
             .limit(50);
           
@@ -187,7 +199,7 @@ app.use(express.static('public'));
             });
           }
           
-          console.log(`✅ Encontrados ${documents?.length || 0} documentos`);
+          console.log(`✅ Encontrados ${documents?.length || 0} documentos para usuario ${userId}`);
           
           // Formatear respuesta para el frontend
           const analyses = (documents || []).map(doc => ({
@@ -213,8 +225,8 @@ app.use(express.static('public'));
             success: true,
             analyses: analyses,
             total: analyses.length,
-            user_id: 'temp',
-            message: 'Historial temporal (sin autenticación)'
+            user_id: userId,
+            message: `Historial de análisis para usuario ${userId}`
           });
           
         } catch (err) {

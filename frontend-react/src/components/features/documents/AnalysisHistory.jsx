@@ -4,6 +4,32 @@ import { supabaseRealHelpers } from '../../../services/supabase-real';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import './AnalysisHistory.css';
+import { useClearCacheOnResize } from '../../../utils/cacheManager';
+import CacheClearButton from '../../common/CacheClearButton';
+
+// Hook personalizado para detectar si estamos en un dispositivo móvil
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Verificar en el montaje inicial
+    checkIsMobile();
+    
+    // Añadir listener para cambios de tamaño
+    window.addEventListener('resize', checkIsMobile);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
+  
+  return isMobile;
+};
 
 const AnalysisHistory = () => {
   const [analyses, setAnalyses] = useState([]);
@@ -12,6 +38,14 @@ const AnalysisHistory = () => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const isMobile = useIsMobile();
+  
+  // Limpiar caché cuando cambia el tamaño de la pantalla
+  useClearCacheOnResize();
 
   // Función para ver detalles del análisis
   const handleViewDetails = (analysis) => {
@@ -20,10 +54,12 @@ const AnalysisHistory = () => {
     const statusText = analysis.status === 'completed' ? 'Completado' :
                       analysis.status === 'processing' ? 'Procesando' : 'Fallido';
     
+    const isMobile = window.innerWidth < 768;
+    
     Swal.fire({
       title: '📄 Detalles del Análisis',
       html: `
-        <div style="text-align: left; font-size: 16px;">
+        <div style="text-align: left; font-size: ${isMobile ? '14px' : '16px'};">
           <p><strong>📄 Archivo:</strong> ${analysis.filename}</p>
           <p><strong>📋 Tipo:</strong> ${analysis.type}</p>
           <p><strong>📊 Estado:</strong> ${statusText}</p>
@@ -35,10 +71,12 @@ const AnalysisHistory = () => {
       confirmButtonText: 'Cerrar',
       confirmButtonColor: '#3b82f6',
       background: '#ffffff',
+      width: isMobile ? '95%' : 'auto',
       customClass: {
-        popup: 'swal2-custom-popup',
-        title: 'swal2-custom-title',
-        htmlContainer: 'swal2-custom-html'
+        popup: isMobile ? 'swal2-mobile-popup' : 'swal2-custom-popup',
+        title: isMobile ? 'swal2-mobile-title' : 'swal2-custom-title',
+        htmlContainer: isMobile ? 'swal2-mobile-html' : 'swal2-custom-html',
+        confirmButton: isMobile ? 'swal2-mobile-confirm' : 'swal2-custom-confirm'
       }
     });
   };
@@ -76,6 +114,8 @@ const AnalysisHistory = () => {
       link.click();
       document.body.removeChild(link);
       
+      const isMobile = window.innerWidth < 768;
+      
       Swal.fire({
         title: '✅ Descarga iniciada',
         text: `Descargando: ${analysis.filename}`,
@@ -83,11 +123,16 @@ const AnalysisHistory = () => {
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#10b981',
         background: '#ffffff',
+        width: isMobile ? '95%' : 'auto',
         customClass: {
-          popup: 'swal2-custom-popup'
+          popup: isMobile ? 'swal2-mobile-popup' : 'swal2-custom-popup',
+          title: isMobile ? 'swal2-mobile-title' : 'swal2-custom-title',
+          confirmButton: isMobile ? 'swal2-mobile-confirm' : 'swal2-custom-confirm'
         }
       });
     } else {
+      const isMobile = window.innerWidth < 768;
+      
       Swal.fire({
         title: '❌ Descarga no disponible',
         text: `No se pudo obtener la URL de descarga para: ${analysis.filename}. El archivo puede haber sido eliminado o no estar disponible.`,
@@ -95,38 +140,94 @@ const AnalysisHistory = () => {
         confirmButtonText: 'Entendido',
         confirmButtonColor: '#ef4444',
         background: '#ffffff',
+        width: isMobile ? '95%' : 'auto',
         customClass: {
-          popup: 'swal2-custom-popup'
+          popup: isMobile ? 'swal2-mobile-popup' : 'swal2-custom-popup',
+          title: isMobile ? 'swal2-mobile-title' : 'swal2-custom-title',
+          confirmButton: isMobile ? 'swal2-mobile-confirm' : 'swal2-custom-confirm'
         }
       });
     }
   };
 
-  // Cargar historial real de análisis
+  // Verificar autenticación del usuario
   useEffect(() => {
-    loadAnalysisHistory();
+    checkAuthentication();
   }, []);
+
+  // Cargar historial real de análisis solo si el usuario está autenticado
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadAnalysisHistory();
+    } else {
+      setLoading(false);
+      setError('Debes iniciar sesión para ver tu historial de análisis');
+    }
+  }, [isAuthenticated, user]);
+
+  // Función para verificar si el usuario está autenticado
+  const checkAuthentication = async () => {
+    try {
+      setLoading(true);
+      
+      // Verificar si hay un usuario autenticado usando Supabase
+      const { data: { user }, error } = await supabaseReal.auth.getUser();
+      
+      if (error) {
+        console.error('Error verificando autenticación:', error);
+        setIsAuthenticated(false);
+        setUser(null);
+        return;
+      }
+      
+      if (user) {
+        setIsAuthenticated(true);
+        setUser(user);
+        console.log('Usuario autenticado:', user.id);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+        console.log('No hay usuario autenticado');
+      }
+    } catch (err) {
+      console.error('Error en checkAuthentication:', err);
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadAnalysisHistory = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Cargando historial público...');
+      // Verificar que el usuario esté autenticado
+      if (!isAuthenticated || !user) {
+        console.log('Usuario no autenticado, no se puede cargar el historial');
+        setError('Debes iniciar sesión para ver tu historial de análisis');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Cargando historial para usuario autenticado:', user.id);
       
       // PRIMERO: Intentar obtener datos reales de Supabase
       let data, fetchError;
       
       try {
-        // Intentar con el cliente real de Supabase usando un ID por defecto
-        const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
+        // Solo usar el ID del usuario autenticado, sin fallback
+        const userId = user.id;
+        console.log('Cargando historial para usuario:', userId);
+        const result = await supabaseRealHelpers.getAnalysisHistory(userId, 50);
         data = result.data;
         fetchError = result.error;
         
         if (fetchError || !data) {
           console.log('No se pudieron obtener datos reales, intentando con método alternativo...');
-          // Si falla, intentar con el método original
-          const fallbackResult = await supabaseHelpers.getAnalysisHistory(1, 50);
+          // Si falla, intentar con el método original usando el ID del usuario autenticado
+          const fallbackResult = await supabaseHelpers.getAnalysisHistory(userId, 50);
           data = fallbackResult.data;
           fetchError = fallbackResult.error;
         }
@@ -142,10 +243,11 @@ const AnalysisHistory = () => {
         // Si el error es por tabla no encontrada, generar datos de prueba reales
         if (fetchError.code === 'PGRST116') {
           console.log('Generando datos de prueba reales...');
-          const testData = await supabaseRealHelpers.generateTestData(1);
+          const userId = user.id; // Solo usar ID del usuario autenticado
+          const testData = await supabaseRealHelpers.generateTestData(userId);
           if (testData.success) {
             // Intentar obtener los datos generados
-            const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
+            const result = await supabaseRealHelpers.getAnalysisHistory(userId, 50);
             data = result.data;
           } else {
             setError('La base de datos aún no está configurada. Los análisis aparecerán aquí cuando realices tu primer análisis.');
@@ -165,10 +267,11 @@ const AnalysisHistory = () => {
       // Si no hay datos, generar datos de prueba para demostración
       if (!data || data.length === 0) {
         console.log('No se encontraron análisis reales, generando datos de demostración...');
-        const testData = await supabaseRealHelpers.generateTestData(1);
+        const userId = user.id; // Solo usar ID del usuario autenticado
+        const testData = await supabaseRealHelpers.generateTestData(userId);
         if (testData.success) {
           // Intentar obtener los datos generados
-          const result = await supabaseRealHelpers.getAnalysisHistory(1, 50);
+          const result = await supabaseRealHelpers.getAnalysisHistory(userId, 50);
           data = result.data;
         } else {
           setAnalyses([]);
@@ -272,13 +375,8 @@ const AnalysisHistory = () => {
         </svg>
       );
     }
-    return (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
-      </svg>
-    );
+    // Para otros tipos de archivo, simplemente devolvemos null para ocultar el icono
+    return null;
   };
 
   const filteredAnalyses = analyses
@@ -315,6 +413,22 @@ const AnalysisHistory = () => {
           return 0;
       }
     });
+
+  // Calcular el número total de páginas
+  const totalPages = Math.ceil(filteredAnalyses.length / pageSize);
+  
+  // Obtener los análisis para la página actual
+  const paginatedAnalyses = filteredAnalyses.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Función para cambiar de página
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Scroll al inicio de la lista
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -359,8 +473,110 @@ const AnalysisHistory = () => {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="analysis-history-container">
+        <div className="auth-required-state">
+          <div className="auth-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+              <path d="M12 15v3m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+          </div>
+          <h3>Inicio de sesión requerido</h3>
+          <p>Debes iniciar sesión para ver tu historial de análisis.</p>
+          <div className="auth-actions">
+            <button
+              className="action-btn primary"
+              onClick={() => window.location.href = '/auth'}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              className="action-btn secondary"
+              onClick={() => window.location.href = '/'}
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="analysis-history-container">
+      <style jsx>{`
+        .auth-required-state {
+          text-align: center;
+          padding: 3rem 1rem;
+          max-width: 400px;
+          margin: 0 auto;
+        }
+
+        .auth-required-state .auth-icon {
+          margin-bottom: 1.5rem;
+        }
+
+        .auth-required-state .auth-icon svg {
+          width: 64px;
+          height: 64px;
+          color: var(--warning-color, #f39c12);
+        }
+
+        .auth-required-state h3 {
+          margin: 1rem 0 0.5rem;
+          color: var(--warning-color, #f39c12);
+          font-size: 1.25rem;
+          font-weight: 600;
+        }
+
+        .auth-required-state p {
+          margin: 0 0 1.5rem;
+          color: var(--text-secondary, #666);
+          font-size: 0.95rem;
+          line-height: 1.4;
+        }
+
+        .auth-required-state .auth-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .auth-required-state .action-btn {
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+          text-decoration: none;
+          display: inline-block;
+        }
+
+        .auth-required-state .action-btn.primary {
+          background-color: var(--primary-color, #3498db);
+          color: white;
+        }
+
+        .auth-required-state .action-btn.primary:hover {
+          background-color: var(--primary-hover, #2980b9);
+          transform: translateY(-1px);
+        }
+
+        .auth-required-state .action-btn.secondary {
+          background-color: transparent;
+          color: var(--text-secondary, #666);
+          border: 2px solid var(--border-color, #ddd);
+        }
+
+        .auth-required-state .action-btn.secondary:hover {
+          background-color: var(--background-hover, #f8f9fa);
+          border-color: var(--text-secondary, #666);
+        }
+      `}</style>
       <div className="analysis-history-header">
         <div className="header-icon">📋</div>
         <h1>Historial de Análisis</h1>
@@ -405,6 +621,36 @@ const AnalysisHistory = () => {
               <option value="name">Ordenar por nombre</option>
               <option value="size">Ordenar por tamaño</option>
             </select>
+            
+            {/* Botón para limpiar caché */}
+            <CacheClearButton
+              buttonText="Limpiar Caché"
+              buttonClassName="cache-clear-btn"
+              showConfirmation={true}
+              confirmationMessage="¿Estás seguro de que quieres limpiar toda la caché? Esto recargará la página."
+              onSuccess={() => {
+                console.log('Caché limpiado correctamente');
+                Swal.fire({
+                  title: '¡Éxito!',
+                  text: 'La caché ha sido limpiada correctamente. La página se recargará.',
+                  icon: 'success',
+                  confirmButtonText: 'Aceptar',
+                  confirmButtonColor: '#3b82f6',
+                  background: '#ffffff'
+                });
+              }}
+              onError={(error) => {
+                console.error('Error al limpiar la caché:', error);
+                Swal.fire({
+                  title: 'Error',
+                  text: 'Hubo un problema al limpiar la caché. Por favor, intenta recargar la página manualmente.',
+                  icon: 'error',
+                  confirmButtonText: 'Aceptar',
+                  confirmButtonColor: '#ef4444',
+                  background: '#ffffff'
+                });
+              }}
+            />
           </div>
         </div>
 
@@ -434,41 +680,277 @@ const AnalysisHistory = () => {
           <div className="analyses-list">
             <h3>Análisis Realizados ({filteredAnalyses.length})</h3>
             <div className="analyses-container">
-              {filteredAnalyses.map((analysis) => (
-                <div key={analysis.id} className="analysis-item">
+              {paginatedAnalyses.map((analysis) => (
+                <div
+                  key={analysis.id}
+                  className="analysis-item"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    margin: '0 0 1rem 0',
+                    padding: '1rem',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    background: '#ffffff',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}
+                >
                   {/* File Information */}
-                  <div className="file-info">
-                    <div className="file-icon">
-                      {getFileIcon(analysis.type)}
-                    </div>
-                    <div className="file-details">
-                      <h3 className="file-name">{analysis.filename}</h3>
-                      <div className="file-meta">
-                        <span className="file-type">{analysis.type}</span>
-                        <span className="file-size">{analysis.size}</span>
-                        {analysis.pages && <span className="file-pages">{analysis.pages} páginas</span>}
+                  <div
+                    className="file-info"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      marginBottom: '1rem',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid #e2e8f0',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    {/* Solo mostrar el icono si existe */}
+                    {getFileIcon(analysis.type) && (
+                      <div className="file-icon">
+                        {getFileIcon(analysis.type)}
+                      </div>
+                    )}
+                    <div
+                      className="file-details"
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <h3
+                        className="file-name"
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          fontSize: '1.1rem',
+                          fontWeight: '700',
+                          marginBottom: '0.5rem',
+                          wordBreak: 'break-word',
+                          color: '#1e293b'
+                        }}
+                      >
+                        {analysis.filename}
+                      </h3>
+                      <div
+                        className="file-meta"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        <span
+                          className="file-type"
+                          style={{
+                            display: 'inline-block',
+                            padding: '0.4rem 0.8rem',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            borderRadius: '20px',
+                            border: '1px solid #e2e8f0',
+                            background: '#f8fafc',
+                            color: '#475569',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {analysis.type}
+                        </span>
+                        <span
+                          className="file-size"
+                          style={{
+                            display: 'inline-block',
+                            padding: '0.4rem 0.8rem',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            borderRadius: '20px',
+                            border: '1px solid #e2e8f0',
+                            background: '#f8fafc',
+                            color: '#475569',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {analysis.size}
+                        </span>
+                        {analysis.pages && analysis.pages > 0 && (
+                          <span
+                            className="file-pages"
+                            style={{
+                              display: 'inline-block',
+                              padding: '0.4rem 0.8rem',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              borderRadius: '20px',
+                              border: '1px solid #e2e8f0',
+                              background: '#f8fafc',
+                              color: '#475569',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {analysis.pages} páginas
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                   
                   {/* Analysis Details */}
-                  <div className="analysis-details">
-                    <div className="analysis-detail">
-                      <span className="detail-label">Fecha</span>
-                      <span className="detail-value">{formatDate(analysis.date)}</span>
+                  <div
+                    className="analysis-details"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      gap: '0.5rem',
+                      padding: '0.75rem',
+                      background: '#f8fafc',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      marginBottom: '0.75rem'
+                    }}
+                  >
+                    <div
+                      className="analysis-detail"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0',
+                        borderBottom: '1px solid #e2e8f0'
+                      }}
+                    >
+                      <span
+                        className="detail-label"
+                        style={{
+                          fontSize: '0.75rem',
+                          color: '#64748b',
+                          fontWeight: '500',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Fecha
+                      </span>
+                      <span
+                        className="detail-value"
+                        style={{
+                          fontSize: '0.85rem',
+                          fontWeight: '600',
+                          color: '#1e293b',
+                          textAlign: 'right',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {formatDate(analysis.date)}
+                      </span>
                     </div>
                     
                     {analysis.confidence && (
-                      <div className="analysis-detail">
-                        <span className="detail-label">Confianza</span>
-                        <span className="detail-value confidence">{analysis.confidence}%</span>
+                      <div
+                        className="analysis-detail"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}
+                      >
+                        <span
+                          className="detail-label"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#64748b',
+                            fontWeight: '500',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Confianza
+                        </span>
+                        <span
+                          className="detail-value confidence"
+                          style={{
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#059669',
+                            textAlign: 'right',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {analysis.confidence}%
+                        </span>
                       </div>
                     )}
                     
                     {analysis.aiModel && (
-                      <div className="analysis-detail">
-                        <span className="detail-label">Modelo IA</span>
-                        <span className="detail-value">
+                      <div
+                        className="analysis-detail"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0',
+                          borderBottom: '1px solid #e2e8f0'
+                        }}
+                      >
+                        <span
+                          className="detail-label"
+                          style={{
+                            fontSize: '0.75rem',
+                            color: '#64748b',
+                            fontWeight: '500',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Modelo IA
+                        </span>
+                        <span
+                          className="detail-value"
+                          style={{
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#1e293b',
+                            textAlign: 'right',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
                           {analysis.aiModel === 'Desconocido' ?
                             (analysis.hasAI ? 'IA Básica' : 'Análisis Básico') :
                             analysis.aiModel
@@ -477,9 +959,45 @@ const AnalysisHistory = () => {
                       </div>
                     )}
                     
-                    <div className="analysis-detail">
-                      <span className="detail-label">Estado</span>
-                      <span className={`detail-value status-${analysis.status}`}>
+                    <div
+                      className="analysis-detail"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        gap: '0.5rem',
+                        padding: '0.5rem 0',
+                        borderBottom: 'none'
+                      }}
+                    >
+                      <span
+                        className="detail-label"
+                        style={{
+                          fontSize: '0.75rem',
+                          color: '#64748b',
+                          fontWeight: '500',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Estado
+                      </span>
+                      <span
+                        className={`detail-value status-${analysis.status}`}
+                        style={{
+                          fontSize: '0.85rem',
+                          fontWeight: '600',
+                          color: analysis.status === 'completed' ? '#059669' :
+                                 analysis.status === 'processing' ? '#d97706' : '#dc2626',
+                          textAlign: 'right',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
                         {analysis.status === 'completed' ? 'Completado' :
                          analysis.status === 'processing' ? 'Procesando' : 'Fallido'}
                       </span>
@@ -487,8 +1005,40 @@ const AnalysisHistory = () => {
                   </div>
 
                   {/* Status and Actions */}
-                  <div className="status-actions">
-                    <div className="status-badge" style={{ color: getStatusColor(analysis.status) }}>
+                  <div
+                    className="status-actions"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      gap: '1rem',
+                      alignItems: 'stretch',
+                      paddingTop: '1rem',
+                      borderTop: '1px solid #e2e8f0'
+                    }}
+                  >
+                    <div
+                      className="status-badge"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        gap: '0.5rem',
+                        padding: '0.875rem 1rem',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        borderRadius: '25px',
+                        border: '2px solid #e2e8f0',
+                        background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)',
+                        textAlign: 'center',
+                        color: getStatusColor(analysis.status)
+                      }}
+                    >
                       {getStatusIcon(analysis.status)}
                       <span className="status-text">
                         {analysis.status === 'completed' ? 'Completado' :
@@ -496,11 +1046,41 @@ const AnalysisHistory = () => {
                       </span>
                     </div>
                     
-                    <div className="analysis-actions">
+                    <div
+                      className="analysis-actions"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        width: '100%',
+                        maxWidth: '100%',
+                        boxSizing: 'border-box',
+                        gap: '0.75rem'
+                      }}
+                    >
                       <button
                         className="action-btn primary"
                         onClick={() => handleViewDetails(analysis)}
                         title="Ver detalles del análisis"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          gap: '0.5rem',
+                          padding: '0.875rem 1rem',
+                          fontSize: '0.9rem',
+                          borderRadius: '8px',
+                          minHeight: '48px',
+                          fontWeight: '600',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                          color: '#ffffff',
+                          transition: 'all 0.2s ease',
+                          textAlign: 'center'
+                        }}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -512,6 +1092,26 @@ const AnalysisHistory = () => {
                         className="action-btn secondary"
                         onClick={() => handleDownload(analysis)}
                         title="Descargar análisis"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          gap: '0.5rem',
+                          padding: '0.875rem 1rem',
+                          fontSize: '0.9rem',
+                          borderRadius: '8px',
+                          minHeight: '48px',
+                          fontWeight: '600',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          border: '1px solid #e5e7eb',
+                          background: '#ffffff',
+                          color: '#374151',
+                          transition: 'all 0.2s ease',
+                          textAlign: 'center'
+                        }}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -525,6 +1125,142 @@ const AnalysisHistory = () => {
                 </div>
               ))}
             </div>
+            
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div
+                className="pagination-container"
+                style={{
+                  display: 'flex',
+                  flexDirection: isMobile ? 'row' : 'column',
+                  gap: isMobile ? '0.5rem' : '1rem',
+                  marginTop: '2rem',
+                  padding: isMobile ? '1rem' : '1.5rem',
+                  background: '#ffffff',
+                  borderRadius: '12px',
+                  border: '2px solid #e2e8f0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                  alignItems: isMobile ? 'center' : 'stretch',
+                  justifyContent: isMobile ? 'space-between' : 'flex-start'
+                }}
+              >
+                <div
+                  className="pagination-info"
+                  style={{
+                    fontSize: isMobile ? '0.8rem' : '0.9rem',
+                    color: '#64748b',
+                    textAlign: isMobile ? 'left' : 'center',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    flex: isMobile ? '1' : 'auto'
+                  }}
+                >
+                  Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredAnalyses.length)} de {filteredAnalyses.length} análisis
+                </div>
+                <div
+                  className="pagination-controls"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexWrap: 'nowrap',
+                    overflowX: 'auto',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}
+                >
+                  <button
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    title="Página anterior"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '36px',
+                      height: '36px',
+                      padding: '0 0.75rem',
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      color: '#374151',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      borderRadius: '6px',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      opacity: currentPage === 1 ? '0.5' : '1',
+                      flexShrink: '0'
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                  </button>
+                  
+                  {/* Números de página */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => handlePageChange(page)}
+                      title={`Página ${page}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '36px',
+                        height: '36px',
+                        padding: '0 0.75rem',
+                        border: '1px solid #e2e8f0',
+                        background: currentPage === page ? 'linear-gradient(135deg, #3b82f6, #1d4ed8)' : '#ffffff',
+                        color: currentPage === page ? '#ffffff' : '#374151',
+                        fontSize: '0.9rem',
+                        fontWeight: currentPage === page ? '600' : '500',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        flexShrink: '0',
+                        margin: '0 2px'
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  <button
+                    className="pagination-btn"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    title="Página siguiente"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '36px',
+                      height: '36px',
+                      padding: '0 0.75rem',
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      color: '#374151',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      borderRadius: '6px',
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      opacity: currentPage === totalPages ? '0.5' : '1',
+                      flexShrink: '0'
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
