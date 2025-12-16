@@ -7,47 +7,50 @@
 
 const NodeCache = require('node-cache');
 
-// Configuración de caché por defecto (5 minutos TTL)
-const DEFAULT_TTL = 300; // segundos
-const DEFAULT_CHECK_PERIOD = 60; // segundos
+// Configuración de caché optimizada
+const DEFAULT_TTL = 600; // 10 minutos TTL por defecto
+const DEFAULT_CHECK_PERIOD = 120; // 2 minutos
 
 // Crear instancias de caché para diferentes tipos de datos
 const cacheInstances = {
-  // Caché para documentos del usuario (1 minuto TTL)
+  // Caché para documentos del usuario (5 minutos TTL)
   documents: new NodeCache({
-    stdTTL: 60,
-    checkperiod: 30,
-    useClones: false
-  }),
-  
-  // Caché para métricas (2 minutos TTL)
-  metrics: new NodeCache({
-    stdTTL: 120,
-    checkperiod: 60,
-    useClones: false
-  }),
-  
-  // Caché para configuración de usuario (5 minutos TTL)
-  userConfig: new NodeCache({
     stdTTL: 300,
     checkperiod: 60,
     useClones: false
   }),
   
-  // Caché para estado de APIs (30 segundos TTL)
-  apiStatus: new NodeCache({
-    stdTTL: 30,
-    checkperiod: 10,
+  // Caché para métricas (15 minutos TTL - optimizado)
+  metrics: new NodeCache({
+    stdTTL: 900,
+    checkperiod: 120,
     useClones: false
   }),
   
-  // Caché general para otros datos (5 minutos TTL)
+  // Caché para configuración de usuario (10 minutos TTL)
+  userConfig: new NodeCache({
+    stdTTL: 600,
+    checkperiod: 120,
+    useClones: false
+  }),
+  
+  // Caché para estado de APIs (2 minutos TTL)
+  apiStatus: new NodeCache({
+    stdTTL: 120,
+    checkperiod: 30,
+    useClones: false
+  }),
+  
+  // Caché general para otros datos (10 minutos TTL)
   general: new NodeCache({
     stdTTL: DEFAULT_TTL,
     checkperiod: DEFAULT_CHECK_PERIOD,
     useClones: false
   })
 };
+
+// Mapa para controlar requests en progreso (evitar duplicados)
+const inProgressRequests = new Map();
 
 /**
  * Generar clave de caché basada en parámetros
@@ -68,7 +71,58 @@ function generateCacheKey(prefix, params = {}) {
 }
 
 /**
- * Obtener datos de caché
+ * Obtener datos de caché con control de requests duplicados
+ * @param {string} cacheType - Tipo de caché a usar
+ * @param {string} key - Clave de caché
+ * @param {Function} fetchFunction - Función para obtener datos si no están en caché
+ * @returns {Promise<any>} - Datos almacenados o resultado de fetchFunction
+ */
+async function getFromCacheWithFetch(cacheType, key, fetchFunction) {
+  const cache = cacheInstances[cacheType];
+  if (!cache) {
+    console.warn(`⚠️ Tipo de caché no válido: ${cacheType}`);
+    return await fetchFunction();
+  }
+  
+  // Verificar si ya hay un request en progreso para esta clave
+  if (inProgressRequests.has(key)) {
+    console.log(`⏳ Request en progreso, esperando: ${cacheType}:${key}`);
+    return await inProgressRequests.get(key);
+  }
+  
+  const data = cache.get(key);
+  if (data) {
+    console.log(`🎯 Cache hit: ${cacheType}:${key}`);
+    return data;
+  }
+  
+  console.log(`❌ Cache miss: ${cacheType}:${key}`);
+  
+  // Crear promise para evitar requests duplicados
+  const requestPromise = (async () => {
+    try {
+      const result = await fetchFunction();
+      
+      // Almacenar en caché
+      const ttl = cacheInstances[cacheType].options.stdTTL;
+      cache.set(key, result, ttl);
+      console.log(`💾 Datos almacenados en caché: ${cacheType}:${key}`);
+      
+      return result;
+    } finally {
+      // Limpiar el request en progreso
+      inProgressRequests.delete(key);
+    }
+  })();
+  
+  // Marcar request como en progreso
+  inProgressRequests.set(key, requestPromise);
+  
+  return await requestPromise;
+}
+
+/**
+ * Obtener datos de caché (versión simple)
  * @param {string} cacheType - Tipo de caché a usar
  * @param {string} key - Clave de caché
  * @returns {any|null} - Datos almacenados o null si no existe
@@ -297,6 +351,7 @@ function createAutoInvalidatingCache(cacheType, invalidationTriggers = []) {
 module.exports = {
   // Funciones básicas
   getFromCache,
+  getFromCacheWithFetch,
   setInCache,
   deleteFromCache,
   invalidateCacheByPattern,

@@ -50,6 +50,7 @@ const {
 // Importar utilidades de caché
 const cacheUtils = require('./src/utils/cache');
 const getFromCache = cacheUtils.getFromCache;
+const getFromCacheWithFetch = cacheUtils.getFromCacheWithFetch;
 const setInCache = cacheUtils.setInCache;
 const invalidateCacheByPattern = cacheUtils.invalidateCacheByPattern;
 const cacheMiddleware = cacheUtils.cacheMiddleware;
@@ -1356,19 +1357,15 @@ app.get('/metrics', async (req, res) => {
     // Generar clave de caché específica para los parámetros
     const cacheKey = generateCacheKey('metrics', { timeRange, userId });
     
-    // Verificar si ya tenemos los datos en caché
-    const cachedMetrics = getFromCache(CACHE_TYPES.METRICS, cacheKey);
-    if (cachedMetrics) {
-      console.log(`📊 Métricas obtenidas desde caché: ${cacheKey}`);
-      return res.json(createResponse(true, cachedMetrics));
-    }
-    
-    // Obtener métricas reales de la base de datos
-    const metrics = await getRealMetrics(timeRange, userId);
-    
-    // Guardar en caché
-    setInCache(CACHE_TYPES.METRICS, cacheKey, metrics);
-    console.log(`📊 Métricas guardadas en caché: ${cacheKey}`);
+    // Usar la nueva función anti-duplicados para obtener métricas
+    const metrics = await getFromCacheWithFetch(
+      CACHE_TYPES.METRICS,
+      cacheKey,
+      async () => {
+        console.log(`📊 Obteniendo métricas reales desde ${new Date().toISOString()}`);
+        return await getRealMetrics(timeRange, userId);
+      }
+    );
     
     // Hacer broadcasting de las estadísticas actualizadas
     broadcastStatisticsUpdate({
@@ -1400,19 +1397,15 @@ app.get('/api/metrics', async (req, res) => {
     // Generar clave de caché específica para los parámetros
     const cacheKey = generateCacheKey('metrics', { timeRange, userId });
     
-    // Verificar si ya tenemos los datos en caché
-    const cachedMetrics = getFromCache(CACHE_TYPES.METRICS, cacheKey);
-    if (cachedMetrics) {
-      console.log(`📊 Métricas obtenidas desde caché: ${cacheKey}`);
-      return res.json(createResponse(true, cachedMetrics));
-    }
-    
-    // Obtener métricas reales de la base de datos
-    const metrics = await getRealMetrics(timeRange, userId);
-    
-    // Guardar en caché
-    setInCache(CACHE_TYPES.METRICS, cacheKey, metrics);
-    console.log(`📊 Métricas guardadas en caché: ${cacheKey}`);
+    // Usar la nueva función anti-duplicados para obtener métricas
+    const metrics = await getFromCacheWithFetch(
+      CACHE_TYPES.METRICS,
+      cacheKey,
+      async () => {
+        console.log(`📊 Obteniendo métricas reales desde ${new Date().toISOString()}`);
+        return await getRealMetrics(timeRange, userId);
+      }
+    );
     
     // Hacer broadcasting de las estadísticas actualizadas
     broadcastStatisticsUpdate({
