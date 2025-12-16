@@ -26,7 +26,7 @@ const OCRProcessing = React.lazy(() => import('./components/features/ocr/OCRProc
 const ImageConversion = React.lazy(() => import('./components/features/ocr/ImageConversion'));
 const WordConversion = React.lazy(() => import('./components/features/ocr/WordConversion'));
 const OCRSettings = React.lazy(() => import('./components/features/ocr/OCRSettings'));
-const BatchAnalysis = React.lazy(() => import('./components/features/batch/BatchAnalysis'));
+import BatchAnalysis from './components/features/batch/BatchAnalysis';
 const BatchTools = React.lazy(() => import('./components/features/batch/BatchTools'));
 const AIConfiguration = React.lazy(() => import('./components/features/ai/AIConfiguration'));
 const ModelSelection = React.lazy(() => import('./components/features/ai/ModelSelection'));
@@ -230,9 +230,7 @@ const AppRoutes = () => {
       
       <Route path="/procesamiento-batch" element={
         <AppLayout>
-          <LazyWrapper>
-            <BatchAnalysis />
-          </LazyWrapper>
+          <BatchAnalysis />
         </AppLayout>
       } />
       
