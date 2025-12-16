@@ -288,12 +288,12 @@ const Main = React.memo(({ children, sidebarOpen, onToggleSidebar }) => {
 
   // Memoizar los valores de métricas para evitar re-renders
   const memoizedMetrics = useMemo(() => ({
-    totalRequests: documentsCount,
-    successRate: successRate,
-    activeModels: activeModels,
-    averageResponseTime: averageResponseTime,
+    totalRequests: isAuthenticated ? documentsCount : 0,
+    successRate: isAuthenticated ? successRate : 0,
+    activeModels: isAuthenticated ? activeModels : 0,
+    averageResponseTime: isAuthenticated ? averageResponseTime : 0,
     loading: loadingMetrics
-  }), [documentsCount, successRate, activeModels, averageResponseTime, loadingMetrics]);
+  }), [documentsCount, successRate, activeModels, averageResponseTime, loadingMetrics, isAuthenticated]);
 
   return (
     <>
