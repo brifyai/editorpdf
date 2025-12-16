@@ -684,3 +684,4 @@
 
 .tool-card:hover::before {
   transform: translateX(100%);
+}
