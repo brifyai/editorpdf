@@ -1,90 +1,217 @@
+/* ===================================
+   DOCUMENT ANALYZER - DISEÑO MODERNO
+   =================================== */
+
+/* ===== VARIABLES DE DISEÑO ===== */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Colores Primarios */
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --success-gradient: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+  --warning-gradient: linear-gradient(135deg, #f9d423 0%, #ff4e50 100%);
+  --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --dark-gradient: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
 
-  color-scheme: light;
-  color: #1a202c;
-  background-color: #f8fafc;
+  /* Colores Sólidos */
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --success-color: #13f1fc;
+  --warning-color: #f9d423;
+  --danger-color: #ff4e50;
+  --info-color: #4facfe;
+  --dark-color: #1a202c;
+  --light-color: #f7fafc;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Colores de Tema */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.9);
+  --text-primary: #1a202c;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --border-color: rgba(0, 0, 0, 0.1);
+
+  /* Sombras */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  /* --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3); */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  /* Bordes y Radio */
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+  --border-radius-xl: 10px;
+  --border-radius-full: 6px;
+
+  /* Transiciones */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* ===== ESTILOS BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+/* Prevenir scroll automático al cargar la página */
+html {
+  scroll-behavior: auto;
+  scroll-padding-top: 0;
+  scroll-snap-type: none;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 body {
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  height: 100vh;
+  scroll-behavior: auto;
+  scroll-padding-top: 0;
   margin: 0;
-  display: block;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #f8fafc !important;
-  color: #1a202c !important;
+  padding: 0;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Forzar posición inicial en la parte superior */
+html,
+body {
+  overflow-x: hidden;
+  height: 100%;
+  position: relative;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Resetear scroll para todos los contenedores principales */
+.main-container,
+.content-wrapper,
+.page-container,
+.container-fluid,
+main,
+.app-content,
+.sidebar-content,
+.main-content {
+  scroll-behavior: auto;
+  scroll-padding-top: 0;
+  overflow-x: hidden;
 }
 
-/* Forzar tema claro */
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #1a202c !important;
-    background-color: #f8fafc !important;
-  }
-  a:hover {
-    color: #667eea;
-  }
-  button {
-    background-color: #ffffff;
-    color: #1a202c;
-  }
+/* Prevenir scroll restauración del navegador */
+html:focus-within {
+  scroll-behavior: auto;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #1a202c !important;
-    background-color: #f8fafc !important;
+/* Asegurar que no hay anclas que causen scroll automático */
+html {
+  scroll-padding-top: 0 !important;
+  scroll-snap-type: none !important;
+}
+
+/* Deshabilitar smooth scroll globalmente */
+* {
+  scroll-behavior: auto !important;
+}
+
+/* Cleaned up - removed conflicting anti-scroll rules for analysis-history */
+/* The position: fixed solution in HTML handles scroll prevention correctly */
+
+/* ===== ANIMACIONES GLOBALES ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  a:hover {
-    color: #667eea;
-  }
-  button {
-    background-color: #ffffff;
-    color: #1a202c;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Batch Analysis Critical Styles - Complete FOUC Prevention */
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.fade-in-left {
+  animation: fadeInLeft 0.6s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/* .gradient-animation {
+  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+} */
+
+/* ===== BATCH ANALYSIS CRITICAL STYLES - COMPLETE FOUC PREVENTION ===== */
 .analysis-history-container {
   padding: 2rem;
   max-width: 1400px;
@@ -94,8 +221,10 @@ button:focus-visible {
   color: #1f2937;
 }
 
+/* Header Section */
 .analysis-history-header {
   margin-bottom: 3rem;
+  animation: fadeInDown 0.8s ease-out;
   background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 16px;
@@ -133,12 +262,14 @@ button:focus-visible {
   color: #6b7280;
 }
 
+/* Content Section */
 .analysis-history-content {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
+/* Controls Section */
 .controls-section {
   background: #ffffff;
   border: 2px solid #e2e8f0;
@@ -146,6 +277,7 @@ button:focus-visible {
   padding: 2.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .controls-section h3 {
@@ -157,12 +289,14 @@ button:focus-visible {
   padding: 1rem 0;
 }
 
+/* Config Form */
 .config-form {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
+/* Config Sections */
 .config-section {
   background: #f8fafc;
   border: 2px solid #e2e8f0;
@@ -181,12 +315,14 @@ button:focus-visible {
   gap: 0.5rem;
 }
 
+/* Basic Info Grid */
 .basic-info-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
 }
 
+/* Config Grid */
 .config-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -205,9 +341,7 @@ button:focus-visible {
   font-size: 0.95rem;
 }
 
-.search-input,
-.filter-select,
-.sort-select {
+.search-input {
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -217,9 +351,7 @@ button:focus-visible {
   transition: all 0.3s ease;
 }
 
-.search-input:focus,
-.filter-select:focus,
-.sort-select:focus {
+.search-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -229,12 +361,33 @@ button:focus-visible {
   color: #9ca3af;
 }
 
+/* Filters */
 .filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
 
+.filter-select,
+.sort-select {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.filter-select:focus,
+.sort-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Advanced Options */
 .advanced-options {
   border-top: 1px solid #e5e7eb;
   padding-top: 1.5rem;
@@ -266,6 +419,7 @@ button:focus-visible {
   border: 1px solid #e5e7eb;
 }
 
+/* Dropzone */
 .dropzone {
   background: #f9fafb;
   border: 2px dashed #d1d5db;
@@ -312,6 +466,7 @@ button:focus-visible {
   color: #6b7280;
 }
 
+/* Analyses List */
 .analyses-list {
   margin-top: 2rem;
 }
@@ -405,6 +560,7 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
+/* Main Actions */
 .main-actions {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -415,6 +571,7 @@ button:focus-visible {
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  animation: fadeInUp 0.8s ease-out;
 }
 
 .summary-card {
@@ -459,6 +616,13 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.analysis-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Action Buttons */
 .action-btn {
   display: flex;
   align-items: center;
@@ -550,6 +714,7 @@ button:focus-visible {
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
 }
 
+/* Loading State */
 .loading-state {
   background: #ffffff;
   border: 2px solid #e2e8f0;

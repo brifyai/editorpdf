@@ -8,7 +8,6 @@ import { useErrorHandler } from '../../../utils/errorHandler';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
-import './BatchAnalysis.css';
 
 const BatchAnalysis = () => {
   const navigate = useNavigate();
@@ -174,7 +173,7 @@ const BatchAnalysis = () => {
     <div className="analysis-history-container">
       <div className="analysis-history-header">
         <div className="header-icon">📦</div>
-        <h1>Procesamiento Batch</h1>
+        <h1>Herramientas Batch PDF</h1>
         <p>Procesa múltiples documentos simultáneamente con configuraciones personalizadas</p>
       </div>
 
