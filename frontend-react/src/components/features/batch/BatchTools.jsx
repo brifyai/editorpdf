@@ -262,8 +262,8 @@ const BatchTools = () => {
             </svg>
           </div>
           <div className="header-text">
-            <h1>Procesamiento Batch</h1>
-            <p>Herramientas especializadas para procesamiento eficiente de documentos en lote</p>
+            <h1>Herramientas Batch PDF</h1>
+            <p>Automatización de documentos y procesamiento eficiente en lote</p>
           </div>
         </div>
       </div>
