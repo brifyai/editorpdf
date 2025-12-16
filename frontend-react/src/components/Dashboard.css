@@ -4,6 +4,8 @@
   margin: 0;
 }
 
+/* FOUC fix - timestamp for deployment trigger */
+
 /* Header del Dashboard */
 .dashboard-header {
   background: #ffffff;
